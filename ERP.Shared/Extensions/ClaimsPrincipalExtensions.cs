@@ -11,16 +11,13 @@ public static class ClaimsPrincipalExtensions
     private const string RoleIdClaimType = "RoleId";
 
     /// <summary>
-    /// Pobiera ID użytkownika z Claims
+    /// Pobiera ID użytkownika z Claims (wyłącznie ClaimTypes.NameIdentifier).
     /// </summary>
     public static int? GetUserId(this ClaimsPrincipal principal)
     {
-        var userIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier) ?? 
-                         principal.FindFirst("UserId");
-        
+        var userIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || string.IsNullOrEmpty(userIdClaim.Value) || !int.TryParse(userIdClaim.Value, out int userId))
             return null;
-            
         return userId;
     }
 

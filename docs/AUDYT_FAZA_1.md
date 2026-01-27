@@ -28,3 +28,7 @@ Działa: start HTTP, login, wybór firmy, Main, anti-forgery.
 ## Checkpoint: audit-faza1_ok_faza2k2_ok
 
 Działa: start HTTP, login, wybór firmy, anti-forgery, returnUrl.
+
+## Checkpoint: audit-faza1_ok_faza2k4_ok
+
+Działa: start HTTP, login, wybór firmy, anti-forgery, returnUrl, uproszczony UserId.
