@@ -27,6 +27,7 @@ public class UserContext : IUserContext
 
     public string? UserName => User?.GetUserName();
 
+    // Nieużywane w obecnym modelu – RoleId (claim "RoleId") jest źródłem prawdy dla ról.
     public IEnumerable<string> Roles
     {
         get

@@ -27,7 +27,7 @@ public interface IUserContext
     string? UserName { get; }
 
     /// <summary>
-    /// Lista ról użytkownika (z Claims)
+    /// Lista ról użytkownika (ClaimTypes.Role). Nieużywane w obecnym modelu – RoleId jest źródłem prawdy.
     /// </summary>
     IEnumerable<string> Roles { get; }
 

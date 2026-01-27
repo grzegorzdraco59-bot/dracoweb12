@@ -32,3 +32,11 @@ Działa: start HTTP, login, wybór firmy, anti-forgery, returnUrl.
 ## Checkpoint: audit-faza1_ok_faza2k4_ok
 
 Działa: start HTTP, login, wybór firmy, anti-forgery, returnUrl, uproszczony UserId.
+
+## Notatka developerska: model ról
+
+Model ról w aplikacji = **RoleId** (int, claim `"RoleId"`), a nie `ClaimTypes.Role`. Policies i handlery autoryzacji opierają się na RoleId. Właściwość `IUserContext.Roles` (ClaimTypes.Role) nie jest używana.
+
+## Checkpoint: audit-faza1_ok_faza2k5_ok
+
+Działa: start HTTP, login, wybór firmy, anti-forgery, returnUrl, uproszczony UserId, role model = RoleId.
