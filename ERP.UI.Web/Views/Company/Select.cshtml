@@ -26,6 +26,7 @@
                             @foreach (var company in Model)
                             {
                                 <form asp-action="Select" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
                                     <input type="hidden" name="companyId" value="@company.Id" />
                                     <button type="submit" 
                                             class="btn btn-outline-primary btn-lg text-start p-3 w-100 @(company.IsDefault ? "border-primary border-2" : "")">

@@ -18,3 +18,9 @@
 ## Punkt odniesienia
 
 Ten stan jest zatwierdzonym punktem odniesienia do dalszych prac. Wdrożenie HTTPS planowane jest jako osobna faza.
+
+DEV działa na HTTP; HTTPS będzie konfigurowany w osobnej fazie.
+
+## Checkpoint: audit-faza1_ok_faza2k1_ok
+
+Działa: start HTTP, login, wybór firmy, Main, anti-forgery.

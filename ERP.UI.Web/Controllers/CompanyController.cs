@@ -66,6 +66,7 @@ public class CompanyController : Controller
     /// Zapisuje wybraną firmę w Claims i przekierowuje do głównej strony
     /// </summary>
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Select(int companyId, int? roleId = null)
     {
         if (companyId <= 0)
