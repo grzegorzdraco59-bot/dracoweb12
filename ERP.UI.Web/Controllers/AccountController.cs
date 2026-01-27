@@ -75,7 +75,9 @@ public class AccountController : Controller
             new ClaimsPrincipal(claimsIdentity),
             authProperties);
 
-        // Po sukcesie przekieruj do CompanySelectionView
+        // Po sukcesie: redirect do returnUrl jeśli lokalny, w przeciwnym razie do wyboru firmy
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return LocalRedirect(returnUrl);
         return RedirectToAction("Select", "Company");
     }
 
