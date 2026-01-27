@@ -1,0 +1,159 @@
+<UserControl x:Class="ERP.UI.WPF.Views.OrdersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="1200">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>   <!-- 0: Nagłówek Zamówienia hala -->
+            <RowDefinition Height="Auto"/>   <!-- 1: Legenda kolorów i przyciski na górze -->
+            <RowDefinition Height="*"/>      <!-- 2: Browse Zamówień -->
+            <RowDefinition Height="Auto"/>   <!-- 3: Przyciski edycji na dole -->
+        </Grid.RowDefinitions>
+
+        <!-- Nagłówek Zamówienia hala -->
+        <Label Grid.Row="0" Content="Zamówienia hala" FontSize="16" FontWeight="Bold" Margin="0,0,0,5" HorizontalAlignment="Left"/>
+
+        <!-- Legenda kolorów i przyciski na górze -->
+        <GroupBox Grid.Row="1" Header="Statusy i akcje" Padding="10" Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Legenda kolorów statusów -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,0,20,0">
+                    <Border BorderBrush="#CCCCCC" BorderThickness="1" Margin="0,0,5,0" Padding="5,2">
+                        <StackPanel Orientation="Horizontal">
+                            <Rectangle Width="20" Height="15" Fill="#FFA500" Margin="0,0,5,0"/>
+                            <TextBlock Text="1-wybrane do zamówień" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Border BorderBrush="#CCCCCC" BorderThickness="1" Margin="0,0,5,0" Padding="5,2">
+                        <StackPanel Orientation="Horizontal">
+                            <Rectangle Width="20" Height="15" Fill="#FFFF00" Margin="0,0,5,0"/>
+                            <TextBlock Text="2-zamówienia edytowane" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Border BorderBrush="#CCCCCC" BorderThickness="1" Margin="0,0,5,0" Padding="5,2">
+                        <StackPanel Orientation="Horizontal">
+                            <Rectangle Width="20" Height="15" Fill="#00FF00" Margin="0,0,5,0"/>
+                            <TextBlock Text="3-oczekiwanie na dostawe" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Border BorderBrush="#CCCCCC" BorderThickness="1" Margin="0,0,5,0" Padding="5,2">
+                        <StackPanel Orientation="Horizontal">
+                            <Rectangle Width="20" Height="15" Fill="#00FF00" Margin="0,0,5,0"/>
+                            <TextBlock Text="4-dostaczone" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Przyciski i pola na prawo -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <StackPanel Orientation="Vertical" Margin="0,0,10,0">
+                        <Label Content="po ilu dniach kasowqac zrealizowane" FontSize="10" Padding="0,0,0,2"/>
+                        <TextBox Text="{Binding DaysToDeleteRealized, UpdateSourceTrigger=PropertyChanged}" 
+                                 Width="200" 
+                                 Padding="5"
+                                 VerticalContentAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Vertical" Margin="0,0,10,0">
+                        <Label Content="" FontSize="10" Padding="0,0,0,2"/>
+                        <TextBox Text="{Binding NumericValue, UpdateSourceTrigger=PropertyChanged}" 
+                                 Width="150" 
+                                 Padding="5"
+                                 VerticalContentAlignment="Center"/>
+                    </StackPanel>
+                    <Button Content="kasuj stare" 
+                            Command="{Binding DeleteOldCommand}"
+                            Padding="10,5"
+                            Margin="0,20,5,0"
+                            VerticalAlignment="Bottom"/>
+                    <Button Content="wyslij do oferty" 
+                            Command="{Binding SendToOfferCommand}"
+                            Padding="10,5"
+                            Margin="0,20,5,0"
+                            VerticalAlignment="Bottom"/>
+                    <Button Content="zaznacz do zamówienia wszytkie od dostawcy" 
+                            Command="{Binding SelectAllFromSupplierCommand}"
+                            Padding="10,5"
+                            Margin="0,20,5,0"
+                            VerticalAlignment="Bottom"/>
+                    <Button Content="zaznacz do zamówienia" 
+                            Command="{Binding SelectForOrderCommand}"
+                            Padding="10,5"
+                            Margin="0,20,5,0"
+                            VerticalAlignment="Bottom"/>
+                    <Button Content="wyslij do zamowienia" 
+                            Command="{Binding SendToOrderCommand}"
+                            Padding="10,5"
+                            Margin="0,20,5,0"
+                            VerticalAlignment="Bottom"/>
+                </StackPanel>
+            </Grid>
+        </GroupBox>
+
+        <!-- Browse Zamówień -->
+        <DataGrid Grid.Row="2" 
+                  ItemsSource="{Binding Orders}"
+                  SelectedItem="{Binding SelectedOrder}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  GridLinesVisibility="All"
+                  HeadersVisibility="Column"
+                  Margin="0,0,0,10">
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Status}" Value="1">
+                            <Setter Property="Background" Value="#FFA500"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Status}" Value="2">
+                            <Setter Property="Background" Value="#FFFF00"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Status}" Value="3">
+                            <Setter Property="Background" Value="#00FF00"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Status}" Value="4">
+                            <Setter Property="Background" Value="#00FF00"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.RowStyle>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60"/>
+                <DataGridTextColumn Header="Data" Binding="{Binding OrderDate, StringFormat='{}{0:yyyy-MM-dd}'}" Width="100"/>
+                <DataGridTextColumn Header="Dostawca" Binding="{Binding SupplierName}" Width="150"/>
+                <DataGridTextColumn Header="Nazwa" Binding="{Binding ProductNameDraco}" Width="200"/>
+                <DataGridTextColumn Header="Jednostki" Binding="{Binding SalesUnit}" Width="100"/>
+                <DataGridTextColumn Header="Ilość" Binding="{Binding Quantity, StringFormat='{}{0:N2}'}" Width="80"/>
+                <DataGridTextColumn Header="Uwagi" Binding="{Binding Notes}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Przyciski edycji na dole -->
+        <GroupBox Grid.Row="3" Header="Akcje - zamowieniahala" Padding="10">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Dodaj" 
+                        Command="{Binding AddOrderCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Edytuj" 
+                        Command="{Binding EditOrderCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Usuń" 
+                        Command="{Binding DeleteOrderCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Odśwież" 
+                        Command="{Binding LoadOrdersCommand}"
+                        Padding="10,5"/>
+            </StackPanel>
+        </GroupBox>
+    </Grid>
+</UserControl>

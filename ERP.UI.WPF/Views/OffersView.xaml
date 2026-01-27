@@ -1,0 +1,159 @@
+<UserControl x:Class="ERP.UI.WPF.Views.OffersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="1000">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>   <!-- 0: Nagłówek Oferty -->
+            <RowDefinition Height="Auto"/>   <!-- 1: Przyciski nad browseem ofert -->
+            <RowDefinition Height="Auto"/>   <!-- 2: Pole wyszukiwania -->
+            <RowDefinition Height="*"/>      <!-- 3: Browse Ofert -->
+            <RowDefinition Height="Auto"/>   <!-- 4: Przyciski edycji ofert -->
+            <RowDefinition Height="Auto"/>   <!-- 5: Nagłówek Pozycje Oferty -->
+            <RowDefinition Height="*"/>      <!-- 6: Browse Pozycji Oferty -->
+            <RowDefinition Height="Auto"/>   <!-- 7: Przyciski edycji pozycji -->
+        </Grid.RowDefinitions>
+
+        <!-- Nagłówek Oferty -->
+        <Label Grid.Row="0" Content="Oferty" FontSize="16" FontWeight="Bold" Margin="0,0,0,5"/>
+
+        <!-- Przyciski nad browseem ofert -->
+        <GroupBox Grid.Row="1" Header="Akcje na ofercie" Padding="10" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="1. Print oferta PL" 
+                        Command="{Binding PrintOfferPlCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="2. Print oferta ENG" 
+                        Command="{Binding PrintOfferEngCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="3. Send email" 
+                        Command="{Binding SendEmailCommand}"
+                        Padding="10,5"
+                        Margin="15,0,5,0"/>
+                <Button Content="4. Kopiuj do nowej oferty" 
+                        Command="{Binding CopyToNewOfferCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="5. Kopiuj do FPF" 
+                        Command="{Binding CopyToFpfCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="6. Kopiuj do FPFzal." 
+                        Command="{Binding CopyToFpfZalCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="7. Kopiuj do zlecenia" 
+                        Command="{Binding CopyToOrderCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="8. Kopiuj do FV" 
+                        Command="{Binding CopyToFvCommand}"
+                        Padding="10,5"/>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Pole wyszukiwania -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,5">
+            <Label Content="Szukaj:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                     Width="300" 
+                     Padding="5"
+                     VerticalAlignment="Center">
+                <TextBox.Style>
+                    <Style TargetType="TextBox">
+                        <Setter Property="Tag" Value="Wyszukaj po wszystkich kolumnach"/>
+                    </Style>
+                </TextBox.Style>
+            </TextBox>
+        </StackPanel>
+
+        <!-- Browse Ofert (górny) -->
+        <DataGrid Grid.Row="3" 
+                  ItemsSource="{Binding FilteredOffers}"
+                  SelectedItem="{Binding SelectedOffer}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  GridLinesVisibility="All"
+                  HeadersVisibility="Column"
+                  Margin="0,0,0,10">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60"/>
+                <DataGridTextColumn Header="Data" Binding="{Binding FormattedOfferDate}" Width="100"/>
+                <DataGridTextColumn Header="Nr oferty" Binding="{Binding OfferNumber}" Width="100"/>
+                <DataGridTextColumn Header="Klient" Binding="{Binding CustomerName}" Width="*"/>
+                <DataGridTextColumn Header="Waluta" Binding="{Binding Currency}" Width="80"/>
+                <DataGridTextColumn Header="Wartość" Binding="{Binding TotalBrutto, StringFormat='{}{0:N2}'}" Width="120"/>
+                <DataGridTextColumn Header="Operator" Binding="{Binding Operator}" Width="100"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Przyciski edycji ofert -->
+        <GroupBox Grid.Row="4" Header="Akcje" Padding="10" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Dodaj ofertę" 
+                        Command="{Binding AddOfferCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Edytuj ofertę" 
+                        Command="{Binding EditOfferCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Usuń ofertę" 
+                        Command="{Binding DeleteOfferCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Odśwież" 
+                        Command="{Binding LoadOffersCommand}"
+                        Padding="10,5"/>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Nagłówek Pozycje Oferty -->
+        <Label Grid.Row="5" Content="Pozycje Oferty" FontSize="16" FontWeight="Bold" Margin="0,10,0,5"/>
+
+        <!-- Browse Pozycji Oferty (dolny) -->
+        <DataGrid Grid.Row="6" 
+                  ItemsSource="{Binding OfferPositions}"
+                  SelectedItem="{Binding SelectedOfferPosition}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  GridLinesVisibility="All"
+                  HeadersVisibility="Column"
+                  Margin="0,0,0,10">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60"/>
+                <DataGridTextColumn Header="Kod" Binding="{Binding ProductCode}" Width="100"/>
+                <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="*"/>
+                <DataGridTextColumn Header="Ilość" Binding="{Binding Quantity, StringFormat='{}{0:N2}'}" Width="80"/>
+                <DataGridTextColumn Header="Jedn." Binding="{Binding Unit}" Width="60"/>
+                <DataGridTextColumn Header="Cena" Binding="{Binding Price, StringFormat='{}{0:N2}'}" Width="100"/>
+                <DataGridTextColumn Header="Rabat" Binding="{Binding Discount, StringFormat='{}{0:N2}'}" Width="80"/>
+                <DataGridTextColumn Header="Cena po rabacie" Binding="{Binding PriceAfterDiscount, StringFormat='{}{0:N2}'}" Width="120"/>
+                <DataGridTextColumn Header="VAT" Binding="{Binding VatRate}" Width="60"/>
+                <DataGridTextColumn Header="Brutto" Binding="{Binding PriceBrutto, StringFormat='{}{0:N2}'}" Width="120"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Przyciski edycji pozycji oferty -->
+        <GroupBox Grid.Row="7" Header="Akcje - Pozycje" Padding="10">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Dodaj pozycję" 
+                        Command="{Binding AddPositionCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Edytuj pozycję" 
+                        Command="{Binding EditPositionCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Usuń pozycję" 
+                        Command="{Binding DeletePositionCommand}"
+                        Padding="10,5"/>
+            </StackPanel>
+        </GroupBox>
+    </Grid>
+</UserControl>

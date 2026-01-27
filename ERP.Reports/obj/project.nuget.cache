@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "f1+mP6/4rc4=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\48603\\projektyC#\\dracoWEB5\\ERP.Reports\\ERP.Reports.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\48603\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

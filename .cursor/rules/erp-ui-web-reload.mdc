@@ -1,0 +1,13 @@
+---
+description: Po zmianach w ERP.UI.Web zawsze przeładować program (dotnet watch run)
+globs: ERP.UI.Web/**/*
+alwaysApply: false
+---
+
+# ERP.UI.Web – automatyczne przeładowanie
+
+- Uruchamiaj projekt przez `dotnet watch run` (nie `dotnet run`), żeby aplikacja przeładowywała się przy zmianach plików.
+- Po wprowadzeniu zmian w widokach, kontrolerach lub konfiguracji ERP.UI.Web:
+  1. Upewnij się, że w tle działa `dotnet watch run` w katalogu `ERP.UI.Web`.
+  2. Jeśli watch nie był uruchomiony – uruchom go i poczekaj na build.
+- Hot reload obsługuje m.in. zmiany w `.cshtml`, `.cs` – przy zapisie pliku aplikacja odświeża się automatycznie.

@@ -1,0 +1,33 @@
+@{
+    ViewData["Title"] = "Strona główna";
+}
+
+<div class="container-fluid p-0 d-flex flex-column" style="height: 100%;">
+    <!-- Menu 23 przycisków jest w _Layout – wspólne dla wszystkich widoków -->
+    <div class="flex-grow-1 p-4">
+        @if (ViewBag.ViewNumber != null)
+        {
+            <div class="alert alert-info">
+                <h5>Widok @ViewBag.ViewNumber</h5>
+                @if (ViewBag.ViewName != null)
+                {
+                    <p>@ViewBag.ViewName - W przygotowaniu</p>
+                }
+                else
+                {
+                    <p>Widok @ViewBag.ViewNumber - W przygotowaniu</p>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-success">
+                <h4 class="alert-heading">Witaj w systemie ERP!</h4>
+                <p>Firma została wybrana pomyślnie.</p>
+                <hr>
+                <p class="mb-0">Wybrana firma ID: <strong>@ViewBag.CompanyId</strong></p>
+                <p class="mt-2">Wybierz moduł z menu powyżej.</p>
+            </div>
+        }
+    </div>
+</div>

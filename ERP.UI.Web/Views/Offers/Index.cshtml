@@ -1,0 +1,685 @@
+@model IEnumerable<ERP.Application.DTOs.OfferDto>
+@{
+    ViewData["Title"] = "Oferty";
+}
+
+<div class="container-fluid p-0 d-flex flex-column offers-fullscreen">
+    <!-- Nagłówek Oferty -->
+    <div class="p-3 border-bottom bg-light flex-shrink-0">
+        <h2 class="mb-0">Oferty</h2>
+    </div>
+
+    <!-- Pole wyszukiwania (jak w OffersView.xaml) - natychmiastowe -->
+    <div class="p-3 border-bottom flex-shrink-0">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <label for="searchText" class="form-label mb-0">Szukaj:</label>
+            <input type="text" 
+                   class="form-control" 
+                   id="searchText" 
+                   placeholder="Wyszukaj po wszystkich kolumnach (natychmiastowe)"
+                   style="max-width: 300px;" 
+                   autocomplete="off" />
+            <button type="button" class="btn btn-outline-secondary" id="clearSearchBtn" onclick="clearSearch()" style="display: none;">Wyczyść</button>
+            
+            <!-- Przyciski akcji -->
+            <div class="ms-3 d-flex gap-2 align-items-center">
+                <button type="button" class="btn btn-primary btn-sm" onclick="printOfferPL()">1. Print oferta PL</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="printOfferENG()">2. Print oferta ENG</button>
+                
+                <div class="ms-3"></div> <!-- Odstęp -->
+                
+                <button type="button" class="btn btn-secondary btn-sm" onclick="copyToOffer()">3. Kopiuj do oferty</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="copyToFPF()">4. Kopiuj do FPF</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="copyToFPFZal()">5. Kopiuj do FPF zal.</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="copyToZLEC()">6. Kopiuj do ZLEC</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="copyToFV()">7. Kopiuj do FV</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Górna połowa: Browse Ofert (jak DataGrid w OffersView.xaml) -->
+    <div class="d-flex flex-column border-bottom offers-panel">
+        <div class="flex-grow-1 p-3 overflow-auto offers-scroll-area">
+            <h5 class="mb-2">Oferty</h5>
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive" style="max-height: 100%;">
+                    <table class="table table-striped table-hover table-bordered table-compact">
+                        <thead class="sticky-header table-header-orange">
+                            <tr>
+                                <th class="sortable" data-column="id" style="width: 1%; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    ID <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="date" style="width: 1%; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Data <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="number" style="width: 1%; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Nr.of <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="fpv" style="width: 1%; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    FPV <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="fv" style="width: 1%; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    FV <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="zl" style="width: 1%; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    ZL <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="customer" style="max-width: 300px; width: 30%; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Klient <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="country" style="width: 100px; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    odbiorca panstwo <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="currency" style="width: 80px; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Waluta <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="value" style="width: 120px; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Wartość <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="operator" style="width: 100px; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Operator <span class="sort-indicator">↕</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="offers-tbody">
+                            @foreach (var offer in Model)
+                            {
+                                <tr class="offer-row" data-offer-id="@offer.Id" style="cursor: pointer;" 
+                                    data-offer-data="@($"{offer.Id}|{offer.OfferNumber}|{offer.FormattedOfferDate}|{offer.ForProforma}|{offer.ForInvoice}|{offer.ForOrder}|{offer.CustomerName}|{offer.CustomerCountry}|{offer.Currency}|{offer.TotalBrutto}|{offer.Operator}|{offer.CustomerStreet}|{offer.CustomerCity}|{offer.CustomerNip}")"
+                                    data-offer-id-value="@offer.Id"
+                                    data-offer-date-value="@(offer.OfferDate ?? 0)"
+                                    data-offer-number-value="@(offer.OfferNumber ?? 0)"
+                                    data-offer-fpv-value="@(offer.ForProforma == true ? 1 : 0)"
+                                    data-offer-fv-value="@(offer.ForInvoice == true ? 1 : 0)"
+                                    data-offer-zl-value="@(offer.ForOrder == true ? 1 : 0)"
+                                    data-offer-customer-value="@(offer.CustomerName ?? "")"
+                                    data-offer-country-value="@(offer.CustomerCountry ?? "")"
+                                    data-offer-currency-value="@(offer.Currency ?? "")"
+                                    data-offer-value-value="@(offer.TotalBrutto ?? 0)"
+                                    data-offer-operator-value="@(offer.Operator ?? "")">
+                                    <td style="white-space: nowrap;">@offer.Id</td>
+                                    <td style="white-space: nowrap;">@(offer.FormattedOfferDate ?? "-")</td>
+                                    <td style="white-space: nowrap;">@(offer.OfferNumber?.ToString() ?? "-")</td>
+                                    <td class="fpv-cell" data-value="@(offer.ForProforma == true ? "1" : "0")" style="white-space: nowrap; text-align: center;">@(offer.ForProforma == true ? "1" : "0")</td>
+                                    <td class="fv-cell" data-value="@(offer.ForInvoice == true ? "1" : "0")" style="white-space: nowrap; text-align: center;">@(offer.ForInvoice == true ? "1" : "0")</td>
+                                    <td class="zl-cell" data-value="@(offer.ForOrder == true ? "1" : "0")" style="white-space: nowrap; text-align: center;">@(offer.ForOrder == true ? "1" : "0")</td>
+                                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(offer.CustomerName ?? "-")</td>
+                                    <td>@(offer.CustomerCountry ?? "-")</td>
+                                    <td>@(offer.Currency ?? "-")</td>
+                                    <td class="text-end">@(offer.TotalBrutto?.ToString("N2") ?? "-")</td>
+                                    <td>@(offer.Operator ?? "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <h5>Brak ofert</h5>
+                    <p>@(string.IsNullOrEmpty(ViewBag.SearchText) 
+                        ? "Nie znaleziono żadnych ofert." 
+                        : $"Nie znaleziono ofert pasujących do wyszukiwania: \"{ViewBag.SearchText}\"")</p>
+                </div>
+            }
+        </div>
+        
+        <!-- Przyciski edycji ofert (jak w OffersView.xaml) -->
+        <div class="p-3 border-top bg-light flex-shrink-0">
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-primary btn-sm" onclick="addOffer()">Dodaj ofertę</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="editOfferBtn" onclick="editOffer()" disabled>Edytuj ofertę</button>
+                <button type="button" class="btn btn-danger btn-sm" id="deleteOfferBtn" onclick="deleteOffer()" disabled>Usuń ofertę</button>
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm">Odśwież</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dolna połowa: Browse Pozycji Oferty (jak DataGrid w OffersView.xaml) -->
+    <div class="d-flex flex-column offers-panel">
+        <div class="flex-grow-1 p-3 overflow-auto offers-scroll-area">
+            <h5 class="mb-2">Pozycje Oferty</h5>
+            <div id="positions-container">
+                <div class="alert alert-secondary">
+                    <p class="mb-0">Wybierz ofertę z tabeli powyżej, aby zobaczyć jej pozycje.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Przyciski edycji pozycji oferty (jak w OffersView.xaml) -->
+        <div class="p-3 border-top bg-light flex-shrink-0">
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-primary btn-sm" id="addPositionBtn" onclick="addPosition()" disabled>Dodaj pozycję</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="editPositionBtn" onclick="editPosition()" disabled>Edytuj pozycję</button>
+                <button type="button" class="btn btn-danger btn-sm" id="deletePositionBtn" onclick="deletePosition()" disabled>Usuń pozycję</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Okno ofert dopasowane do wielkości ekranu – uwzględnia navbar + menu 23 przycisków + footer */
+    .offers-fullscreen {
+        height: calc(100vh - 215px);
+        height: calc(100dvh - 215px);
+        min-height: 300px;
+        overflow: hidden;
+    }
+    .offers-panel {
+        flex: 1;
+        min-height: 0;
+    }
+    .offers-scroll-area {
+        min-height: 0;
+    }
+    
+    /* Nagłówki tabel – kolor pomarańczowy */
+    .table-header-orange.sticky-header,
+    .table-header-orange.sticky-header th {
+        background-color: #e67e22 !important;
+        color: #fff !important;
+        border-bottom-color: #d35400 !important;
+    }
+    .table-header-orange .sortable:hover {
+        background-color: #d35400 !important;
+    }
+    
+    /* Stylizacja tabeli podobna do DataGrid - table-compact od razu, bez przejścia wysokie→niskie wiersze */
+    .table-compact {
+        font-size: 14px;
+    }
+    
+    .table-compact th {
+        font-weight: 600;
+        white-space: nowrap;
+        padding: 0.25rem 0.5rem !important;
+        vertical-align: middle;
+    }
+    
+    .table-compact td {
+        vertical-align: middle;
+        padding: 0.25rem 0.5rem !important;
+    }
+    
+    .table-compact.table-hover tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .offer-row.selected {
+        background-color: #007bff !important;
+        color: white !important;
+    }
+    
+    .offer-row.selected td {
+        color: white !important;
+        background-color: #007bff !important;
+    }
+    
+    .sortable:hover {
+        background-color: #e9ecef;
+    }
+    
+    .sort-indicator {
+        font-size: 10px;
+        margin-left: 5px;
+        opacity: 0.5;
+    }
+    
+    .sort-asc .sort-indicator::after {
+        content: " ↑";
+        opacity: 1;
+    }
+    
+    .sort-desc .sort-indicator::after {
+        content: " ↓";
+        opacity: 1;
+    }
+    
+    /* Zielone tło dla wartości "1" w kolumnach FPV, FV, ZL */
+    td.fpv-cell[data-value="1"],
+    td.fv-cell[data-value="1"],
+    td.zl-cell[data-value="1"] {
+        background-color: #90EE90 !important;
+    }
+    
+    /* Ciemniejsze zielone tło dla wartości "1" gdy wiersz jest zaznaczony */
+    .offer-row.selected td.fpv-cell[data-value="1"],
+    .offer-row.selected td.fv-cell[data-value="1"],
+    .offer-row.selected td.zl-cell[data-value="1"] {
+        background-color: #28a745 !important;
+        color: white !important;
+    }
+    
+    /* Zaznaczona pozycja oferty – niebiesko, jak w Browse Oferty */
+    .position-row.selected {
+        background-color: #007bff !important;
+        color: white !important;
+    }
+    .position-row.selected td {
+        color: white !important;
+        background-color: #007bff !important;
+    }
+    
+    .position-summary-row {
+        border-top: 2px solid #dee2e6 !important;
+    }
+    
+    .table-compact .position-summary-row td {
+        padding: 0.25rem 0.5rem !important;
+    }
+    
+    /* Sticky headers dla tabel */
+    .sticky-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: #f8f9fa !important;
+    }
+    
+    .sticky-header th {
+        background-color: #f8f9fa !important;
+        border-bottom: 2px solid #dee2e6;
+    }
+</style>
+
+<script>
+    let selectedOfferId = null;
+    let selectedPositionId = null;
+    let allOfferRows = [];
+    let sortColumn = null;
+    let sortDirection = 'asc';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const positionsContainer = document.getElementById('positions-container');
+        const searchInput = document.getElementById('searchText');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        if (!positionsContainer) return;
+        
+        // Zapisz wszystkie wiersze ofert do filtrowania
+        allOfferRows = Array.from(document.querySelectorAll('.offer-row'));
+        
+        // Obsługa sortowania kolumn (tylko gdy jest tabela)
+        document.querySelectorAll('.sortable').forEach(header => {
+            header.addEventListener('click', function() {
+                const column = this.getAttribute('data-column');
+                
+                // Usuń wskaźniki sortowania z innych nagłówków
+                document.querySelectorAll('.sortable').forEach(h => {
+                    h.classList.remove('sort-asc', 'sort-desc');
+                });
+                
+                // Zmień kierunek sortowania jeśli kliknięto tę samą kolumnę
+                if (sortColumn === column) {
+                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortColumn = column;
+                    sortDirection = 'asc';
+                }
+                
+                // Dodaj wskaźnik sortowania
+                this.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+                
+                // Sortuj wiersze
+                sortOffers(column, sortDirection);
+            });
+        });
+        
+        // Funkcja sortowania ofert
+        function sortOffers(column, direction) {
+            const tbody = document.getElementById('offers-tbody');
+            if (!tbody) return;
+            const rows = Array.from(allOfferRows);
+            
+            rows.sort((a, b) => {
+                let aValue, bValue;
+                
+                switch(column) {
+                    case 'id':
+                        aValue = parseInt(a.getAttribute('data-offer-id-value') || '0');
+                        bValue = parseInt(b.getAttribute('data-offer-id-value') || '0');
+                        break;
+                    case 'date':
+                        aValue = parseInt(a.getAttribute('data-offer-date-value') || '0');
+                        bValue = parseInt(b.getAttribute('data-offer-date-value') || '0');
+                        break;
+                    case 'number':
+                        aValue = parseInt(a.getAttribute('data-offer-number-value') || '0');
+                        bValue = parseInt(b.getAttribute('data-offer-number-value') || '0');
+                        break;
+                    case 'fpv':
+                        aValue = parseInt(a.getAttribute('data-offer-fpv-value') || '0');
+                        bValue = parseInt(b.getAttribute('data-offer-fpv-value') || '0');
+                        break;
+                    case 'fv':
+                        aValue = parseInt(a.getAttribute('data-offer-fv-value') || '0');
+                        bValue = parseInt(b.getAttribute('data-offer-fv-value') || '0');
+                        break;
+                    case 'zl':
+                        aValue = parseInt(a.getAttribute('data-offer-zl-value') || '0');
+                        bValue = parseInt(b.getAttribute('data-offer-zl-value') || '0');
+                        break;
+                    case 'customer':
+                        aValue = (a.getAttribute('data-offer-customer-value') || '').toLowerCase();
+                        bValue = (b.getAttribute('data-offer-customer-value') || '').toLowerCase();
+                        if (direction === 'asc') {
+                            return aValue.localeCompare(bValue);
+                        } else {
+                            return bValue.localeCompare(aValue);
+                        }
+                    case 'country':
+                        aValue = (a.getAttribute('data-offer-country-value') || '').toLowerCase();
+                        bValue = (b.getAttribute('data-offer-country-value') || '').toLowerCase();
+                        if (direction === 'asc') {
+                            return aValue.localeCompare(bValue);
+                        } else {
+                            return bValue.localeCompare(aValue);
+                        }
+                    case 'currency':
+                        aValue = (a.getAttribute('data-offer-currency-value') || '').toLowerCase();
+                        bValue = (b.getAttribute('data-offer-currency-value') || '').toLowerCase();
+                        if (direction === 'asc') {
+                            return aValue.localeCompare(bValue);
+                        } else {
+                            return bValue.localeCompare(aValue);
+                        }
+                    case 'value':
+                        aValue = parseFloat(a.getAttribute('data-offer-value-value') || '0');
+                        bValue = parseFloat(b.getAttribute('data-offer-value-value') || '0');
+                        break;
+                    case 'operator':
+                        aValue = (a.getAttribute('data-offer-operator-value') || '').toLowerCase();
+                        bValue = (b.getAttribute('data-offer-operator-value') || '').toLowerCase();
+                        if (direction === 'asc') {
+                            return aValue.localeCompare(bValue);
+                        } else {
+                            return bValue.localeCompare(aValue);
+                        }
+                    default:
+                        return 0;
+                }
+                
+                if (direction === 'asc') {
+                    return aValue - bValue;
+                } else {
+                    return bValue - aValue;
+                }
+            });
+            
+            // Usuń wszystkie wiersze z tbody
+            rows.forEach(row => tbody.removeChild(row));
+            
+            // Dodaj posortowane wiersze
+            rows.forEach(row => tbody.appendChild(row));
+            
+            // Zaktualizuj allOfferRows po sortowaniu
+            allOfferRows = rows;
+        }
+        
+        // Natychmiastowe wyszukiwanie podczas wpisywania
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                filterOffers(this.value);
+                if (clearSearchBtn) clearSearchBtn.style.display = this.value ? 'block' : 'none';
+            });
+        }
+        window.clearSearch = function() {
+            if (searchInput) searchInput.value = '';
+            filterOffers('');
+            if (clearSearchBtn) clearSearchBtn.style.display = 'none';
+        };
+        
+        // Funkcja filtrowania ofert
+        function filterOffers(searchText) {
+            const searchTextLower = searchText.toLowerCase().trim();
+            const tbody = document.getElementById('offers-tbody');
+            
+            if (!searchTextLower) {
+                // Pokaż wszystkie wiersze
+                allOfferRows.forEach(row => {
+                    row.style.display = '';
+                });
+                return;
+            }
+            
+            // Filtruj wiersze
+            allOfferRows.forEach(row => {
+                const offerData = row.getAttribute('data-offer-data') || '';
+                const matches = offerData.toLowerCase().includes(searchTextLower);
+                row.style.display = matches ? '' : 'none';
+            });
+        }
+        
+        const offerRows = document.querySelectorAll('.offer-row');
+        
+        offerRows.forEach(row => {
+            row.addEventListener('click', function() {
+                // Usuń zaznaczenie z innych wierszy
+                offerRows.forEach(r => r.classList.remove('selected'));
+                // Zaznacz aktualny wiersz
+                this.classList.add('selected');
+                
+                selectedOfferId = this.getAttribute('data-offer-id');
+                selectedPositionId = null; // Reset wybranej pozycji
+                
+                const editBtn = document.getElementById('editOfferBtn');
+                const delBtn = document.getElementById('deleteOfferBtn');
+                const addPosBtn = document.getElementById('addPositionBtn');
+                const editPosBtn = document.getElementById('editPositionBtn');
+                const delPosBtn = document.getElementById('deletePositionBtn');
+                if (editBtn) editBtn.disabled = false;
+                if (delBtn) delBtn.disabled = false;
+                if (addPosBtn) addPosBtn.disabled = false;
+                if (editPosBtn) editPosBtn.disabled = true;
+                if (delPosBtn) delPosBtn.disabled = true;
+                loadOfferPositions(selectedOfferId);
+            });
+        });
+        
+        // Od razu przejdź do 2 browse’y: auto-wybór pierwszej oferty (pomijamy „Wybierz ofertę…”)
+        try {
+            if (offerRows.length > 0) offerRows[0].click();
+        } catch (e) {
+            console.warn('Auto-wybor pierwszej oferty:', e);
+        }
+        
+        function loadOfferPositions(offerId) {
+            if (!positionsContainer) return;
+            positionsContainer.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Ładowanie...</span></div></div>';
+            fetch(`/Offers/GetPositions?offerId=${offerId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        positionsContainer.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                        return;
+                    }
+                    
+                    if (data.length === 0) {
+                        positionsContainer.innerHTML = '<div class="alert alert-info">Brak pozycji dla wybranej oferty.</div>';
+                        return;
+                    }
+                    
+                    // Oblicz sumy
+                    let sumPriceAfterDiscount = 0;
+                    let sumPriceBrutto = 0;
+                    
+                    data.forEach(position => {
+                        if (position.priceAfterDiscount) {
+                            sumPriceAfterDiscount += parseFloat(position.priceAfterDiscount) || 0;
+                        }
+                        if (position.priceBrutto) {
+                            sumPriceBrutto += parseFloat(position.priceBrutto) || 0;
+                        }
+                    });
+                    
+                    // Tworzymy tabelę z pozycjami – table-compact od razu w HTML (bez przejścia wysokie→niskie wiersze)
+                    let html = '<div class="table-responsive" style="max-height: 100%;"><table class="table table-striped table-hover table-bordered table-compact"><thead class="sticky-header table-header-orange"><tr>';
+                    html += '<th style="width: 60px;">ID</th>';
+                    html += '<th style="width: 100px;">Kod</th>';
+                    html += '<th>Nazwa</th>';
+                    html += '<th style="width: 80px;">Ilość</th>';
+                    html += '<th style="width: 60px;">Jedn.</th>';
+                    html += '<th style="width: 100px;">Cena</th>';
+                    html += '<th style="width: 80px;">Rabat</th>';
+                    html += '<th style="width: 120px;">Cena po rabacie</th>';
+                    html += '<th style="width: 60px;">VAT</th>';
+                    html += '<th style="width: 120px;">Brutto</th>';
+                    html += '</tr></thead><tbody>';
+                    
+                    data.forEach(position => {
+                        html += `<tr class="position-row" data-position-id="${position.id}" style="cursor: pointer;">`;
+                        html += `<td>${position.id}</td>`;
+                        html += `<td>${position.productCode || '-'}</td>`;
+                        html += `<td>${position.name || '-'}</td>`;
+                        html += `<td class="text-end">${position.quantity ? parseFloat(position.quantity).toFixed(2) : '-'}</td>`;
+                        html += `<td>${position.unit || '-'}</td>`;
+                        html += `<td class="text-end">${position.price ? parseFloat(position.price).toFixed(2) : '-'}</td>`;
+                        html += `<td class="text-end">${position.discount ? parseFloat(position.discount).toFixed(2) : '-'}</td>`;
+                        html += `<td class="text-end">${position.priceAfterDiscount ? parseFloat(position.priceAfterDiscount).toFixed(2) : '-'}</td>`;
+                        html += `<td>${position.vatRate || '-'}</td>`;
+                        html += `<td class="text-end">${position.priceBrutto ? parseFloat(position.priceBrutto).toFixed(2) : '-'}</td>`;
+                        html += '</tr>';
+                    });
+                    
+                    // Wiersz z sumami
+                    html += '<tr class="position-summary-row" style="background-color: #f8f9fa; font-weight: bold;">';
+                    html += '<td colspan="7" class="text-end">SUMA:</td>';
+                    html += `<td class="text-end">${sumPriceAfterDiscount.toFixed(2)}</td>`;
+                    html += '<td></td>'; // Pusta kolumna VAT
+                    html += `<td class="text-end">${sumPriceBrutto.toFixed(2)}</td>`;
+                    html += '</tr>';
+                    
+                    html += '</tbody></table></div>';
+                    positionsContainer.innerHTML = html;
+                    
+                    // Dodaj obsługę kliknięć w wiersze pozycji
+                    const positionRows = document.querySelectorAll('.position-row');
+                    positionRows.forEach(row => {
+                        row.addEventListener('click', function() {
+                            // Usuń zaznaczenie z innych wierszy
+                            positionRows.forEach(r => r.classList.remove('selected'));
+                            // Zaznacz aktualny wiersz
+                            this.classList.add('selected');
+                            
+                            selectedPositionId = this.getAttribute('data-position-id');
+                            
+                            // Aktywuj przyciski edycji pozycji
+                            document.getElementById('editPositionBtn').disabled = false;
+                            document.getElementById('deletePositionBtn').disabled = false;
+                        });
+                    });
+                })
+                .catch(error => {
+                    positionsContainer.innerHTML = `<div class="alert alert-danger">Błąd podczas ładowania pozycji: ${error.message}</div>`;
+                });
+        }
+    });
+    
+    // Funkcje dla przycisków ofert
+    function addOffer() {
+        alert('Dodaj ofertę - funkcjonalność w przygotowaniu');
+    }
+    
+    function editOffer() {
+        if (!selectedOfferId) {
+            alert('Wybierz ofertę do edycji');
+            return;
+        }
+        alert(`Edytuj ofertę ID: ${selectedOfferId} - funkcjonalność w przygotowaniu`);
+    }
+    
+    function deleteOffer() {
+        if (!selectedOfferId) {
+            alert('Wybierz ofertę do usunięcia');
+            return;
+        }
+        if (confirm(`Czy na pewno chcesz usunąć ofertę ID: ${selectedOfferId}?`)) {
+            alert('Usuń ofertę - funkcjonalność w przygotowaniu');
+        }
+    }
+    
+    // Funkcje dla przycisków pozycji
+    function addPosition() {
+        if (!selectedOfferId) {
+            alert('Wybierz ofertę, do której chcesz dodać pozycję');
+            return;
+        }
+        alert(`Dodaj pozycję do oferty ID: ${selectedOfferId} - funkcjonalność w przygotowaniu`);
+    }
+    
+    function editPosition() {
+        if (!selectedPositionId) {
+            alert('Wybierz pozycję do edycji');
+            return;
+        }
+        alert(`Edytuj pozycję ID: ${selectedPositionId} - funkcjonalność w przygotowaniu`);
+    }
+    
+    function deletePosition() {
+        if (!selectedPositionId) {
+            alert('Wybierz pozycję do usunięcia');
+            return;
+        }
+        if (confirm(`Czy na pewno chcesz usunąć pozycję ID: ${selectedPositionId}?`)) {
+            alert('Usuń pozycję - funkcjonalność w przygotowaniu');
+        }
+    }
+    
+    // Funkcje dla przycisków akcji nad tabelą
+    function printOfferPL() {
+        if (!selectedOfferId) {
+            alert('Wybierz ofertę do wydruku');
+            return;
+        }
+        alert(`Print oferta PL ID: ${selectedOfferId} - funkcjonalność w przygotowaniu`);
+    }
+    
+    function printOfferENG() {
+        if (!selectedOfferId) {
+            alert('Wybierz ofertę do wydruku');
+            return;
+        }
+        alert(`Print oferta ENG ID: ${selectedOfferId} - funkcjonalność w przygotowaniu`);
+    }
+    
+    function copyToOffer() {
+        if (!selectedOfferId) {
+            alert('Wybierz ofertę do skopiowania');
+            return;
+        }
+        alert(`Kopiuj do oferty ID: ${selectedOfferId} - funkcjonalność w przygotowaniu`);
+    }
+    
+    function copyToFPF() {
+        if (!selectedOfferId) {
+            alert('Wybierz ofertę do skopiowania');
+            return;
+        }
+        alert(`Kopiuj do FPF ID: ${selectedOfferId} - funkcjonalność w przygotowaniu`);
+    }
+    
+    function copyToFPFZal() {
+        if (!selectedOfferId) {
+            alert('Wybierz ofertę do skopiowania');
+            return;
+        }
+        alert(`Kopiuj do FPF zal. ID: ${selectedOfferId} - funkcjonalność w przygotowaniu`);
+    }
+    
+    function copyToZLEC() {
+        if (!selectedOfferId) {
+            alert('Wybierz ofertę do skopiowania');
+            return;
+        }
+        alert(`Kopiuj do ZLEC ID: ${selectedOfferId} - funkcjonalność w przygotowaniu`);
+    }
+    
+    function copyToFV() {
+        if (!selectedOfferId) {
+            alert('Wybierz ofertę do skopiowania');
+            return;
+        }
+        alert(`Kopiuj do FV ID: ${selectedOfferId} - funkcjonalność w przygotowaniu`);
+    }
+</script>

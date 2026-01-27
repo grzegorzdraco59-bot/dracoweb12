@@ -1,0 +1,285 @@
+@model IEnumerable<ERP.Application.DTOs.SupplierDto>
+@{
+    ViewData["Title"] = "Dostawcy";
+}
+
+<div class="container-fluid p-0 d-flex flex-column suppliers-fullscreen">
+    <!-- Nagłówek Dostawcy -->
+    <div class="p-3 border-bottom bg-light flex-shrink-0">
+        <h2 class="mb-0">8. Dostawcy</h2>
+    </div>
+
+    <!-- Pole wyszukiwania – natychmiastowe -->
+    <div class="p-3 border-bottom flex-shrink-0">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <label for="searchText" class="form-label mb-0">Szukaj:</label>
+            <input type="text"
+                   class="form-control"
+                   id="searchText"
+                   placeholder="Wyszukaj po wszystkich kolumnach (natychmiastowe)"
+                   style="max-width: 300px;"
+                   autocomplete="off" />
+            <button type="button" class="btn btn-outline-secondary" id="clearSearchBtn" onclick="clearSearch()" style="display: none;">Wyczyść</button>
+        </div>
+    </div>
+
+    <!-- Panel: Browse Dostawców (bez dolnego browse) -->
+    <div class="d-flex flex-column flex-grow-1 suppliers-panel overflow-hidden">
+        <div class="flex-grow-1 p-3 overflow-auto suppliers-scroll-area">
+            <h5 class="mb-2">Dostawcy</h5>
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive" style="max-height: 100%;">
+                    <table class="table table-striped table-hover table-bordered table-compact">
+                        <thead class="sticky-header table-header-orange">
+                            <tr>
+                                <th class="sortable" data-column="id" style="width: 1%; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    ID <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="name" style="max-width: 220px; width: 20%; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Nazwa <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="phone" style="width: 150px; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Telefon <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="email" style="max-width: 200px; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Email <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="currency" style="width: 70px; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Waluta <span class="sort-indicator">↕</span>
+                                </th>
+                                <th style="max-width: 300px; white-space: nowrap;">Uwagi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="suppliers-tbody">
+                            @foreach (var s in Model)
+                            {
+                                var rowData = $"{s.Id}|{s.Name ?? ""}|{s.Phone ?? ""}|{s.Email ?? ""}|{s.Currency ?? ""}|{s.Notes ?? ""}";
+                                <tr class="supplier-row" data-supplier-id="@s.Id" style="cursor: pointer;"
+                                    data-supplier-data="@rowData"
+                                    data-supplier-id-value="@s.Id"
+                                    data-supplier-name-value="@(s.Name ?? "")"
+                                    data-supplier-phone-value="@(s.Phone ?? "")"
+                                    data-supplier-email-value="@(s.Email ?? "")"
+                                    data-supplier-currency-value="@(s.Currency ?? "")">
+                                    <td style="white-space: nowrap;">@s.Id</td>
+                                    <td style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(s.Name ?? "-")</td>
+                                    <td style="white-space: nowrap;">@(s.Phone ?? "-")</td>
+                                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(s.Email ?? "-")</td>
+                                    <td style="white-space: nowrap;">@(s.Currency ?? "-")</td>
+                                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(s.Notes ?? "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <h5>Brak dostawców</h5>
+                    <p class="mb-0">Nie znaleziono dostawców dla wybranej firmy.</p>
+                </div>
+            }
+        </div>
+
+        <!-- Przyciski edycji (jak w Ofertach, bez pozycji) -->
+        <div class="p-3 border-top bg-light flex-shrink-0">
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-primary btn-sm" onclick="addSupplier()">Dodaj dostawcę</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="editSupplierBtn" onclick="editSupplier()" disabled>Edytuj dostawcę</button>
+                <button type="button" class="btn btn-danger btn-sm" id="deleteSupplierBtn" onclick="deleteSupplier()" disabled>Usuń dostawcę</button>
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm">Odśwież</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Okno dostawców – jak Oferty, bez dolnego browse */
+    .suppliers-fullscreen {
+        height: calc(100vh - 215px);
+        height: calc(100dvh - 215px);
+        min-height: 300px;
+        overflow: hidden;
+    }
+    .suppliers-panel {
+        flex: 1;
+        min-height: 0;
+    }
+    .suppliers-scroll-area {
+        min-height: 0;
+    }
+
+    /* Nagłówki tabel – pomarańczowy (jak Oferty) */
+    .table-header-orange.sticky-header,
+    .table-header-orange.sticky-header th {
+        background-color: #e67e22 !important;
+        color: #fff !important;
+        border-bottom-color: #d35400 !important;
+    }
+    .table-header-orange .sortable:hover {
+        background-color: #d35400 !important;
+    }
+
+    .table-compact {
+        font-size: 14px;
+    }
+    .table-compact th {
+        font-weight: 600;
+        white-space: nowrap;
+        padding: 0.25rem 0.5rem !important;
+        vertical-align: middle;
+    }
+    .table-compact td {
+        vertical-align: middle;
+        padding: 0.25rem 0.5rem !important;
+    }
+    .table-compact.table-hover tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    /* Zaznaczony wiersz – niebiesko (jak Oferty) */
+    .supplier-row.selected {
+        background-color: #007bff !important;
+        color: white !important;
+    }
+    .supplier-row.selected td {
+        color: white !important;
+        background-color: #007bff !important;
+    }
+
+    .sortable:hover {
+        background-color: #e9ecef;
+    }
+    .sort-indicator {
+        font-size: 10px;
+        margin-left: 5px;
+        opacity: 0.5;
+    }
+    .sort-asc .sort-indicator::after {
+        content: " ↑";
+        opacity: 1;
+    }
+    .sort-desc .sort-indicator::after {
+        content: " ↓";
+        opacity: 1;
+    }
+
+    .sticky-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: #f8f9fa !important;
+    }
+    .sticky-header th {
+        background-color: #f8f9fa !important;
+        border-bottom: 2px solid #dee2e6;
+    }
+    .table-header-orange.sticky-header th {
+        background-color: #e67e22 !important;
+        border-bottom-color: #d35400 !important;
+    }
+</style>
+
+<script>
+    let selectedSupplierId = null;
+    let allSupplierRows = [];
+    let sortColumn = null;
+    let sortDirection = 'asc';
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('searchText');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        const tbody = document.getElementById('suppliers-tbody');
+        if (!tbody) return;
+
+        allSupplierRows = Array.from(document.querySelectorAll('.supplier-row'));
+
+        document.querySelectorAll('.sortable').forEach(function (header) {
+            header.addEventListener('click', function () {
+                const column = this.getAttribute('data-column');
+                document.querySelectorAll('.sortable').forEach(function (h) {
+                    h.classList.remove('sort-asc', 'sort-desc');
+                });
+                if (sortColumn === column) {
+                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortColumn = column;
+                    sortDirection = 'asc';
+                }
+                this.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+                sortSuppliers(column, sortDirection);
+            });
+        });
+
+        function sortSuppliers(column, direction) {
+            const rows = Array.from(allSupplierRows);
+            rows.sort(function (a, b) {
+                let aVal, bVal;
+                var attr = 'data-supplier-' + column + '-value';
+                aVal = a.getAttribute(attr) || '';
+                bVal = b.getAttribute(attr) || '';
+                if (column === 'id') {
+                    aVal = parseInt(aVal) || 0;
+                    bVal = parseInt(bVal) || 0;
+                    return direction === 'asc' ? aVal - bVal : bVal - aVal;
+                }
+                aVal = String(aVal).toLowerCase();
+                bVal = String(bVal).toLowerCase();
+                var cmp = aVal.localeCompare(bVal);
+                return direction === 'asc' ? cmp : -cmp;
+            });
+            rows.forEach(function (r) { tbody.removeChild(r); });
+            rows.forEach(function (r) { tbody.appendChild(r); });
+            allSupplierRows = rows;
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                filterSuppliers(this.value);
+                if (clearSearchBtn) clearSearchBtn.style.display = this.value ? 'block' : 'none';
+            });
+        }
+        window.clearSearch = function () {
+            if (searchInput) searchInput.value = '';
+            filterSuppliers('');
+            if (clearSearchBtn) clearSearchBtn.style.display = 'none';
+        };
+
+        function filterSuppliers(searchText) {
+            var q = (searchText || '').toLowerCase().trim();
+            allSupplierRows.forEach(function (row) {
+                var data = (row.getAttribute('data-supplier-data') || '').toLowerCase();
+                row.style.display = !q || data.includes(q) ? '' : 'none';
+            });
+        }
+
+        var rows = document.querySelectorAll('.supplier-row');
+        rows.forEach(function (row) {
+            row.addEventListener('click', function () {
+                rows.forEach(function (r) { r.classList.remove('selected'); });
+                this.classList.add('selected');
+                selectedSupplierId = this.getAttribute('data-supplier-id');
+                var editBtn = document.getElementById('editSupplierBtn');
+                var delBtn = document.getElementById('deleteSupplierBtn');
+                if (editBtn) editBtn.disabled = false;
+                if (delBtn) delBtn.disabled = false;
+            });
+        });
+    });
+
+    function addSupplier() {
+        alert('Dodaj dostawcę – funkcjonalność w przygotowaniu');
+    }
+    function editSupplier() {
+        if (!selectedSupplierId) { alert('Wybierz dostawcę do edycji'); return; }
+        alert('Edytuj dostawcę ID: ' + selectedSupplierId + ' – funkcjonalność w przygotowaniu');
+    }
+    function deleteSupplier() {
+        if (!selectedSupplierId) { alert('Wybierz dostawcę do usunięcia'); return; }
+        if (confirm('Czy na pewno chcesz usunąć dostawcę ID: ' + selectedSupplierId + '?')) {
+            alert('Usuń dostawcę – funkcjonalność w przygotowaniu');
+        }
+    }
+</script>

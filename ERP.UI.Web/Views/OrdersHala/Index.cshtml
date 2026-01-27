@@ -1,0 +1,330 @@
+@model IEnumerable<ERP.Application.DTOs.OrderDto>
+@{
+    ViewData["Title"] = "zamowienia hala";
+}
+
+<div class="container-fluid p-0 d-flex flex-column" style="height: calc(100vh - 215px); min-height: 300px; overflow: hidden;">
+    <div class="p-3 border-bottom bg-light flex-shrink-0">
+        <h2 class="mb-3">13. zamowienia hala</h2>
+        
+        <!-- Zakładki filtrowania -->
+        <ul class="nav nav-tabs mb-3" id="filterTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="by-date-tab" data-bs-toggle="tab" data-bs-target="#by-date" type="button" role="tab">
+                    wg_daty
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="by-realization-tab" data-bs-toggle="tab" data-bs-target="#by-realization" type="button" role="tab">
+                    wg. realizacji
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="by-supplier-tab" data-bs-toggle="tab" data-bs-target="#by-supplier" type="button" role="tab">
+                    wg_dostawcy
+                </button>
+            </li>
+        </ul>
+
+        <!-- Panel z filtrami i legendą -->
+        <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+            <!-- Przycisk skanera -->
+            <button type="button" class="btn btn-outline-primary" id="scannerBtn">
+                <i class="bi bi-qr-code-scan"></i> skaner
+            </button>
+
+            <!-- Legenda statusów -->
+            <div class="d-flex align-items-center gap-2">
+                <div class="status-legend-item" style="background-color: #ff9800; width: 20px; height: 20px; border: 1px solid #ccc;"></div>
+                <span class="small">1-wybrane do zamówień</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="status-legend-item" style="background-color: #ffeb3b; width: 20px; height: 20px; border: 1px solid #ccc;"></div>
+                <span class="small">2-zamówienia edytowane</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="status-legend-item" style="background-color: #8bc34a; width: 20px; height: 20px; border: 1px solid #ccc;"></div>
+                <span class="small">3-oczekiwanie na dostaw</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="status-legend-item" style="background-color: #4caf50; width: 20px; height: 20px; border: 1px solid #ccc;"></div>
+                <span class="small">4-dostarczone</span>
+            </div>
+
+            <!-- Pole do kasowania starych zamówień -->
+            <div class="d-flex align-items-center gap-2 ms-auto">
+                <label class="small mb-0">po ilu dniach kasować zrealizowane:</label>
+                <input type="number" class="form-control form-control-sm" id="deleteDays" value="30" style="width: 80px;">
+                <button type="button" class="btn btn-outline-danger btn-sm" id="deleteOldBtn">
+                    kasuj stare
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Główna zawartość z tabelą i przyciskami -->
+    <div class="flex-grow-1 d-flex overflow-hidden">
+        <!-- Tabela -->
+        <div class="flex-grow-1 p-3 overflow-auto">
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm table-hover" id="ordersTable">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" id="selectAll" class="form-check-input">
+                                </th>
+                                <th>Status zamówienia</th>
+                                <th>Ostatni dostawca</th>
+                                <th>Nazwa towaru draco</th>
+                                <th>Pakowaniu</th>
+                                <th>Jedno</th>
+                                <th>Ilość</th>
+                                <th>Uwagi</th>
+                                <th>Zaz</th>
+                                <th>Dostawca mail</th>
+                                <th>Waluta</th>
+                                <th>Operator</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var o in Model)
+                            {
+                                var statusClass = o.Status switch
+                                {
+                                    1 => "status-1", // orange - wybrane do zamówień
+                                    2 => "status-2", // yellow - zamówienia edytowane
+                                    3 => "status-3", // light green - oczekiwanie na dostawę
+                                    4 => "status-4", // dark green - dostarczone
+                                    _ => ""
+                                };
+                                <tr class="@statusClass" data-order-id="@o.Id" data-status="@(o.Status ?? 0)">
+                                    <td class="text-center">
+                                        <input type="checkbox" class="form-check-input order-checkbox" value="@o.Id">
+                                    </td>
+                                    <td>@(o.OrderDate?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                    <td>@(o.SupplierName ?? "-")</td>
+                                    <td class="product-name-cell">@(o.ProductNameDraco ?? o.ProductName ?? "-")</td>
+                                    <td>@(o.QuantityInPackage?.ToString("N2") ?? "-")</td>
+                                    <td>@(o.PurchaseUnit ?? o.SalesUnit ?? "-")</td>
+                                    <td class="text-end">@(o.Quantity?.ToString("N2") ?? "-")</td>
+                                    <td>@(o.Notes ?? "-")</td>
+                                    <td class="text-center">
+                                        <input type="checkbox" class="form-check-input select-checkbox" value="@o.Id">
+                                    </td>
+                                    <td>@(o.SupplierEmail ?? "-")</td>
+                                    <td>@(o.SupplierCurrency ?? "-")</td>
+                                    <td>@(o.Operator ?? "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <h5>Brak zamówień</h5>
+                    <p class="mb-0">Nie znaleziono zamówień hala dla wybranej firmy.</p>
+                </div>
+            }
+        </div>
+
+        <!-- Przyciski akcji po prawej stronie -->
+        <div class="p-3 border-start bg-light flex-shrink-0" style="width: 250px;">
+            <div class="d-flex flex-column gap-2">
+                <button type="button" class="btn btn-primary w-100" id="sendToOfferBtn">
+                    wyślij do oferty
+                </button>
+                <button type="button" class="btn btn-success w-100" id="selectAndSendFromSupplierBtn">
+                    zaznacz do zamówienia<br>wyślij od dostawcy
+                </button>
+                <button type="button" class="btn btn-warning w-100" id="selectForOrderBtn">
+                    zaznacz do zamówienia
+                </button>
+                <button type="button" class="btn btn-info w-100" id="sendToOrderBtn">
+                    wyślij do zamówienia
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table th, .table td { 
+        padding: 0.25rem 0.5rem; 
+        font-size: 14px; 
+        vertical-align: middle;
+    }
+
+    /* Kolory statusów */
+    .status-1 {
+        background-color: #fff3e0 !important; /* Orange background */
+    }
+    .status-1 .product-name-cell {
+        background-color: #ff9800 !important; /* Orange for product name */
+        color: white;
+        font-weight: bold;
+    }
+
+    .status-2 {
+        background-color: #fffde7 !important; /* Yellow background */
+    }
+    .status-2 .product-name-cell {
+        background-color: #ffeb3b !important; /* Yellow for product name */
+        font-weight: bold;
+    }
+
+    .status-3 {
+        background-color: #f1f8e9 !important; /* Light green background */
+    }
+    .status-3 .product-name-cell {
+        background-color: #8bc34a !important; /* Light green for product name */
+        color: white;
+        font-weight: bold;
+    }
+
+    .status-4 {
+        background-color: #e8f5e9 !important; /* Dark green background */
+    }
+    .status-4 .product-name-cell {
+        background-color: #4caf50 !important; /* Dark green for product name */
+        color: white;
+        font-weight: bold;
+    }
+
+    /* Zaznaczony wiersz (niebieski) */
+    .table tbody tr:hover {
+        background-color: #e3f2fd !important;
+    }
+
+    .table tbody tr.selected {
+        background-color: #2196f3 !important;
+        color: white;
+    }
+
+    .table tbody tr.selected td {
+        background-color: #2196f3 !important;
+        color: white;
+    }
+
+    /* Przyciski */
+    .btn {
+        white-space: normal;
+        word-wrap: break-word;
+        text-align: center;
+    }
+
+    /* Legenda */
+    .status-legend-item {
+        display: inline-block;
+        border-radius: 2px;
+    }
+
+    /* Sticky header */
+    .sticky-top {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Obsługa zaznaczania wszystkich
+        const selectAll = document.getElementById('selectAll');
+        const orderCheckboxes = document.querySelectorAll('.order-checkbox');
+        
+        if (selectAll) {
+            selectAll.addEventListener('change', function() {
+                orderCheckboxes.forEach(cb => cb.checked = this.checked);
+            });
+        }
+
+        // Obsługa zaznaczania wiersza
+        orderCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const row = this.closest('tr');
+                if (this.checked) {
+                    row.classList.add('selected');
+                } else {
+                    row.classList.remove('selected');
+                }
+            });
+        });
+
+        // Przycisk skanera
+        const scannerBtn = document.getElementById('scannerBtn');
+        if (scannerBtn) {
+            scannerBtn.addEventListener('click', function() {
+                alert('Funkcja skanera - do implementacji');
+            });
+        }
+
+        // Przycisk kasowania starych zamówień
+        const deleteOldBtn = document.getElementById('deleteOldBtn');
+        if (deleteOldBtn) {
+            deleteOldBtn.addEventListener('click', function() {
+                const days = document.getElementById('deleteDays').value;
+                if (confirm(`Czy na pewno chcesz usunąć zrealizowane zamówienia starsze niż ${days} dni?`)) {
+                    alert('Funkcja kasowania starych zamówień - do implementacji');
+                }
+            });
+        }
+
+        // Przyciski akcji
+        const sendToOfferBtn = document.getElementById('sendToOfferBtn');
+        if (sendToOfferBtn) {
+            sendToOfferBtn.addEventListener('click', function() {
+                const selected = getSelectedOrders();
+                if (selected.length === 0) {
+                    alert('Proszę wybrać zamówienia');
+                    return;
+                }
+                alert(`Wysyłanie ${selected.length} zamówień do oferty - do implementacji`);
+            });
+        }
+
+        const selectAndSendFromSupplierBtn = document.getElementById('selectAndSendFromSupplierBtn');
+        if (selectAndSendFromSupplierBtn) {
+            selectAndSendFromSupplierBtn.addEventListener('click', function() {
+                const selected = getSelectedOrders();
+                if (selected.length === 0) {
+                    alert('Proszę wybrać zamówienia');
+                    return;
+                }
+                alert(`Zaznaczanie i wysyłanie ${selected.length} zamówień od dostawcy - do implementacji`);
+            });
+        }
+
+        const selectForOrderBtn = document.getElementById('selectForOrderBtn');
+        if (selectForOrderBtn) {
+            selectForOrderBtn.addEventListener('click', function() {
+                const selected = getSelectedOrders();
+                if (selected.length === 0) {
+                    alert('Proszę wybrać zamówienia');
+                    return;
+                }
+                alert(`Zaznaczanie ${selected.length} zamówień - do implementacji`);
+            });
+        }
+
+        const sendToOrderBtn = document.getElementById('sendToOrderBtn');
+        if (sendToOrderBtn) {
+            sendToOrderBtn.addEventListener('click', function() {
+                const selected = getSelectedOrders();
+                if (selected.length === 0) {
+                    alert('Proszę wybrać zamówienia');
+                    return;
+                }
+                alert(`Wysyłanie ${selected.length} zamówień - do implementacji`);
+            });
+        }
+
+        function getSelectedOrders() {
+            const checkboxes = document.querySelectorAll('.order-checkbox:checked');
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+    });
+</script>

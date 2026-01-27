@@ -1,0 +1,2129 @@
+=== Struktura bazy danych locbd ===
+
+Data wygenerowania: 2026-01-25 12:12:16
+
+Tabela: aoferty
+Model: Offer
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+ID_oferta                           int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   NO                NULL           
+do_proformy                         bit(1)                    YES               NULL           
+do_zlecenia                         bit(1)                    YES               NULL           
+Data_oferty                         int(10)                   YES      MUL      NULL           
+Nr_oferty                           int(4)                    YES               NULL           
+odbiorca_ID_odbiorcy                int(11)                   YES               NULL           
+odbiorca_nazwa                      varchar(100)              YES      MUL      NULL           
+odbiorca_ulica                      varchar(100)              YES               NULL           
+odbiorca_kod_poczt                  varchar(20)               YES               NULL           
+odbiorca_miasto                     varchar(100)              YES               NULL           
+odbiorca_panstwo                    varchar(100)              YES               NULL           
+odbiorca_nip                        varchar(20)               YES               NULL           
+odbiorca_mail                       varchar(100)              YES               NULL           
+Waluta                              varchar(5)                YES               NULL           
+Cena_calkowita                      decimal(15,2)             YES               NULL           
+stawka_vat                          decimal(15,4)             YES               NULL           
+total_vat                           decimal(15,2)             YES               NULL           
+total_brutto                        decimal(15,2)             YES               NULL           
+uwagi_do_oferty                     varchar(800)              YES               NULL           
+dane_dodatkowe                      varchar(800)              YES               NULL           
+operator                            varchar(50)               NO                NULL           
+uwagi_targi                         varchar(1000)             NO                NULL           
+do_faktury                          bit(1)                    NO                b'0'           
+historia                            varchar(50)               NO                b'0'           
+
+Tabela: apozycjeoferty
+Model: OfferPosition
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+ID_pozycja_oferty                   int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   NO                NULL           
+ID_oferta                           int(15)                   YES      MUL      NULL           
+id_towaru                           int(15)                   YES               NULL           
+id_dostawcy                         int(15)                   YES               NULL           
+kod_towaru                          varchar(100)              YES               NULL           
+Nazwa                               varchar(200)              YES               NULL           
+Nazwa_ENG                           varchar(200)              YES               NULL           
+jednostki                           varchar(10)               NO                NULL           
+jednostki_en                        varchar(10)               YES               NULL           
+Sztuki                              decimal(15,2)             YES               NULL           
+Cena                                decimal(15,2)             YES               NULL           
+Rabat                               decimal(15,2)             YES               NULL           
+Cena_po_rabacie                     decimal(15,2)             YES               NULL           
+Cena_po_rabacie_i_sztukach          decimal(15,2)             YES               NULL           
+stawka_vat                          varchar(10)               YES               NULL           
+vat                                 decimal(10,4)             YES               NULL           
+cena_brutto                         decimal(15,2)             YES               NULL           
+Uwagi_oferta                        varchar(1240)             YES               NULL           
+uwagi_faktura                       varchar(500)              YES               NULL           
+inne1                               varchar(100)              YES               NULL           
+nr_zespolu                          decimal(10,2)             YES               NULL           
+
+Tabela: ar_internal_metadata
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+key                                 varchar(255)              NO       PRI      NULL           
+value                               varchar(255)              YES               NULL           
+created_at                          datetime(6)               NO                NULL           
+updated_at                          datetime(6)               NO                NULL           
+
+Tabela: auta
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_auta                             int(11)                   NO       PRI      NULL           
+id_firmy                            int(11)                   YES               NULL           
+nazwa                               varchar(50)               YES               NULL           
+nr_rej                              varchar(10)               YES               NULL           
+data_rejestracji1                   int(10)                   YES               NULL           
+pojemnosc                           varchar(10)               YES               NULL           
+moc                                 varchar(10)               YES               NULL           
+nr_nadwozia                         varchar(50)               YES               NULL           
+data_badania_techn                  int(10)                   YES               NULL           
+data_ubezpieczenia                  int(10)                   YES               NULL           
+data_serwisu_eksp                   int(10)                   YES               NULL           
+ubezpieczyciel                      varchar(250)              YES               NULL           
+uzytkownik                          varchar(20)               YES               NULL           
+inne                                bit(1)                    YES               NULL           
+uwagi                               varchar(500)              YES               NULL           
+data_sprzedazy                      int(10)                   YES               NULL           
+ukryj                               bit(1)                    YES               NULL           
+
+Tabela: awariamaszyna
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_awaria_maszyna                   int(11)                   NO       PRI      NULL           
+maszyna_typ                         varchar(50)               YES               NULL           
+maszyna_opis                        varchar(250)              YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: awariapozycje
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_awaria_pozycja                   int(15)                   NO       PRI      NULL           
+id_awaria_maszyna                   int(15)                   YES               NULL           
+awaria_opis                         varchar(50)               YES               NULL           
+awaria_naprawa                      varchar(500)              YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: banki
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_banku                            int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   YES               NULL           
+nazwa_banku                         varchar(100)              YES               NULL           
+nr_konta                            varchar(32)               NO                NULL           
+iban                                varchar(2)                YES               NULL           
+swift_bic                           varchar(20)               YES               NULL           
+waluta                              varchar(5)                NO                NULL           
+kurs_waluty                         decimal(15,4)             NO                0.0000         
+
+Tabela: daneobliczmaszyne
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_dane_oblicz_maszyne              int(11)                   NO       PRI      NULL           
+typ_maszyny                         varchar(30)               YES               NULL           
+jak_liczymy                         varchar(30)               YES               NULL           
+dlugosc_calkowita                   decimal(15,2)             YES               NULL           
+szerokosc_calkowita                 decimal(15,2)             YES               NULL           
+wysokosc_calkowita                  decimal(15,2)             YES               NULL           
+PROWADNICA                          decimal(15,2)             YES               NULL           
+podswietlenie                       decimal(15,2)             YES               NULL           
+stol_listwa1                        decimal(15,2)             YES               NULL           
+stol_listwa2                        decimal(15,2)             YES               NULL           
+stol_listwa3                        decimal(15,2)             YES               NULL           
+WZDLUZNIKI60X40X2                   decimal(15,2)             YES               NULL           
+miarki                              decimal(15,2)             YES               NULL           
+nogi_odleglosc                      decimal(15,2)             YES               NULL           
+plyty_szerokosc_standard            decimal(15,2)             YES               NULL           
+pasek_zebaty                        decimal(15,2)             YES               NULL           
+ogniw_lancucha                      decimal(15,2)             YES               NULL           
+skrzynia1l                          decimal(15,2)             YES               NULL           
+skrzynia1s                          decimal(15,2)             YES               NULL           
+skrzynia1h                          decimal(15,2)             YES               NULL           
+skrzynia2l                          decimal(15,2)             YES               NULL           
+skrzynia2s                          decimal(15,2)             YES               NULL           
+skrzynia2h                          decimal(15,2)             YES               NULL           
+prowadnica_pozycjonera              decimal(15,2)             YES               NULL           
+profil_glowny_pozycjonera           decimal(15,2)             YES               NULL           
+kostki_pozycjonera                  decimal(15,2)             YES               NULL           
+dlugosc_pozycjonera                 decimal(15,2)             YES               NULL           
+dlugosc_calkowita_pozycjonera       decimal(15,2)             YES               NULL           
+profil_przedni_dluzszy_o            decimal(15,2)             YES               NULL           
+dlugosc_calkowita_pozycjonera_dluzsza_o decimal(15,2)             YES               NULL           
+dlugosc_pozycjonera_typ4_krotsza_o  decimal(15,2)             YES               NULL           
+dluzyca_dlugosc                     decimal(15,2)             YES               NULL           
+szerokosc_rolki                     decimal(15,2)             YES               NULL           
+pt_wzdluznik_nawijanie              decimal(15,2)             YES               NULL           
+IP_code                             varchar(20)               YES               NULL           
+napiecie                            varchar(20)               YES               NULL           
+moc                                 varchar(20)               YES               NULL           
+cisnienie                           varchar(20)               YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: danetabliczka
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_dane_tabliczka                   int(11)                   NO       PRI      NULL           
+id_firmy                            int(11)                   YES               NULL           
+rodzaj_jednostki                    varchar(20)               YES               NULL           
+opis_jednostki                      varchar(30)               YES               NULL           
+
+Tabela: dokdlaodbiorcy
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_dok_dla_odbiorcy                 int(15)                   NO       PRI      NULL           
+dok_dla_odbiorcy_pl                 varchar(100)              YES               NULL           
+dok_dla_odbiorcy_eng                varchar(100)              YES               NULL           
+zaznacz_do_wydruku                  bit(1)                    YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: dostawcy
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_dostawcy                         int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   NO                NULL           
+nazwa_dostawcy                      varchar(100)              NO                NULL           
+waluta                              varchar(5)                NO                NULL           
+mail                                varchar(200)              YES               NULL           
+telefon                             varchar(200)              NO                NULL           
+uwagi                               varchar(200)              NO                NULL           
+
+Tabela: fakturatyp
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_faktura_typ                      int(15)                   NO       PRI      NULL           
+faktura_typ_nazwa                   varchar(30)               NO                NULL           
+faktura_typ_skrot                   varchar(10)               YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: faktury
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+Id_faktury                          int(15)                   NO       PRI      NULL           
+id_oferty                           int(15)                   NO                NULL           
+id_firmy                            int(15)                   NO                NULL           
+id_faktur_powiazanych               int(15)                   NO                NULL           
+data_faktury                        int(20)                   YES               NULL           
+nr_faktury                          int(15)                   YES               NULL           
+nr_faktury_text                     varchar(20)               YES               NULL           
+numer_faktury_korygowanej_text      varchar(20)               NO                NULL           
+data_sprzedazy                      int(20)                   NO                NULL           
+data_faktury_korygowanej            int(10)                   NO                NULL           
+rodzaj_faktury                      varchar(30)               YES               NULL           
+skrot_nazwa_faktury                 varchar(10)               NO                NULL           
+skrot_kolejne_faktury               varchar(30)               NO                NULL           
+firma_nazwa                         varchar(100)              NO                NULL           
+naglowek1                           varchar(100)              NO                NULL           
+naglowek2                           varchar(100)              NO                NULL           
+firma_adres                         varchar(100)              NO                NULL           
+firma_kod_pocztowy                  varchar(30)               NO                NULL           
+firma_miejscowosc                   varchar(100)              YES               NULL           
+firma_panstwo                       varchar(100)              NO                NULL           
+firma_nip                           varchar(30)               NO                NULL           
+firma_bank_nazwa                    varchar(100)              NO                NULL           
+firma_nr_konta                      varchar(32)               NO                NULL           
+firma_iban                          varchar(2)                NO                NULL           
+firma_swift_bic                     varchar(20)               NO                NULL           
+id_odbiorca                         int(15)                   NO                NULL           
+odbiorca_nazwa                      varchar(100)              NO                NULL           
+odbiorca_adres                      varchar(100)              NO                NULL           
+odbiorca_kod_pocztowy               varchar(30)               NO                NULL           
+odbiorca_miejscowosc                varchar(100)              NO                NULL           
+odbiorca_panstwo                    varchar(100)              NO                NULL           
+odbiorca_nip                        varchar(50)               NO                NULL           
+odbiorca_mail                       varchar(100)              NO                NULL           
+waluta                              varchar(5)                YES               NULL           
+kurs_waluty                         decimal(15,4)             YES               NULL           
+kwota_netto                         decimal(15,2)             YES               NULL           
+stawka_vat                          varchar(15)               YES               NULL           
+total_vat                           decimal(15,2)             YES               NULL           
+kwota_brutto                        decimal(15,2)             YES               NULL           
+poprzednie_zaliczki_suma            decimal(15,2) unsigned    YES               NULL           
+kwota_zaliczki                      decimal(15,2)             YES               NULL           
+suma_zaliczek                       decimal(15,2)             YES               NULL           
+kwota_wplacona                      decimal(15,2)             YES               NULL           
+data_wplaty                         int(10)                   YES               NULL           
+status_platnosci                    varchar(20)               YES               NULL           
+nr_faktury_zaliczkowej              varchar(50)               YES               NULL           
+rodzaj_platnosci                    varchar(20)               YES               NULL           
+termin_dni                          int(3)                    YES               NULL           
+data_platnosci                      int(10)                   YES               NULL           
+uwagi_do_faktury                    varchar(500)              YES               NULL           
+operator                            varchar(50)               YES               NULL           
+status_kopiowania                   bit(1)                    YES               NULL           
+grupa_sprzedazy                     varchar(20)               YES               NULL           
+rodzaj_platnosci_en                 varchar(20)               YES               NULL           
+kwota_netto_pln                     decimal(15,2)             YES               NULL           
+tabela_nbp                          varchar(50)               YES               NULL           
+data_tabeli_nbp                     char(50)                  YES               NULL           
+status                              char(20)                  YES               NULL           
+
+Tabela: firmy
+Model: Company
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_firmy                            int(15)                   NO       PRI      NULL           
+nazwa                               varchar(100)              YES               NULL           
+naglowek1                           varchar(100)              YES               NULL           
+naglowek2                           varchar(100)              YES               NULL           
+ulica_nr                            varchar(100)              YES               NULL           
+kod_pocztowy                        varchar(30)               YES               NULL           
+miasto                              varchar(100)              YES               NULL           
+panstwo                             varchar(100)              YES               NULL           
+nip                                 varchar(30)               YES               NULL           
+regon                               varchar(30)               YES               NULL           
+tel1                                varchar(50)               YES               NULL           
+mail                                varchar(100)              YES               NULL           
+Numeracja_FV_r_m                    bit(1)                    YES               NULL           
+Numeracja_FPF_r_m                   bit(1)                    YES               NULL           
+krs                                 varchar(50)               YES               NULL           
+
+Tabela: foto
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_foto                             int(15)                   NO       PRI      NULL           
+nazwa_foto                          varchar(50)               YES               NULL           
+foto                                blob                      YES               NULL           
+id_firmy                            int(15)                   YES               NULL           
+
+Tabela: grupagtu
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_grupagtu                         int(15)                   NO       PRI      NULL           
+nazwa_grupygtu                      varchar(10)               YES               NULL           
+opis_grupygtu                       varchar(1000)             YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: grupasprzedazy
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_grupaprzedazy                    int(15)                   NO       PRI      NULL           
+nazwa_grupysprzedazy                varchar(20)               YES               NULL           
+opis_grupysprzedazy                 varchar(200)              YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: grupytowaru
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_grupy_towaru                     int(15)                   NO       PRI      NULL           
+nazwa_grupy_towaru                  varchar(30)               YES               NULL           
+pole_dodatkowe_1                    int(15)                   YES               NULL           
+pole_dodatkowe_2                    varchar(1)                YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: jednostki
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_jednostki                        int(15)                   NO       PRI      NULL           
+nazwa_jednostki                     varchar(5)                NO                NULL           
+opis_jednostki_PL                   varchar(20)               NO                NULL           
+nazwa_jednostki_eng                 varchar(5)                NO                NULL           
+id_firmy                            varchar(5)                NO                NULL           
+
+Tabela: kalendarz
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_kalendarz                        int(11)                   NO       PRI      NULL           
+data_wykonania                      int(11)                   YES               NULL           
+opis                                varchar(501)              YES               NULL           
+zakonczone                          bit(1)                    YES               NULL           
+informacja_rodzaj                   varchar(25)               YES               NULL           
+id_firmy                            int(3)                    YES               NULL           
+
+Tabela: kasa
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_kasy                             int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   NO                NULL           
+id_serwisu                          int(15)                   NO                NULL           
+data_operacji                       bigint(20)                NO                NULL           
+odbiorca                            varchar(100)              NO                NULL           
+tytul_operacji                      varchar(50)               NO                NULL           
+wn                                  decimal(15,2)             NO                NULL           
+ma                                  decimal(15,2)             NO                NULL           
+saldo                               decimal(15,2)             NO                NULL           
+uwagi                               varchar(50)               NO                NULL           
+rozlicz_zal                         decimal(15,2)             NO                NULL           
+zakoncz_mies                        bit(3)                    NO                b'0'           
+waluta                              varchar(10)               NO                0              
+
+Tabela: kurswaluty
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_kurs_waluty                      int(15)                   NO       PRI      NULL           
+id_firmy                            int(3)                    YES               NULL           
+nazwa_waluty                        char(20)                  YES               NULL           
+data_tabeli                         int(8)                    YES               NULL           
+nr_tabeli_nbp                       char(50)                  YES               NULL           
+kurs_waluty                         decimal(15,4)             YES               NULL           
+data_dzis                           int(8)                    YES               NULL           
+nazwa_waluty_skrot                  char(7)                   YES               NULL           
+nazwa_tabeli_nbp                    char(2)                   YES               NULL           
+
+Tabela: liniaprodukcyjna
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_linii_produkcyjnej               int(3)                    NO       PRI      NULL           
+numer_linii_produkcyjnej            int(3)                    YES               NULL           
+nazwa_linii_produkcyjnej            varchar(30)               YES               NULL           
+ilosc_pracownikow_na linii          decimal(10,2)             YES               NULL           
+wspolczynnik_linii_produkcyjnej     decimal(10,2)             YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: linieobciazenie
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_obciazenia                       int(15)                   YES               NULL           
+id_firmy                            int(15)                   YES               NULL           
+id_zlecenia                         int(15)                   YES               NULL           
+id_poz_zle                          int(15)                   YES               NULL           
+id_towaru                           int(15)                   YES               NULL           
+nr_linii                            int(15)                   YES               NULL           
+nazwa_linii                         varchar(50)               YES               NULL           
+ilosc                               decimal(15,2)             YES               NULL           
+rh                                  decimal(15,2)             YES               NULL           
+rh_na_dobe                          decimal(15,2)             YES               NULL           
+wspolczynnik                        decimal(15,2)             YES               NULL           
+rh_pozostalo                        decimal(15,2)             YES               NULL           
+data_start                          int(8)                    YES               NULL           
+data_stop                           int(8)                    YES               NULL           
+
+Tabela: linieobciazenieoferta
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_linii_obc_ofe                    int(11)                   NO       PRI      NULL           
+id_oferty                           int(11)                   YES               NULL           
+id_pozycji_oferty                   int(11)                   YES               NULL           
+id_towaru                           int(11)                   YES               NULL           
+nr_linii                            int(11)                   YES               NULL           
+rh                                  decimal(15,2)             YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: linieobciazenietymcz
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_linii_obc_tym                    int(11)                   YES               NULL           
+nr_linii                            int(11)                   YES               NULL           
+id_towaru                           int(11)                   YES               NULL           
+ilosc                               decimal(15,2)             YES               NULL           
+rh                                  decimal(15,2)             YES               NULL           
+rh_na_dobe                          decimal(15,2)             YES               NULL           
+wspolczynnik                        decimal(15,2)             YES               NULL           
+data_wykonania                      int(8)                    YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: linieobciazenietymcz2
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_linii_obc_tymcz_2                int(15)                   YES               NULL           
+nr_linii                            int(4)                    YES               NULL           
+nazwa_linii                         varchar(50)               YES               NULL           
+data_zakonczenia                    int(8)                    YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: linieobciazeniezlecenie
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_obciazenia                       int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   YES               NULL           
+id_zlecenia                         int(15)                   YES               NULL           
+id_poz_zle                          int(15)                   YES               NULL           
+id_towaru                           int(15)                   YES               NULL           
+nr_linii                            int(15)                   YES               NULL           
+nazwa_linii                         varchar(50)               YES               NULL           
+ilosc                               decimal(15,2)             YES               NULL           
+rh                                  decimal(15,2)             YES               NULL           
+rh_na_dobe                          decimal(15,2)             YES               NULL           
+wspolczynnik                        decimal(15,2)             YES               NULL           
+rh_pozostalo                        decimal(15,2)             YES               NULL           
+data_start                          int(8)                    YES               NULL           
+data_stop                           int(8)                    YES               NULL           
+
+Tabela: linieprodukcyjne
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_linii                            int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   YES               NULL           
+nr_linii                            int(15)                   YES               NULL           
+nazwa_linii                         varchar(50)               YES               NULL           
+rh_na_dobe                          decimal(15,2)             YES               NULL           
+wspolczynnik_linii                  decimal(6,2)              YES               NULL           
+rh                                  decimal(15,2)             YES               NULL           
+data_real                           int(10)                   YES               NULL           
+
+Tabela: linierhproduktu
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_prod_rh                          int(11)                   NO       PRI      NULL           
+id_firmy                            int(11)                   NO                NULL           
+id_produktu                         int(11)                   NO       MUL      NULL           
+typ_produktu                        varchar(50)               YES               NULL           
+nr_linii                            int(11)                   YES               NULL           
+nazwa_linii                         varchar(50)               YES               NULL           
+ilosc_rh                            decimal(15,2)             YES               NULL           
+
+Tabela: magazyn
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_magazyn                          int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   NO       PRI      NULL           
+data_operacji                       int(8)                    YES               NULL           
+nr_dok_zak_sprz                     varchar(50)               YES               NULL           
+id_dostawcy_odbiorcy                int(15)                   YES               NULL           
+nazwa_dostawcy_odbiorcy             varchar(50)               YES               NULL           
+id_towaru                           int(15)                   YES               NULL           
+nazwa_towaru                        varchar(100)              YES               NULL           
+jednostki_magazynu                  varchar(7)                YES               NULL           
+ilosc_pz                            decimal(15,2)             YES               NULL           
+cena_zakupu_pln_nowe_jednostki      decimal(17,4)             YES               NULL           
+ilosc_wz                            decimal(15,2)             YES               NULL           
+uwagi                               varchar(251)              YES               NULL           
+id_zamowienia                       int(15)                   YES               NULL           
+cena_sprzedazy                      decimal(15,2)             YES               NULL           
+
+Tabela: maszynadaneobliczen
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_maszyna_dane_obliczen            int(15)                   YES               NULL           
+id_firmy                            int(15)                   YES               NULL           
+id_maszyna_typ                      int(15)                   YES               NULL           
+id_maszyna_wymiar                   int(15)                   YES               NULL           
+maszyna_typ_nazwa                   varchar(50)               YES               NULL           
+nazwa_czesci_obliczanej             varchar(100)              YES               NULL           
+ile_dodac_odjac                     decimal(15,2)             YES               NULL           
+opis_obliczania                     varchar(100)              YES               NULL           
+ktory_wymiar                        char(3)                   YES               NULL           
+wymiar_bazowy                       decimal(15,2)             YES               NULL           
+ile_dodac_odjac_s                   decimal(15,2)             YES               NULL           
+wynik                               decimal(15,2)             YES               NULL           
+
+Tabela: maszynaodbiorca
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_maszyna_odbiorca                 int(11)                   YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+id_zlecenia                         int(11)                   YES               NULL           
+id_pozycji_zlecenia                 int(11)                   YES               NULL           
+id_maszyna_typ                      int(11)                   YES               NULL           
+maszyna_typ_nazwa                   int(11)                   YES               NULL           
+wymiar_bazowy_nazwa                 char(50)                  YES               NULL           
+wymiar_l                            decimal(15,2)             YES               NULL           
+wymiar_s                            decimal(15,2)             YES               NULL           
+wymiar_h                            decimal(15,2)             YES               NULL           
+
+Tabela: maszynaodbiorcapozycja
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_maszyna_odbiorca_pozycja         int(11)                   YES               NULL           
+id_maszyna_odbiorca                 int(11)                   YES               NULL           
+id_maswzyna_firma                   int(11)                   YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: maszynatyp
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_typ_maszyny                      int(10)                   NO       PRI      NULL           
+grupa                               varchar(50)               YES               NULL           
+typ_maszyny                         varchar(50)               YES               NULL           
+nazwa_CE                            varchar(50)               YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: maszynawymiar
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_maszyna_wymiar                   int(15)                   YES               NULL           
+id_firmy                            int(15)                   YES               NULL           
+id_maszyna_typ                      int(15)                   YES               NULL           
+maszyna_typ_nazwa                   char(50)                  YES               NULL           
+wymiar_bazowy_nazwa                 char(50)                  YES               NULL           
+wymiar_l                            decimal(15,2)             YES               NULL           
+wymiar_l_plus                       decimal(15,2)             YES               NULL           
+wymiar_l_c                          decimal(15,2)             YES               NULL           
+wymiar_s                            decimal(15,2)             YES               NULL           
+wymiar_s_plus                       decimal(15,2)             YES               NULL           
+wymiar_s_c                          decimal(15,2)             YES               NULL           
+wymiar_h                            decimal(15,2)             YES               NULL           
+wymiar_h_plus                       decimal(15,2)             YES               NULL           
+wymiar_h_c                          decimal(15,2)             YES               NULL           
+
+Tabela: maszyny
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_maszyny                          int(11)                   NO       PRI      NULL           
+id_zlecenia                         int(11)                   NO                NULL           
+id_pozycji_zlecenia                 int(11)                   NO                NULL           
+id_dane_oblicz_maszyne              int(11)                   NO                NULL           
+grupa                               varchar(50)               NO                               
+typ                                 varchar(50)               NO                               
+do_zamowienia                       bit(1)                    YES               NULL           
+oslony_zamowione                    bit(1)                    YES               NULL           
+dlugosc                             decimal(15,2)             NO                NULL           
+szerokosc                           decimal(15,2)             YES               NULL           
+wysokosc                            decimal(15,2)             YES               NULL           
+stol_l                              decimal(15,2)             YES               NULL           
+stol_s                              decimal(15,2)             YES               NULL           
+stol_h                              decimal(15,2)             YES               NULL           
+tyl_h                               decimal(15,2)             YES               NULL           
+stol_pila_l                         decimal(15,2)             YES               NULL           
+stol_dodatkowy_l                    decimal(15,2)             YES               NULL           
+prowadnica                          decimal(15,2)             YES               NULL           
+modul                               decimal(15,2)             YES               NULL           
+podswietlenie                       decimal(15,2)             YES               NULL           
+ilosc_nog                           decimal(15,2)             YES               NULL           
+ilosc_wzdluznikow                   decimal(15,2)             YES               NULL           
+ilosc_plyt                          decimal(15,2)             YES               NULL           
+plyta_l                             decimal(15,2)             YES               NULL           
+plyta_s                             decimal(15,2)             YES               NULL           
+profil1_przod                       decimal(15,2)             YES               NULL           
+profil2_glowny                      decimal(15,2)             YES               NULL           
+profil3_tyl                         decimal(15,2)             YES               NULL           
+wzdluznik_stolu                     decimal(15,2)             YES               NULL           
+miarki                              decimal(15,2)             YES               NULL           
+napiecie                            varchar(20)               YES               NULL           
+moc                                 varchar(20)               YES               NULL           
+cisnienie                           varchar(20)               YES               NULL           
+masa                                varchar(20)               YES               NULL           
+maszyna_nazwa                       varchar(50)               YES               NULL           
+maszyna_model                       varchar(50)               YES               NULL           
+maszyna_numer                       varchar(50)               YES               NULL           
+maszyna_data_produkcji              int(10)                   YES               NULL           
+IP_code                             varchar(20)               YES               NULL           
+skok_pozycjonera                    decimal(15,2)             YES               NULL           
+prowadnica_pozycjonera              decimal(15,2)             YES               NULL           
+profil_glowny_pozycjonera           decimal(15,2)             YES               NULL           
+dlugosc_pozycjonera                 decimal(15,2)             YES               NULL           
+profil_przedni_pozycjonera          decimal(15,2)             YES               NULL           
+dlugosc_calkowita_pozycjonera       decimal(15,2)             YES               NULL           
+dluzyca_dlugosc                     decimal(15,2)             YES               NULL           
+szerokosc_rolki                     decimal(15,2)             YES               NULL           
+pt_wzdluznik_nawijanie              decimal(15,2)             YES               NULL           
+stol_poz_wzdl_1                     decimal(15,2)             YES               NULL           
+stol_poz_wzdl_1_otw_1               decimal(15,2)             YES               NULL           
+stol_poz_wzdl_1_otw_2               decimal(15,2)             YES               NULL           
+stol_poz_wzdl_1_nogi_ilosc          decimal(15,2)             YES               NULL           
+stol_poz_wzdl_1_odl_miedzy_nogami   decimal(15,2)             YES               NULL           
+stol_poz_wzdl_2                     decimal(15,2)             YES               NULL           
+stol_poz_wzdl_2_otw_1               decimal(15,2)             YES               NULL           
+stol_poz_wzdl_2_otw_2               decimal(15,2)             YES               NULL           
+stol_poz_wzdl_2_nogi_ilosc          decimal(15,2)             YES               NULL           
+stol_poz_wzdl_2_odl_miedzy_nogami   decimal(15,2)             YES               NULL           
+stol_dod_wzdl_1                     decimal(15,2)             YES               NULL           
+stol_dod_wzdl_1_otw_1               decimal(15,2)             YES               NULL           
+stol_dod_wzdl_1_otw_2               decimal(15,2)             YES               NULL           
+stol_dod_wzdl_1_nogi_ilosc          decimal(15,2)             YES               NULL           
+stol_dod_wzdl_1_odl_miedzy_nogami   decimal(15,2)             YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: narzedziawydane
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_wydania                          int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   YES               NULL           
+id_pracownika                       int(15)                   YES               NULL           
+id_narzedzia                        int(15)                   YES               NULL           
+data_wydania                        int(15)                   YES               NULL           
+nazwisko_pracownika                 varchar(50)               YES               NULL           
+nazwa_narzedzia                     varchar(100)              YES               NULL           
+sztuk                               decimal(15,2)             YES               NULL           
+cena                                decimal(15,2)             YES               NULL           
+data_zwrotu                         int(15)                   YES               NULL           
+opis                                varchar(100)              YES               NULL           
+uwagi                               varchar(100)              YES               NULL           
+
+Tabela: narzedziawydanepracownik
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_narzedzia_pracownik              int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   YES               NULL           
+id_pracownik                        int(15)                   YES               NULL           
+nazwisko                            varchar(50)               YES               NULL           
+imie                                varchar(50)               YES               NULL           
+data                                int(8)                    YES               NULL           
+
+Tabela: noty
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_noty                             int(11)                   NO       PRI      NULL           
+data_wystawienia_noty               int(10)                   YES               NULL           
+nr_noty                             int(5)                    YES               NULL           
+nr_noty_tekst                       varchar(50)               YES               NULL           
+nazwa_noty                          varchar(50)               YES               NULL           
+id_faktury_korygowanej              int(11)                   YES               NULL           
+data_wystawienia_faktury_korygowanej int(10)                   YES               NULL           
+nr_faktury_korygowanej_tekst        varchar(50)               YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+firma_nazwa                         varchar(50)               YES               NULL           
+firma_adres                         varchar(50)               YES               NULL           
+firma_nip                           varchar(50)               YES               NULL           
+odbiorca_nazwa                      varchar(100)              YES               NULL           
+odbiorca_adres                      varchar(100)              YES               NULL           
+odbiorca_nip                        varchar(20)               YES               NULL           
+tresc_korygowana                    varchar(500)              YES               NULL           
+tresc_prawidlowa                    varchar(500)              YES               NULL           
+wystawil                            varchar(50)               YES               NULL           
+
+Tabela: odbiorcagrupa
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_odbiorca_grupa                   int(15)                   NO       PRI      NULL           
+nazwa_odbiorca_grupa                varchar(50)               YES               NULL           
+kolejnosc                           decimal(6,2)              NO                NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: odbiorcatyp
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_odbiorca_typ                     int(11)                   NO       PRI      NULL           
+odbiorca_typ_nazwa                  varchar(20)               YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: odbiorcazapisanydogrupy
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_odbiorca_zapisany_do_grupy       int(15)                   NO       PRI      NULL           
+id_odbiorcy                         int(15)                   YES               NULL           
+nazwa_odbiorcy                      varchar(50)               YES               NULL           
+id_grupy                            int(15)                   YES               NULL           
+nazwa_odbiorca_grupy                varchar(50)               YES               NULL           
+kolejnosc                           decimal(6,2)              YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: odbiorcy
+Model: Customer
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+ID_odbiorcy                         int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   NO                NULL           
+Nazwa                               varchar(100)              YES               NULL           
+Nazwisko                            varchar(100)              YES               NULL           
+Imie                                varchar(100)              YES               NULL           
+Uwagi                               varchar(1000)             YES               NULL           
+Tel_1                               varchar(150)              YES               NULL           
+Tel_2                               varchar(100)              YES               NULL           
+NIP                                 varchar(30)               YES               NULL           
+Ulica_nr                            varchar(100)              YES               NULL           
+Kod_pocztowy                        varchar(30)               YES               NULL           
+Miasto                              varchar(100)              YES               NULL           
+Kraj                                varchar(100)              YES               NULL           
+Ulica_nr_wysylka                    varchar(100)              YES               NULL           
+Kod_pocztowy_wysylka                varchar(30)               YES               NULL           
+Miasto_wysylka                      varchar(100)              YES               NULL           
+Kraj_wysylka                        varchar(100)              YES               NULL           
+Email_1                             varchar(250)              YES               NULL           
+Email_2                             varchar(100)              YES               NULL           
+kod                                 varchar(100)              YES               NULL           
+status                              varchar(100)              YES               NULL           
+waluta                              varchar(5)                NO                NULL           
+odbiorca_typ                        int(2)                    YES               NULL           
+do_oferty                           bit(1)                    YES               NULL           
+status_vat                          char(20)                  YES               NULL           
+regon                               char(50)                  YES               NULL           
+adres_caly                          varchar(200)              YES               NULL           
+
+Tabela: odbiorcylistatemp
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_odbiorcy_lista_temp              int(15)                   NO       PRI      NULL           
+id_odbiorcy                         int(15)                   YES               NULL           
+odbiorca_nazwa                      varchar(50)               YES               NULL           
+odbiorca_mail                       varchar(50)               YES               NULL           
+odbiorca_grupa                      varchar(50)               YES               NULL           
+odbiorca_panstwo                    varchar(50)               YES               NULL           
+odbiorca_tel                        varchar(50)               YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: ofertastatus
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_statusu_oferty                   int(11)                   NO       PRI      NULL           
+status_oferty                       varchar(20)               NO                NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: operator
+Model: User
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_operatora                        int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   NO                NULL           
+imie_nazwisko                       varchar(30)               NO                NULL           
+uprawnienia                         int(5)                    NO                NULL           
+senderEmail                         varchar(50)               NO                NULL           
+senderUserName                      varchar(50)               NO                NULL           
+senderEmailServer                   varchar(50)               NO                NULL           
+senderEmailPassword                 varchar(50)               NO                NULL           
+messageText                         varchar(500)              NO                NULL           
+ccAdresse                           varchar(50)               NO                NULL           
+
+Tabela: operator_login
+Model: UserLogin
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id                                  int(15)                   NO       PRI      NULL           
+id_operatora                        int(15)                   NO       MUL      NULL           
+login                               varchar(100)              NO       UNI      NULL           
+haslohash                           varchar(255)              NO                NULL           
+CreatedAt                           datetime                  NO                current_timestamp()
+UpdatedAt                           datetime                  YES               NULL           
+
+Tabela: operator_table_permissions
+Model: OperatorTablePermission
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id                                  int(15)                   NO       PRI      NULL           
+id_operatora                        int(15)                   NO       MUL      NULL           
+table_name                          varchar(100)              NO       MUL      NULL           
+can_select                          tinyint(1)                NO                0              
+can_insert                          tinyint(1)                NO                0              
+can_update                          tinyint(1)                NO                0              
+can_delete                          tinyint(1)                NO                0              
+CreatedAt                           datetime                  NO                current_timestamp()
+UpdatedAt                           datetime                  YES               NULL           
+
+Tabela: operatorfirma
+Model: UserCompany
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id                                  int(11)                   NO       PRI      NULL           
+id_operatora                        int(11)                   YES      MUL      NULL           
+id_firmy                            int(11)                   YES      MUL      NULL           
+rola                                int(11)                   YES               NULL           
+
+Tabela: packinglist
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_packing_list                     int(11)                   NO       PRI      NULL           
+id_oferta                           int(11)                   YES               NULL           
+id_odbiorca_wysylka                 int(11)                   YES               NULL           
+nazwa_odbiorcy_wysylka              varchar(50)               YES               NULL           
+adres_odbiorcy_wysylka              varchar(50)               YES               NULL           
+kod_pocztowy_odbiorcy_wysylka       varchar(30)               YES               NULL           
+Miejscowosc_odbiorcy_wysylka        varchar(50)               YES               NULL           
+panstwo_odbiorcy wysylka            varchar(30)               YES               NULL           
+osoba_kontaktowa_wysylka            varchar(30)               YES               NULL           
+tel_wysylka                         varchar(30)               YES               NULL           
+uwagi_wysylka                       varchar(100)              YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: platnosci
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_platnosci                        int(15)                   NO       PRI      NULL           
+id_faktury                          int(15)                   YES               NULL           
+nr_faktury_text                     varchar(30)               YES               NULL           
+data_faktury                        int(15)                   YES               NULL           
+id_faktur_powiazanych               int(15)                   YES               NULL           
+data_platnosci                      int(10)                   YES               NULL           
+kwota_platnosci                     decimal(15,2)             YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: platnoscstatus
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_platnosc_status                  int(15)                   NO       PRI      NULL           
+platnosc_status_nazwa               varchar(30)               YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: platnosctyp
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_platnosc_typ                     int(11)                   NO       PRI      NULL           
+platnosc_typ_nazwa                  varchar(30)               NO                NULL           
+platnosc_typ_nazwa_en               varchar(30)               YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: pliksql
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+P1                                  varchar(1000)             YES               NULL           
+P2                                  varchar(1000)             YES               NULL           
+P3                                  varchar(1000)             YES               NULL           
+P4                                  varchar(1000)             YES               NULL           
+P5                                  varchar(1000)             YES               NULL           
+P6                                  varchar(1000)             YES               NULL           
+P7                                  varchar(1000)             YES               NULL           
+P8                                  varchar(1000)             YES               NULL           
+P9                                  varchar(1000)             YES               NULL           
+P10                                 varchar(1000)             YES               NULL           
+
+Tabela: pozycjedelegacji
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_pozycji_delegacji                int(15)                   NO       PRI      NULL           
+id_serwisu                          int(15)                   YES               NULL           
+id_pracownika                       int(15)                   YES               NULL           
+nr_delegacji                        int(15)                   YES               NULL           
+wyjazd_miejsce                      varchar(50)               YES               NULL           
+wyjazd_data                         int(10)                   YES               NULL           
+wyjazd_h                            int(10)                   YES               NULL           
+przyjazd_miejsce                    varchar(50)               YES               NULL           
+przyjazd_data                       int(10)                   YES               NULL           
+przyjazd_h                          int(10)                   YES               NULL           
+srodek_transportu                   varchar(30)               YES               NULL           
+ilosc_diet                          decimal(15,2)             YES               NULL           
+stawka                              decimal(15,2)             YES               NULL           
+wartosc                             decimal(15,2)             YES               NULL           
+text_do_diety                       varchar(2000)             YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: pozycjedokdlaodbiorcy
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_pozycji_dok_dla_odbiorcy         int(15)                   NO       PRI      NULL           
+id_oferty                           int(15)                   YES               NULL           
+id_dok_dla_odbiorcy                 int(15)                   YES               NULL           
+dok_dla_odbiorcy_pl                 varchar(100)              YES               NULL           
+dok_dla_odbiorcy_eng                varchar(100)              YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: pozycjefaktury
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_pozycji_faktury                  int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   NO                NULL           
+id_faktury                          int(15)                   NO                NULL           
+id_oferty                           int(15)                   NO                NULL           
+po_korekcie                         bit(1)                    NO                b'0'           
+Nazwa_towaru                        varchar(200)              NO                NULL           
+Nazwa_towaru_eng                    varchar(200)              NO                NULL           
+jednostki                           varchar(5)                NO                NULL           
+ilosc                               decimal(15,3) unsigned    NO                NULL           
+cena_netto                          decimal(15,2)             NO                NULL           
+rabat                               decimal(15,2)             NO                NULL           
+stawka_vat                          varchar(10)               YES               NULL           
+status_towaru                       varchar(10)               YES               NULL           
+roboczogodziny                      decimal(15,2)             YES               NULL           
+koszty_materialow                   decimal(15,2)             YES               NULL           
+grupa_gtu                           varchar(10)               YES               NULL           
+do_packing_list                     bit(1)                    YES               NULL           
+jednostki_en                        varchar(5)                YES               NULL           
+id_towaru                           int(15)                   YES               NULL           
+nr_zespolu                          decimal(10,2)             YES               NULL           
+id_pozycji_oferty                   int(15)                   YES               NULL           
+
+Tabela: pozycjefakturytymcz
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id                                  int(11)                   YES               NULL           
+nazwa                               char(50)                  YES               NULL           
+ilosc                               decimal(20,6)             YES               NULL           
+id_firmy                            decimal(20,6)             YES               NULL           
+
+Tabela: pozycjepozycjizlecenia
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_pozycji_pozycji_zlecenia         int(15)                   NO       PRI      NULL           
+id_zlecenia                         int(15)                   YES               NULL           
+id_pozycji_zlecenia                 int(15)                   YES               NULL           
+id_firmy                            int(15)                   YES               NULL           
+id_towaru                           int(15)                   YES               NULL           
+typ_maszyny                         varchar(50)               YES               NULL           
+nazwa_towaru_draco                  varchar(150)              YES               NULL           
+jednostki                           varchar(50)               YES               NULL           
+ilosc                               decimal(15,2)             YES               NULL           
+status_zamowienia                   varchar(30)               YES               NULL           
+uwagi                               varchar(150)              YES               NULL           
+zaznacz_do_zamowienia               bit(3)                    YES               NULL           
+id_dostawcy                         int(15)                   YES               NULL           
+id_pozycji_zamowienia               int(15)                   YES               NULL           
+odbiorca_nazwa                      varchar(50)               YES               NULL           
+uwagi_do_pozycji_zamowienia         varchar(150)              YES               NULL           
+
+Tabela: pozycjeproduktu
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_pozycji_produktu                 int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   YES               NULL           
+id_produktu                         int(15)                   YES               NULL           
+id_towaru                           int(15)                   YES               NULL           
+grupa0                              varchar(50)               YES               NULL           
+grupa1                              varchar(50)               YES               NULL           
+grupa2                              varchar(50)               YES               NULL           
+grupa3                              varchar(50)               YES               NULL           
+grupa4                              varchar(50)               YES               NULL           
+grupa5                              varchar(50)               YES               NULL           
+uwagi                               varchar(100)              YES               NULL           
+nazwa_towaru                        varchar(100)              YES               NULL           
+jednostki                           varchar(4)                YES               NULL           
+ilosc                               decimal(15,2)             YES               NULL           
+ilosc_m_kg                          decimal(15,4)             YES               NULL           
+jednostki_zakupu                    varchar(5)                YES               NULL           
+ilosc_przeliczona                   decimal(15,4)             YES               NULL           
+cena                                decimal(15,2)             YES               NULL           
+wartosc                             decimal(15,2)             YES               NULL           
+szerokosc                           decimal(15,2)             YES               NULL           
+wysokosc                            decimal(15,2)             YES               NULL           
+dlugosc                             decimal(15,2)             YES               NULL           
+masa                                decimal(15,2)             YES               NULL           
+numer                               varchar(50)               YES               NULL           
+material                            varchar(50)               YES               NULL           
+data_wyceny                         int(10)                   YES               NULL           
+cena_stara                          decimal(15,2)             YES               NULL           
+wartosc_stara                       decimal(15,2)             YES               NULL           
+znalazlem_cene                      bit(1)                    YES               NULL           
+faktura_nr                          varchar(100)              YES               NULL           
+
+Tabela: pozycjeremanentu
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_pozycji_rem                      int(15)                   NO       PRI      NULL           
+id_rem                              int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   YES               NULL           
+grupa                               varchar(20)               YES               NULL           
+grupa_remanentu                     varchar(20)               YES               NULL           
+dostawca                            varchar(50)               YES               NULL           
+id_towaru                           int(15)                   YES               NULL           
+nazwa_towaru_draco                  varchar(200)              YES               NULL           
+nazwa_towaru                        varchar(200)              YES               NULL           
+jednostki_hala                      varchar(10)               YES               NULL           
+jednostki_rem                       varchar(10)               YES               NULL           
+ilosc_hala                          decimal(15,4)             YES               NULL           
+przelicznik_h_r                     decimal(15,4)             YES               NULL           
+ilosc_przeliczona                   decimal(15,4)             YES               NULL           
+cena_pln                            decimal(15,4)             YES               NULL           
+wartosc_pln                         decimal(15,4)             YES               NULL           
+ciezar_jednostkowy                  decimal(15,5)             YES               NULL           
+ilosc_hala_gram                     decimal(15,4)             YES               NULL           
+uwagi                               varchar(50)               YES               NULL           
+status_towaru                       varchar(20)               YES               NULL           
+cena_netto_pln_nowe_jednostki       decimal(15,4)             YES               NULL           
+skopiowano_do_magazynu              bit(1)                    YES               NULL           
+skopiowano_do_zamowienia            bit(1)                    YES               NULL           
+
+Tabela: pozycjezamowienia
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_pozycji_zamowienia               int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   NO       MUL      NULL           
+id_zamowienia                       int(15)                   NO       MUL      NULL           
+id_towaru                           int(15)                   YES               NULL           
+data_dostawy_pozycji                int(10)                   YES               NULL           
+towar_nazwa_draco                   varchar(200)              YES               NULL           
+towar                               varchar(200)              YES               NULL           
+towar_nazwa_ENG                     varchar(200)              YES               NULL           
+jednostki_zamawiane                 varchar(5)                YES               NULL           
+ilosc_zamawiana                     decimal(15,4)             YES               NULL           
+ilosc_dostarczona                   decimal(15,4)             YES               NULL           
+cena_zamawiana                      decimal(15,4)             YES               NULL           
+status_towaru                       varchar(20)               YES               NULL           
+jednostki_zakupu                    varchar(5)                YES               NULL           
+ilosc_zakupu                        decimal(15,4)             YES               NULL           
+cena_zakupu                         decimal(15,4)             YES               NULL           
+wartsc_zakupu                       decimal(15,4)             YES               NULL           
+cena_zakupu_pln                     decimal(15,4)             YES               NULL           
+przelicznik_m_kg                    decimal(15,8)             YES               NULL           
+cena_zakupu_PLN_nowe_jednostki      decimal(15,4)             YES               NULL           
+uwagi                               varchar(500)              YES               NULL           
+dostawca_pozycji                    varchar(100)              YES               NULL           
+stawka_vat                          varchar(10)               YES               NULL           
+ciezar_jednostkowy                  decimal(15,5)             YES               NULL           
+ilosc_w_opakowaniu                  decimal(15,4)             YES               NULL           
+id_zamowienia_hala                  int(15)                   YES               NULL           
+id_pozycji_pozycji_oferty           int(15)                   YES               NULL           
+zaznacz_do_kopiowania               int(3)                    YES               NULL           
+skopiowano_do_magazynu              bit(1)                    YES               NULL           
+dlugosc                             decimal(15,3)             YES               NULL           
+
+Tabela: pozycjezlecenia
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+ID_pozycji_zlecenia                 int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   NO                NULL           
+ID_zlecenia                         int(15)                   YES               NULL           
+id_dane_oblicz_maszyne              int(15)                   YES               NULL           
+id_zamowienia                       int(15)                   YES               NULL           
+id_towaru                           int(15)                   YES               NULL           
+id_dostawcy                         int(15)                   YES               NULL           
+status_towaru                       varchar(10)               YES               NULL           
+kod_towaru                          varchar(100)              YES               NULL           
+grupa                               varchar(100)              YES               NULL           
+typ                                 varchar(100)              YES               NULL           
+Nr_seryjny                          varchar(50)               YES               NULL           
+Nr_seryjny_num                      int(15)                   YES               NULL           
+Nazwa                               varchar(100)              YES               NULL           
+Nazwa_ENG                           varchar(100)              YES               NULL           
+nazwa_CE                            varchar(50)               YES               NULL           
+jednostki                           varchar(10)               NO                NULL           
+jednostki_en                        varchar(10)               YES               NULL           
+Sztuki                              decimal(15,2)             YES               NULL           
+ciezar                              decimal(15,2)             YES               NULL           
+koszty_materialow                   decimal(15,2)             YES               NULL           
+roboczogodziny                      decimal(15,6)             YES               NULL           
+RHWartosc                           decimal(15,2)             YES               NULL           
+procent_realizacji                  int(3)                    YES               NULL           
+RHPozostalo                         decimal(15,2)             YES               NULL           
+linia_produkcyjna                   int(3)                    YES               NULL           
+nr_skrzyni                          int(3)                    NO                NULL           
+zaznacz_do_zamowienia               int(3)                    YES               NULL           
+do_packing_list                     bit(1)                    YES               NULL           
+Uwagi_oferta                        varchar(1000)             YES               NULL           
+grupa_gtu                           varchar(10)               YES               NULL           
+Cena                                decimal(15,2)             YES               NULL           
+Rabat                               decimal(15,2)             YES               NULL           
+Cena_po_rabacie                     decimal(15,2)             YES               NULL           
+Cena_po_rabacie_i_sztukach          decimal(15,2)             YES               NULL           
+cena_faktura                        decimal(15,2)             YES               NULL           
+stawka_vat                          varchar(10)               YES               NULL           
+vat                                 decimal(10,4)             YES               NULL           
+inne1                               varchar(500)              YES               NULL           
+uwagi_faktura                       varchar(500)              YES               NULL           
+nr_zespolu                          int(2)                    YES               NULL           
+nr_podzespolu                       int(2)                    YES               NULL           
+id_pozycji_oferty                   int(15)                   YES               NULL           
+id_oferty                           int(15)                   YES               NULL           
+id_maszyna_typ                      int(15)                   YES               NULL           
+rh_biuro                            decimal(15,4)             YES               NULL           
+
+Tabela: pracownicy
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_pracownika                       int(15)                   NO       PRI      NULL           
+id_firma                            int(15)                   YES               NULL           
+imie                                varchar(30)               YES               NULL           
+nazwisko                            varchar(30)               YES               NULL           
+pesel                               varchar(20)               YES               NULL           
+adres_zamieszkania                  varchar(50)               YES               NULL           
+kod_pocztowy                        varchar(10)               YES               NULL           
+miejscowosc                         varchar(30)               YES               NULL           
+telefon                             varchar(30)               YES               NULL           
+email                               varchar(50)               YES               NULL           
+bluza                               varchar(50)               YES               NULL           
+spodnie                             varchar(50)               YES               NULL           
+buty                                varchar(50)               YES               NULL           
+stanowisko                          varchar(50)               YES               NULL           
+data_zatrudnienia                   int(10) unsigned          YES               NULL           
+data_zwolnienia                     int(10) unsigned          YES               NULL           
+badanie_lekarskie                   int(10) unsigned          YES               NULL           
+szkolenie_bhp                       int(10) unsigned          YES               NULL           
+psychotest                          int(10) unsigned          YES               NULL           
+etat                                decimal(10,2)             YES               NULL           
+podstawa                            decimal(15,2)             YES               NULL           
+udzial_premia                       decimal(10,2)             YES               NULL           
+zwolniony                           bit(1)                    YES               NULL           
+biuro1_hala0                        bit(1)                    YES               NULL           
+
+Tabela: pracownicyrh
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_pracownicyRH                     int(11)                   NO                NULL           
+id_pracownika                       int(11)                   NO                NULL           
+odbiorca                            varchar(50)               YES               NULL           
+id_pozycji_zlecenia                 int(11)                   YES               NULL           
+towar_nazwa                         varchar(50)               YES               NULL           
+data                                int(11)                   NO                NULL           
+ilosc_RH                            int(11)                   NO                NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: premia
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_premii                           int(11)                   NO       PRI      NULL           
+nazwa_premii                        varchar(50)               YES               NULL           
+za_co                               varchar(50)               YES               NULL           
+kwota                               decimal(15,3)             YES               NULL           
+uwagi                               varchar(50)               YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: produkcjastatus
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_statusu_zlecenia                 int(15)                   NO       PRI      NULL           
+status_zlecenia                     varchar(40)               YES               NULL           
+status_zlecenia_numer               int(3)                    YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: produkty
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_produktu                         int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   YES               NULL           
+id_towaru                           int(15)                   YES               NULL           
+nazwa_towaru                        varchar(250)              YES               NULL           
+koszt_materialow                    decimal(15,2)             YES               NULL           
+cena_PLN                            decimal(15,2)             YES               NULL           
+uwagi                               varchar(250)              YES               NULL           
+data_dodania                        int(10)                   YES               NULL           
+
+Tabela: remanent
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_remanentu                        int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   YES               NULL           
+znacznik_przepisania_towarow        tinyint(1)                YES               NULL           
+data_remanentu                      int(10)                   YES               NULL           
+Nazwa_firmy                         varchar(50)               YES               NULL           
+Uwagi                               varchar(50)               YES               NULL           
+data_poczatkowa                     int(10)                   YES               NULL           
+znacznik_utworzenia_zamowienia      bit(1)                    YES               NULL           
+
+Tabela: rh
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_rh                               int(11)                   NO       PRI      NULL           
+data_pracy                          int(8)                    YES               NULL           
+rh_ilosc                            decimal(15,6)             YES               NULL           
+id_pracownika                       int(11)                   YES               NULL           
+pracownik_nazwisko                  varchar(50)               YES               NULL           
+pracownik_imie                      varchar(50)               YES               NULL           
+id_odbiorcy                         int(11)                   YES               NULL           
+odbiorca                            varchar(50)               YES               NULL           
+id_zlecenia                         int(11)                   YES               NULL           
+id_pozycji_zlecenia                 int(11)                   YES               NULL           
+nr_maszyny_rh                       varchar(50)               YES               NULL           
+towar_nazwa                         varchar(250)              YES               NULL           
+uwagi                               varchar(250)              YES               NULL           
+hala_biuro                          bit(1)                    YES               NULL           
+rhm_ilosc                           int(4)                    YES               NULL           
+h_produkcyjne_h_nieprodukcyjne      int(3)                    YES               NULL           
+rhm_trasa                           int(4)                    YES               NULL           
+rhm_nadgodziny                      int(4)                    YES               NULL           
+rh_przerwa                          int(15)                   YES               NULL           
+rh_sprzatanie                       int(15)                   YES               NULL           
+rh_organizacja                      int(15)                   YES               NULL           
+rh_zamowienia                       int(15)                   YES               NULL           
+rh_dostawa                          int(15)                   YES               NULL           
+rh_inne                             int(15)                   YES               NULL           
+rh_serwis_gwar                      int(15)                   YES               NULL           
+rh_serwis_platny                    int(15)                   YES               NULL           
+rh_trasa                            int(15)                   YES               NULL           
+rh_nadgodziny                       int(15)                   YES               NULL           
+rh_urlop                            int(15)                   YES               NULL           
+rh_L4                               int(15)                   YES               NULL           
+rh_produkt                          int(15)                   YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: rh2
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_rh                               int(11)                   YES               NULL           
+data_pracy                          int(8)                    YES               NULL           
+rh_ilosc                            decimal(15,6)             YES               NULL           
+id_pracownika                       int(11)                   YES               NULL           
+pracownik_nazwisko                  varchar(50)               YES               NULL           
+pracownik_imie                      varchar(50)               YES               NULL           
+id_odbiorcy                         int(11)                   YES               NULL           
+odbiorca                            varchar(50)               YES               NULL           
+id_zlecenia                         int(11)                   YES               NULL           
+id_pozycji_zlecenia                 int(11)                   YES               NULL           
+nr_maszyny                          varchar(50)               YES               NULL           
+towar_nazwa                         varchar(250)              YES               NULL           
+uwagi                               varchar(250)              YES               NULL           
+hala_biuro                          bit(1)                    YES               NULL           
+rhm_ilosc                           int(4)                    YES               NULL           
+h_produkcyjne_h_nieprodukcyjne      int(3)                    YES               NULL           
+rhm_trasa                           int(4)                    YES               NULL           
+rhm_nadgodziny                      int(4)                    YES               NULL           
+rh_przerwa                          int(15)                   YES               NULL           
+rh_sprzatanie                       int(15)                   YES               NULL           
+rh_organizacja                      int(15)                   YES               NULL           
+rh_zamowienia                       int(15)                   YES               NULL           
+rh_dostawa                          int(15)                   YES               NULL           
+rh_inne                             int(15)                   YES               NULL           
+rh_serwis_gwar                      int(15)                   YES               NULL           
+rh_serwis_platny                    int(15)                   YES               NULL           
+rh_trasa                            int(15)                   YES               NULL           
+rh_nadgodziny                       int(15)                   YES               NULL           
+rh_urlop                            int(15)                   YES               NULL           
+rh_L4                               int(15)                   YES               NULL           
+rh_produkt                          int(15)                   YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: rhdostepne
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_rhdostepne                       int(11)                   YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+data                                int(11)                   YES               NULL           
+rhdostepne                          int(11)                   YES               NULL           
+
+Tabela: rhproduktu
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_rhproduktu                       int(15)                   NO       PRI      NULL           
+id_produktu                         int(15)                   NO       MUL      NULL           
+data_zakonczenia                    int(10)                   NO                NULL           
+nazwa_produktu                      varchar(50)               NO                NULL           
+opis_produktu                       varchar(500)              YES               NULL           
+ilosc_rh                            decimal(15,2)             YES               NULL           
+id_firmy                            int(3)                    YES               NULL           
+
+Tabela: rodzajurlopu
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_rodzaj_urlopu                    int(11)                   NO       PRI      NULL           
+nazwa_rodzaj_urlopu                 varchar(50)               YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: rola
+Model: Role
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_roli                             int(11)                   NO       PRI      NULL           
+nazwa                               char(50)                  YES               NULL           
+
+Tabela: schema_migrations
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+version                             varchar(255)              NO       PRI      NULL           
+
+Tabela: secwin_access
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+acc_guid                            char(16)                  NO       PRI      NULL           
+acc_sitelimiter                     char(4)                   NO       MUL      NULL           
+acc_application                     int(11)                   NO                NULL           
+acc_operator                        int(11)                   NO                NULL           
+acc_operatorsite                    char(4)                   NO                NULL           
+acc_hashnumber                      int(11)                   NO                NULL           
+acc_access                          char(252)                 YES               NULL           
+acc_accesstime                      int(11)                   YES               NULL           
+acc_extrafield                      int(11)                   YES               NULL           
+acc_extrastring                     char(252)                 YES               NULL           
+acc_crc                             char(16)                  YES               NULL           
+
+Tabela: secwin_access_copy
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+acc_guid                            char(16)                  NO       PRI      NULL           
+acc_sitelimiter                     char(4)                   NO       MUL      NULL           
+acc_application                     int(11)                   NO                NULL           
+acc_operator                        int(11)                   NO                NULL           
+acc_operatorsite                    char(4)                   NO                NULL           
+acc_hashnumber                      int(11)                   NO                NULL           
+acc_access                          char(252)                 YES               NULL           
+acc_accesstime                      int(11)                   YES               NULL           
+acc_extrafield                      int(11)                   YES               NULL           
+acc_extrastring                     char(252)                 YES               NULL           
+acc_crc                             char(16)                  YES               NULL           
+
+Tabela: secwin_counters
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+cou_guid                            char(16)                  NO       PRI      NULL           
+cou_sitelimiter                     char(4)                   YES               NULL           
+cou_licenceguid                     char(16)                  NO       MUL      NULL           
+cou_minlevel                        int(11)                   YES               NULL           
+cou_maxlevel                        char(252)                 YES               NULL           
+cou_counterdescription              char(252)                 NO                NULL           
+cou_limit                           int(11)                   YES               NULL           
+cou_extralong                       int(11)                   YES               NULL           
+cou_extrastring                     char(252)                 YES               NULL           
+cou_crc                             char(16)                  YES               NULL           
+
+Tabela: secwin_licence4
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+lic_guid                            char(16)                  NO       UNI      NULL           
+lic_sitelimiter                     char(4)                   NO       PRI      NULL           
+lic_licencedto                      char(252)                 NO       PRI      NULL           
+lic_dealer                          char(252)                 YES               NULL           
+lic_product                         char(252)                 NO       PRI      NULL           
+lic_copies                          int(11)                   YES               NULL           
+lic_level                           int(11)                   YES               NULL           
+lic_lastrundate                     int(11)                   YES               NULL           
+lic_appnumber                       int(11)                   YES               NULL           
+lic_serialnumber                    char(252)                 YES               NULL           
+lic_modules                         int(11)                   YES               NULL           
+lic_licencetype                     int(11)                   NO       PRI      NULL           
+lic_other1                          char(252)                 YES               NULL           
+lic_additionalstring1               char(252)                 YES               NULL           
+lic_additionalstring2               char(252)                 YES               NULL           
+lic_additionalstring3               char(252)                 YES               NULL           
+lic_additionallong1                 int(11)                   YES               NULL           
+lic_additionallong2                 int(11)                   YES               NULL           
+lic_expirydate                      int(11)                   YES               NULL           
+lic_crclen                          int(11)                   YES               NULL           
+lic_crc                             char(16)                  YES               NULL           
+
+Tabela: secwin_namecodes
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+nam_guid                            char(16)                  NO       UNI      NULL           
+nam_sitelimiter                     char(4)                   NO       PRI      NULL           
+nam_appnumber                       int(11)                   NO       PRI      NULL           
+nam_name                            char(252)                 NO       PRI      NULL           
+nam_hashnumber                      int(11)                   YES               NULL           
+nam_extralong                       int(11)                   YES               NULL           
+nam_extrastring                     char(252)                 YES               NULL           
+nam_crc                             char(16)                  YES               NULL           
+
+Tabela: secwin_operators5
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+ope5_guid                           char(16)                  NO       UNI      NULL           
+ope5_sitelimiter                    char(4)                   NO       PRI      NULL           
+ope5_login                          char(129)                 NO       PRI      NULL           
+ope5_firstname                      char(252)                 YES               NULL           
+ope5_surname                        char(252)                 YES               NULL           
+ope5_password                       char(129)                 YES               NULL           
+ope5_number                         int(11)                   YES               NULL           
+ope5_usergroup                      int(11)                   YES               NULL           
+ope5_lastpasswordchangedate         int(11)                   YES               NULL           
+ope5_hook1                          int(11)                   YES               NULL           
+ope5_hook2                          char(252)                 YES               NULL           
+ope5_emailaddress                   char(252)                 YES               NULL           
+ope5_fingerprint1                   varchar(1024)             YES               NULL           
+ope5_fingerprint2                   varchar(1024)             YES               NULL           
+ope5_sitelow                        char(4)                   YES               NULL           
+ope5_sitehi                         char(4)                   YES               NULL           
+ope5_extralong                      int(11)                   YES               NULL           
+ope5_extrastring                    char(252)                 YES               NULL           
+ope5_usetemppwd                     int(11)                   YES               NULL           
+ope5_questions                      char(252)                 YES               NULL           
+ope5_reservedString1                char(252)                 YES               NULL           
+ope5_reservedString2                char(252)                 YES               NULL           
+ope5_reservedlong1                  int(11)                   YES               NULL           
+ope5_reservedlong2                  int(11)                   YES               NULL           
+ope5_crc                            char(16)                  YES               NULL           
+
+Tabela: secwin_operatorsusergroups
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+oug_guid                            char(16)                  NO       UNI      NULL           
+oug_operatornumber                  int(11)                   NO       PRI      NULL           
+oug_operatorsitelimiter             char(4)                   NO       PRI      NULL           
+oug_usergroup                       int(11)                   NO       PRI      NULL           
+oug_usergroupsitelimiter            char(4)                   NO       PRI      NULL           
+oug_extralong                       int(11)                   YES               NULL           
+oug_crc                             char(16)                  YES               NULL           
+
+Tabela: serwistyp
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_serwistyp                        int(11)                   NO       PRI      NULL           
+serwistyp_nazwa                     varchar(30)               YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: serwisy
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_serwisu                          int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   NO                NULL           
+data_serwisu                        int(50)                   NO                NULL           
+data_powrotu                        int(15)                   NO                NULL           
+klient                              varchar(100)              NO                NULL           
+nazwisko                            varchar(100)              NO                NULL           
+adres                               varchar(100)              NO                NULL           
+kod_pocztowy                        varchar(15)               NO                NULL           
+Miasto                              varchar(50)               NO                NULL           
+Panstwo                             varchar(50)               NO                NULL           
+telefon                             varchar(50)               NO                NULL           
+uwagi_przed_serwisem                varchar(500)              NO                NULL           
+uwagi_po_serwisie                   varchar(500)              NO                NULL           
+gotowka_z_kasy                      decimal(15,2)             NO                NULL           
+gotowka_zwrot                       decimal(15,2)             NO                NULL           
+pracownik_1                         varchar(50)               NO                NULL           
+pracownik_2                         varchar(50)               NO                NULL           
+auto                                varchar(30)               NO                NULL           
+uwagi                               varchar(500)              NO                NULL           
+waluta                              varchar(5)                NO                NULL           
+kurs_waluty                         decimal(15,4)             NO                NULL           
+tabela_nbp                          varchar(50)               NO                NULL           
+stawka_dzienna                      decimal(12,2)             NO                NULL           
+auto_nazwa                          varchar(51)               NO                NULL           
+uwagi3                              varchar(500)              YES               NULL           
+serwis_typ                          varchar(30)               YES               NULL           
+znacznik_rozliczenie_serwisu        int(1)                    YES               NULL           
+zn_rozliczenie_odbiorcy             int(1)                    YES               NULL           
+odbiorca_id                         int(15)                   YES               NULL           
+ulica_nr_wysylka                    varchar(100)              YES               NULL           
+kod_pocztowy_wysylka                varchar(15)               YES               NULL           
+miasto_wysylka                      varchar(50)               YES               NULL           
+panstwo_wysylka                     varchar(50)               YES               NULL           
+
+Tabela: serwisypracownicy
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_serwisy_pracownicy               int(11)                   NO       PRI      NULL           
+id_firmy                            int(11)                   YES               NULL           
+id_serwisu                          int(11)                   YES               NULL           
+imie_pracownika                     varchar(50)               YES               NULL           
+nazwaisko_pracownika                varchar(50)               YES               NULL           
+
+Tabela: skrzynie
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+ID_skrzynia                         int(15)                   NO       PRI      NULL           
+nr_skrzyni                          int(3)                    NO                NULL           
+ID_zlecenia                         int(15)                   NO                NULL           
+id_maszyny                          int(15)                   NO                NULL           
+do_zamowienia                       bit(1)                    NO                b'0'           
+rodzaj_opakowania                   varchar(20)               NO                NULL           
+Dlugosc                             decimal(15,2)             YES               NULL           
+Szerokosc                           decimal(15,2)             YES               NULL           
+Wysokosc                            decimal(15,2)             NO                NULL           
+Waga_skrzyni                        decimal(15,2)             YES               NULL           
+Waga_skrzyni_real                   decimal(15,2)             YES               NULL           
+Waga_towaru                         decimal(15,2)             YES               NULL           
+Waga_calkowita                      decimal(15,2)             YES               NULL           
+Uwagi                               varchar(100)              YES               NULL           
+dlugosc_stolu                       decimal(15,2)             YES               NULL           
+szerokosc_stolu                     decimal(15,2)             YES               NULL           
+grupa_maszyny                       varchar(50)               YES               NULL           
+typ_maszyny                         varchar(50)               YES               NULL           
+wysokosc_nogi                       decimal(15,2)             YES               NULL           
+wysokosc_calk                       decimal(15,2)             YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: specmaszklienta
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_spec_masz_klienta                int(11)                   NO       PRI      NULL           
+id_masz_typ                         int(11)                   YES               NULL           
+id_zlecenia                         int(11)                   YES               NULL           
+id_pozycji_zlecenia                 int(11)                   YES               NULL           
+nazwa                               char(50)                  YES               NULL           
+opis                                varchar(500)              YES               NULL           
+maszyna_typ                         char(20)                  YES               NULL           
+kolejnosc                           decimal(15,2)             YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: specyfikacjamaszyny
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_specyfikacja_maszyny             int(15)                   NO       PRI      NULL           
+id_maszyna_typ                      int(15)                   YES               NULL           
+nazwa_pl                            varchar(50)               YES               NULL           
+opis_pl                             varchar(500)              YES               NULL           
+nazwa_en                            varchar(50)               YES               NULL           
+opis_en                             varchar(500)              YES               NULL           
+maszyna_typ                         char(20)                  YES               NULL           
+kolejnosc                           decimal(7,2)              YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: sprawdzaniemaszyny
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_spradzania_maszyny               int(11)                   NO       PRI      NULL           
+grupa_maszyny                       char(50)                  YES               NULL           
+element_sprawdzany                  char(250)                 YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: srodkitrwale
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_srodka_trwalego                  int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   NO                NULL           
+status_srodka_trwalego              varchar(5)                YES               NULL           
+data_zakupu                         int(15)                   NO                0              
+data_likwidacji                     int(15)                   NO                0              
+nazwa_srodka_trwalego               varchar(100)              YES               NULL           
+jednostki                           varchar(5)                YES               NULL           
+ilosc                               decimal(15,2)             YES               NULL           
+cena_zakupu                         decimal(15,2)             YES               NULL           
+opis                                varchar(100)              YES               NULL           
+nr_seryjny                          varchar(100)              YES               NULL           
+uwagi                               varchar(100)              YES               NULL           
+
+Tabela: statusinne
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_statusu_inne                     int(11)                   NO       PRI      NULL           
+status_inne                         varchar(20)               YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: stawkavat
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_stawka_vat                       int(11)                   NO       PRI      NULL           
+stawka_vat                          decimal(10,2)             YES               NULL           
+opis_stawka_vat                     varchar(10)               YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: tabtym
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_tabtym                           int(11)                   NO       PRI      NULL           
+id_produktu                         int(11)                   YES               NULL           
+id_pozycji_produktu                 int(11)                   YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: test
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+ID                                  int(15)                   NO       PRI      NULL           
+Nazwa                               varchar(50)               NO                NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: text
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_tekst                            int(11)                   NO       PRI      NULL           
+nazwa_textu                         varchar(50)               YES               NULL           
+text                                varchar(21000)            YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: towarstatus
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_statusu_towaru                   int(11)                   NO       PRI      NULL           
+status_towaru                       varchar(10)               YES               NULL           
+status_towaru_opis                  varchar(20)               YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: towary
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+ID_towar                            int(15)                   NO       PRI      NULL           
+id_firmy                            int(11)                   YES      MUL      NULL           
+grupa                               varchar(20)               YES               NULL           
+grupa_remanentu                     varchar(20)               YES               NULL           
+status_towaru                       varchar(20)               YES               NULL           
+Nazwa_PL_draco                      varchar(200)              YES               NULL           
+Nazwa_PL                            varchar(200)              YES               NULL           
+Nazwa_ENG                           varchar(200)              YES               NULL           
+Cena_PLN                            decimal(15,2)             YES               NULL           
+Cena_EUR                            decimal(15,2)             YES               NULL           
+Cena_USD                            decimal(15,2)             YES               NULL           
+Waga_Kg                             decimal(15,5)             YES               NULL           
+roboczogodziny                      decimal(15,2)             YES               NULL           
+Uwagi                               varchar(500)              YES               NULL           
+dostawca                            varchar(100)              YES               NULL           
+ilosc_magazyn                       decimal(15,2)             YES               NULL           
+jednostki_zakupu                    varchar(5)                YES               NULL           
+jednostki_sprzedazy                 varchar(5)                YES               NULL           
+jednostka                           varchar(5)                YES               NULL           
+przelicznik_m_kg                    decimal(15,4)             YES               NULL           
+cena_zakupu                         decimal(15,4)             YES               NULL           
+waluta_zakupu                       varchar(5)                YES               NULL           
+kurs_waluty                         decimal(15,4)             YES               NULL           
+cena_zakupu_PLN                     decimal(15,4)             YES               NULL           
+cena_zakupu_PLN_nowe_jednostki      decimal(15,4)             YES               NULL           
+koszty_materialow                   decimal(15,2)             YES               NULL           
+grupa_gtu                           varchar(10)               YES               NULL           
+stawka_vat                          varchar(20)               YES               NULL           
+jednostki_en                        varchar(5)                YES               NULL           
+data_zakupu                         int(10)                   YES               NULL           
+ilosc_w_opakowaniu                  decimal(15,4)             YES               NULL           
+linia_produkcyjna                   int(3)                    YES               NULL           
+id_dostawcy                         int(15)                   YES               NULL           
+do_magazynu                         bit(1)                    YES               NULL           
+cena_data                           int(10)                   YES               NULL           
+etykieta_nazwa                      char(50)                  YES               NULL           
+etykieta_wielkosc                   char(3)                   YES               NULL           
+ilosc_jednostkowa                   decimal(15,4)             YES               NULL           
+
+Tabela: tym1
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id                                  int(15)                   NO       PRI      NULL           
+data_faktury                        int(15)                   YES               NULL           
+waluta                              char(20)                  YES               NULL           
+kurs_waluty                         decimal(16,4)             YES               NULL           
+data_tabeli                         char(20)                  YES               NULL           
+nr_tabeli_nbp                       char(50)                  YES               NULL           
+odbiorca_nip                        char(20)                  YES               NULL           
+odbiorca_nazwa                      varchar(200)              YES               NULL           
+odbiorca_nazwisko                   varchar(100)              YES               NULL           
+odbiorca_ulica_nr                   varchar(200)              YES               NULL           
+odbiorca_kod_pocztowy               char(20)                  YES               NULL           
+odbiorca_miasto                     varchar(100)              YES               NULL           
+odbiorca_panstwo                    varchar(100)              YES               NULL           
+odbiorca_vat_status                 char(20)                  YES               NULL           
+odbiorca_regon                      char(20)                  YES               NULL           
+odbiorca_adres_caly                 varchar(200)              YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: umowypracownicy
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_umowy                            int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   YES               NULL           
+id_pracownika                       int(6)                    YES               NULL           
+rodzaj_umowy                        varchar(30)               YES               NULL           
+data_umowy                          int(10)                   YES               NULL           
+data_rozpoczecia                    int(10)                   YES               NULL           
+data_zakonczenia                    int(10)                   YES               NULL           
+data_poprzedniej_umowy              int(10)                   YES               NULL           
+stanowisko                          varchar(50)               YES               NULL           
+miejsce_wykonywania                 varchar(50)               YES               NULL           
+wymiar_czasu_pracy                  decimal(10,2)             YES               NULL           
+podstawa_brutto                     decimal(15,2)             YES               NULL           
+inne_skladniki_wynagrodzenia        decimal(15,2)             YES               NULL           
+inne_warunki_zatrudnienia           varchar(100)              YES               NULL           
+operator                            varchar(50)               YES               NULL           
+
+Tabela: urlopy
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_urlopy                           int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   YES               NULL           
+id_pracownika                       int(15)                   YES               NULL           
+rodzaj_urlopu                       varchar(50)               YES               NULL           
+data_rozpoczecia                    int(10)                   YES               NULL           
+data_zakonczenia                    int(10)                   YES               NULL           
+urlop_nalezny                       int(10)                   YES               NULL           
+urlop_wykorzystany_dni              int(10)                   YES               NULL           
+urlop_wykorzystany_h                decimal(10,2)             YES               NULL           
+inne_dni_wolne                      int(10)                   YES               NULL           
+uwagi                               varchar(100)              YES               NULL           
+urlop_wykorzystany_minut            int(10)                   YES               NULL           
+urlop_nalezny_h                     int(10)                   YES               NULL           
+urlop_wykorzystany_min              int(10)                   YES               NULL           
+urlop_nalezny_min                   int(10)                   YES               NULL           
+
+Tabela: v_operator_permissions_summary
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_operatora                        int(15)                   NO                0              
+imie_nazwisko                       varchar(30)               NO                NULL           
+table_name                          varchar(100)              YES               NULL           
+can_select                          tinyint(1)                YES               0              
+can_insert                          tinyint(1)                YES               0              
+can_update                          tinyint(1)                YES               0              
+can_delete                          tinyint(1)                YES               0              
+UpdatedAt                           datetime                  YES               NULL           
+
+Tabela: waluty
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_waluty                           int(11)                   NO       PRI      NULL           
+waluta                              varchar(10)               YES               NULL           
+waluta_nazwa                        varchar(50)               YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: wyplaty
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_wyplaty                          int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   YES               NULL           
+id_pracownika                       int(15)                   YES               NULL           
+id_wyplaty_dane_miesiaca            int(15)                   YES               NULL           
+pracownik_nazwisko                  varchar(50)               YES               NULL           
+pracownik_imie                      varchar(50)               YES               NULL           
+data_wyplaty                        int(10)                   YES               NULL           
+podstawa_brutto                     decimal(15,2)             YES               NULL           
+h_mies_na_etat                      decimal(15,2)             YES               NULL           
+h_do_przepracowania                 decimal(10,2)             YES               NULL           
+h_przepracowanych                   decimal(10,2)             YES               NULL           
+h_urlopu                            decimal(10,2)             YES               NULL           
+h_urlopu_innego_platnego            decimal(10,2)             YES               NULL           
+h_nadgodzin_50                      decimal(10,2)             YES               NULL           
+h_nadgodzin_100                     decimal(10,2)             YES               NULL           
+h_nadgodzin_trasa                   decimal(10,2)             YES               NULL           
+L4                                  decimal(10,0)             YES               NULL           
+L4_dni_robocze                      decimal(10,0)             YES               NULL           
+h_urlopu_bezplatnego                decimal(10,2)             YES               NULL           
+wielkosc_etatu                      decimal(10,2) unsigned    YES               NULL           
+srednia_z_3_mies_za_h               decimal(15,6)             YES               NULL           
+udzial_premia_za_maszyny            decimal(15,2)             YES               NULL           
+proc_premia_za_maszyny_nh_url       decimal(15,6)             YES               NULL           
+podstawa_brutto_za_h                decimal(15,6)             YES               NULL           
+podstawa_na_h_przepracowane         decimal(15,2)             YES               NULL           
+za_urlop                            decimal(15,2)             YES               NULL           
+za_nadgodziny_50                    decimal(15,2)             YES               NULL           
+za_nadgodziny_100                   decimal(15,2)             YES               NULL           
+za_trase                            decimal(15,2)             YES               NULL           
+za_L4                               decimal(15,2)             YES               NULL           
+premia_za_maszyny                   decimal(15,2) unsigned    YES               NULL           
+premia_za_montaze                   decimal(15,2)             YES               NULL           
+premia_dodatkowa                    decimal(15,2)             YES               NULL           
+dodatki_stale                       decimal(15,2)             YES               NULL           
+ub_grup_pracodawca                  decimal(15,2)             YES               NULL           
+kwota_brutto                        decimal(15,2)             YES               NULL           
+kwota_netto                         decimal(15,2)             YES               NULL           
+za_urlop_inny_platny                decimal(15,2)             YES               NULL           
+biuro_brutto                        decimal(15,2)             YES               NULL           
+biuro_netto                         decimal(15,2)             YES               NULL           
+biuro_urlop                         decimal(15,2)             YES               NULL           
+biuro_urlop_inny_platny             decimal(15,2)             YES               NULL           
+biuro_L4                            decimal(15,2)             YES               NULL           
+h_do_przepr_3_mies_S                decimal(15,2)             YES               NULL           
+wypl_za_3_mies_S                    decimal(15,2)             YES               NULL           
+ekwiwalent_pranie                   decimal(15,2)             YES               NULL           
+ppk_u                               decimal(15,2)             YES               NULL           
+ppk_p                               decimal(15,2)             YES               NULL           
+h_ekwiwalent_urlop                  int(15)                   YES               NULL           
+wypl_za_12_mies_S                   decimal(15,2)             YES               NULL           
+srednia_do_L4_za_dzien              decimal(15,6)             YES               NULL           
+zus_ubezpieczony                    decimal(15,2)             YES               NULL           
+zdrowotne                           decimal(15,2)             YES               NULL           
+zaliczka_na_podatek                 decimal(15,2)             YES               NULL           
+kup                                 decimal(15,2)             YES               NULL           
+up_ks                               decimal(15,2)             YES               NULL           
+nieopodatkowane                     decimal(15,2)             YES               NULL           
+zgoda_up_ks                         bit(1)                    YES               NULL           
+do_26_lat                           bit(1)                    YES               NULL           
+ub_grup_ubezpieczony                decimal(15,2)             YES               NULL           
+zus_ubezpieczony_E                  decimal(15,2)             YES               NULL           
+zus_ubezpieczony_R                  decimal(15,2)             YES               NULL           
+zus_ubezpieczony_C                  decimal(15,2)             YES               NULL           
+zus_platnik_E                       decimal(15,2)             YES               NULL           
+zus_platnik_R                       decimal(15,2)             YES               NULL           
+zus_platnik_C                       decimal(15,2)             YES               NULL           
+zus_platnik_FP                      decimal(15,2)             YES               NULL           
+zus_platnik_FGSP                    decimal(15,2)             YES               NULL           
+zus_platnik_FEP                     decimal(15,2)             YES               NULL           
+zus_platnik                         decimal(15,2)             YES               NULL           
+zus_platnik_wypadkowe               decimal(15,2)             YES               NULL           
+za_url_czesc_zmienna_za_h           decimal(15,6)             YES               NULL           
+za_h_powyzej_normy                  decimal(15,2)             YES               NULL           
+
+Tabela: wyplatydanem
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_wyplaty_dane_miesiaca            int(11)                   NO       PRI      NULL           
+data                                int(11)                   YES               NULL           
+dni_pracy_w_miesiacu                int(11)                   YES               NULL           
+h_pracy_w_miesiacu                  int(11)                   YES               NULL           
+premia_za_wykonane_maszyny          int(11)                   YES               NULL           
+proc_za_h_nadliczbowe_50            decimal(10,2)             YES               NULL           
+proc_za_h_nadliczbowe_100           decimal(10,2)             YES               NULL           
+ub_grup_pracodawca                  decimal(15,2)             YES               NULL           
+status_kopiowania                   bit(1)                    YES               NULL           
+ub_grup_ubezpieczony                decimal(15,2)             YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: wyplatydaney
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_wyplaty_dane_y                   int(11)                   NO       PRI      NULL           
+data                                int(8)                    YES               NULL           
+zus_u_e                             decimal(15,2)             YES               NULL           
+zus_u_r                             decimal(15,2)             YES               NULL           
+zus_u_ch                            decimal(15,2)             YES               NULL           
+zus_p_e                             decimal(15,2)             YES               NULL           
+zus_p_r                             decimal(15,2)             YES               NULL           
+zus_p_ch                            decimal(15,2)             YES               NULL           
+uz                                  decimal(15,2)             YES               NULL           
+kup_1                               decimal(15,2)             YES               NULL           
+kup_2                               decimal(15,2)             YES               NULL           
+prog_1_kwota                        decimal(15,2)             YES               NULL           
+prog_1_procent                      decimal(15,2)             YES               NULL           
+prog_2_kwota                        decimal(15,2)             YES               NULL           
+prog_2_procent                      decimal(15,2)             YES               NULL           
+kwota_wolna                         decimal(15,2)             YES               NULL           
+up_ks_prog1                         decimal(15,2)             YES               NULL           
+up_ks_prog2                         decimal(15,2)             YES               NULL           
+up_ks_prog3                         decimal(15,2)             YES               NULL           
+zus_p_ubezpieczenie_wypadkowe       decimal(15,2)             YES               NULL           
+zus_fundusz_pracy                   decimal(15,2)             YES               NULL           
+zus_fundusz_gsp                     decimal(15,2)             YES               NULL           
+zus_fundusz_pomostowy               decimal(15,2)             YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: zamowienia
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_zamowienia                       int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   NO                NULL           
+data_zamowienia                     int(10)                   YES      MUL      NULL           
+id_dostawcy                         int(15)                   YES               NULL           
+dostawca                            varchar(100)              YES      MUL      NULL           
+dostawca_mail                       varchar(100)              YES               NULL           
+waluta                              varchar(6)                YES               NULL           
+tabela_nbp                          varchar(50)               YES               NULL           
+kurs_waluty                         decimal(15,4)             YES               NULL           
+data_dostawy                        int(20)                   YES               0              
+nr_faktury                          varchar(50)               YES               NULL           
+status_platnosci                    varchar(20)               YES               NULL           
+wartosc                             decimal(15,2)             YES               NULL           
+status_zamowienia                   varchar(50)               YES               NULL           
+dla_kogo                            varchar(250)              YES               NULL           
+nr_zamowienia                       int(3)                    YES               NULL           
+operator                            varchar(30)               YES               NULL           
+data_platnosci                      int(10)                   YES               NULL           
+skopiowano_niedostarczone           bit(1)                    YES               NULL           
+skopiowano_do_magazynu              bit(1)                    YES               NULL           
+uwagi_zam                           varchar(200)              YES               NULL           
+data_faktury                        int(10)                   YES               NULL           
+data_tabeli_nbp                     char(15)                  YES               NULL           
+termin_platnosci                    int(10)                   YES               NULL           
+
+Tabela: zamowieniahala
+Model: Order
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_zamowienia_hala                  int(11)                   NO       PRI      NULL           
+id_firmy                            int(11)                   YES               NULL           
+id_zamowienia                       int(11)                   YES               NULL           
+data_zamowienia                     int(10)                   YES               NULL           
+id_dostawcy                         int(10)                   YES               NULL           
+dostawca                            varchar(50)               YES               NULL           
+dostawca_mail                       varchar(50)               YES               NULL           
+dostawca_waluta                     varchar(10)               YES               NULL           
+id_towaru                           int(11)                   YES               NULL           
+nazwa_towaru_draco                  varchar(150)              YES               NULL           
+nazwa_towaru                        varchar(150)              YES               NULL           
+status_towaru                       char(8)                   YES               NULL           
+jednostki_zakupu                    char(5)                   YES               NULL           
+jednostki_sprzedazy                 char(5)                   YES               NULL           
+cena_zakupu                         decimal(15,4)             YES               NULL           
+przelicznik_m_kg                    decimal(15,4)             YES               NULL           
+ilosc                               decimal(15,2)             YES               NULL           
+uwagi                               varchar(251)              YES               NULL           
+zaznacz_do_zamowienia               int(3)                    YES               NULL           
+wyslano_do_zamowienia               bit(1)                    YES               NULL           
+dostarczono                         bit(1)                    YES               NULL           
+ilosc_w_opakowaniu                  decimal(15,2)             YES               NULL           
+stawka_vat                          char(10)                  YES               NULL           
+operator                            varchar(50)               YES               NULL           
+nr_zam_skaner                       int(15)                   YES               NULL           
+
+Tabela: zamowieniestatus
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_statusu_zamowienia               int(11)                   NO       PRI      NULL           
+status_zamowienia                   varchar(30)               YES               NULL           
+id_firmy                            int(11)                   YES               NULL           
+
+Tabela: zlecenia
+Model: BRAK MAPOWANIA
+====================================================================================================
+Kolumna                             Typ                       Null     Klucz    Domyślna       
+----------------------------------------------------------------------------------------------------
+id_zlecenia                         int(15)                   NO       PRI      NULL           
+id_firmy                            int(15)                   NO                NULL           
+id_aoferta                          int(15)                   YES               NULL           
+Data_zlec                           bigint(50)                YES               NULL           
+Nr_zlec                             int(4)                    YES               NULL           
+Data_wykonania                      bigint(50)                YES               NULL           
+odbiorca_ID_odbiorcy                int(11)                   YES               NULL           
+odbiorca_nazwa                      varchar(100)              YES               NULL           
+odbiorca_ulica                      varchar(100)              YES               NULL           
+odbiorca_kod_poczt                  varchar(20)               YES               NULL           
+odbiorca_miasto                     varchar(100)              YES               NULL           
+odbiorca_panstwo                    varchar(100)              YES               NULL           
+odbiorca_nip                        varchar(20)               YES               NULL           
+odbiorca_mail                       varchar(50)               YES               NULL           
+Montaz                              varchar(20)               YES               NULL           
+Skrzynia                            varchar(100)              YES               NULL           
+Wysylka                             varchar(20)               YES               NULL           
+Blaty                               varchar(20)               YES               NULL           
+Oslony                              varchar(20)               YES               NULL           
+status_zlecenia                     varchar(40)               YES               NULL           
+Status_produkcji                    varchar(40)               YES               NULL           
+dane_dodatkowe                      varchar(500)              YES               NULL           
+zlecenie_rob_h                      decimal(15,2)             YES               NULL           
+procent_realizacji                  decimal(15,2)             YES               NULL           
+RH_pozostalo                        decimal(15,2)             YES               NULL           
+uwagi_produkcja                     varchar(200)              YES               NULL           
+uwagi_do_zlecenia                   varchar(500)              YES               NULL           
+linia_produkcyjna                   varchar(20)               YES               NULL           
+zakonczone                          int(3)                    YES               NULL           
+operator                            varchar(50)               NO                NULL           
+Data_oferty                         bigint(50)                YES               NULL           
+Nr_oferty                           int(4)                    YES               NULL           
+Waluta                              varchar(5)                YES               NULL           
+xCena_calkowita                     decimal(15,2)             YES               NULL           
+xstawka_vat                         decimal(15,4)             YES               NULL           
+xtotal_vat                          decimal(15,2)             YES               NULL           
+xtotal_brutto                       decimal(15,2)             YES               NULL           
+xdo_zlecenia                        bit(1)                    YES               NULL           
+xdo_proformy                        bit(1)                    YES               NULL           
+xgrupa_sprzedazy                    varchar(20)               YES               NULL           
+cena_total_netto                    varchar(20)               YES               NULL           
+data_start                          int(10)                   YES               NULL           
+data_real                           int(10)                   YES               NULL           
+kopia_rysunki                       bit(1)                    YES               NULL           
+odpowiedzialny                      varchar(50)               YES               NULL           
+

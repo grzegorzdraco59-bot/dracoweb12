@@ -1,0 +1,84 @@
+<UserControl x:Class="ERP.UI.WPF.Views.OrderPositionsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="1000">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>   <!-- 0: Nagłówek Pozycje Zamówienia -->
+            <RowDefinition Height="Auto"/>   <!-- 1: Pole wyszukiwania -->
+            <RowDefinition Height="*"/>      <!-- 2: Browse Pozycje Zamówienia -->
+            <RowDefinition Height="Auto"/>   <!-- 3: Przyciski edycji -->
+        </Grid.RowDefinitions>
+
+        <!-- Nagłówek Pozycje Zamówienia -->
+        <Label Grid.Row="0" Content="Pozycje Zamówienia" FontSize="16" FontWeight="Bold" Margin="0,0,0,5" HorizontalAlignment="Left"/>
+
+        <!-- Pole wyszukiwania -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
+            <Label Content="Szukaj:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                     Width="300" 
+                     Padding="5"
+                     VerticalAlignment="Center">
+                <TextBox.Style>
+                    <Style TargetType="TextBox">
+                        <Setter Property="Tag" Value="Wyszukaj po wszystkich kolumnach"/>
+                    </Style>
+                </TextBox.Style>
+            </TextBox>
+        </StackPanel>
+
+        <!-- Browse Pozycje Zamówienia -->
+        <DataGrid Grid.Row="2" 
+                  ItemsSource="{Binding FilteredPositions}"
+                  SelectedItem="{Binding SelectedPosition}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  GridLinesVisibility="All"
+                  HeadersVisibility="Column"
+                  Margin="0,0,0,10">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60"/>
+                <DataGridTextColumn Header="ID Zamówienia" Binding="{Binding OrderId}" Width="100"/>
+                <DataGridTextColumn Header="ID Towaru" Binding="{Binding ProductId}" Width="80"/>
+                <DataGridTextColumn Header="Nazwa Draco" Binding="{Binding ProductNameDraco}" Width="200"/>
+                <DataGridTextColumn Header="Towar" Binding="{Binding Product}" Width="200"/>
+                <DataGridTextColumn Header="Nazwa ENG" Binding="{Binding ProductNameEng}" Width="200"/>
+                <DataGridTextColumn Header="Jedn. Zam." Binding="{Binding OrderUnit}" Width="80"/>
+                <DataGridTextColumn Header="Ilość Zam." Binding="{Binding OrderQuantity, StringFormat='{}{0:N2}'}" Width="100"/>
+                <DataGridTextColumn Header="Ilość Dost." Binding="{Binding DeliveredQuantity, StringFormat='{}{0:N2}'}" Width="100"/>
+                <DataGridTextColumn Header="Cena Zam." Binding="{Binding OrderPrice, StringFormat='{}{0:N2}'}" Width="100"/>
+                <DataGridTextColumn Header="Status" Binding="{Binding ProductStatus}" Width="100"/>
+                <DataGridTextColumn Header="Jedn. Zak." Binding="{Binding PurchaseUnit}" Width="80"/>
+                <DataGridTextColumn Header="Ilość Zak." Binding="{Binding PurchaseQuantity, StringFormat='{}{0:N2}'}" Width="100"/>
+                <DataGridTextColumn Header="Cena Zak." Binding="{Binding PurchasePrice, StringFormat='{}{0:N2}'}" Width="100"/>
+                <DataGridTextColumn Header="Dostawca" Binding="{Binding Supplier}" Width="150"/>
+                <DataGridTextColumn Header="Uwagi" Binding="{Binding Notes}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Przyciski edycji -->
+        <GroupBox Grid.Row="3" Header="Akcje - Pozycje Zamówienia" Padding="10">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Dodaj pozycję" 
+                        Command="{Binding AddPositionCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Edytuj pozycję" 
+                        Command="{Binding EditPositionCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Usuń pozycję" 
+                        Command="{Binding DeletePositionCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Odśwież" 
+                        Command="{Binding LoadPositionsCommand}"
+                        Padding="10,5"/>
+            </StackPanel>
+        </GroupBox>
+    </Grid>
+</UserControl>

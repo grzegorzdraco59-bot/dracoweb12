@@ -1,0 +1,533 @@
+@model IEnumerable<ERP.Application.DTOs.OrderMainDto>
+@{
+    ViewData["Title"] = "Zamówienia";
+}
+
+<div class="container-fluid p-0 d-flex flex-column orders-fullscreen">
+    <!-- Nagłówek Zamówienia -->
+    <div class="p-3 border-bottom bg-light flex-shrink-0">
+        <h2 class="mb-0">11. Zamówienia</h2>
+    </div>
+
+    <!-- Pole wyszukiwania (jak w OffersView.xaml) - natychmiastowe -->
+    <div class="p-3 border-bottom flex-shrink-0">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <label for="searchText" class="form-label mb-0">Szukaj:</label>
+            <input type="text" 
+                   class="form-control" 
+                   id="searchText" 
+                   placeholder="Wyszukaj po wszystkich kolumnach (natychmiastowe)"
+                   style="max-width: 300px;" 
+                   autocomplete="off" />
+            <button type="button" class="btn btn-outline-secondary" id="clearSearchBtn" onclick="clearSearch()" style="display: none;">Wyczyść</button>
+        </div>
+    </div>
+
+    <!-- Górna połowa: Browse Zamówień (jak DataGrid w OrdersView.xaml) -->
+    <div class="d-flex flex-column border-bottom orders-panel">
+        <div class="flex-grow-1 p-3 overflow-auto orders-scroll-area">
+            <h5 class="mb-2">Zamówienia</h5>
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive" style="max-height: 100%;">
+                    <table class="table table-striped table-hover table-bordered table-compact">
+                        <thead class="sticky-header table-header-orange">
+                            <tr>
+                                <th class="sortable" data-column="id" style="width: 1%; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    ID <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="date" style="width: 1%; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Data <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="number" style="width: 1%; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Nr zam. <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="supplier" style="max-width: 300px; width: 30%; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Dostawca <span class="sort-indicator">↕</span>
+                                </th>
+                                <th style="width: 100px; white-space: nowrap;">Status</th>
+                                <th style="width: 30%; white-space: nowrap;">Uwagi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-tbody">
+                            @foreach (var o in Model)
+                            {
+                                <tr class="order-row" data-order-id="@o.Id" style="cursor: pointer;" 
+                                    data-order-data="@($"{o.Id}|{o.OrderNumber}|{o.OrderDate?.ToString("yyyy-MM-dd")}|{o.SupplierName}|{o.Status}|{o.Notes}")"
+                                    data-order-id-value="@o.Id"
+                                    data-order-date-value="@(o.OrderDate?.ToString("yyyy-MM-dd") ?? "")"
+                                    data-order-number-value="@(o.OrderNumber ?? 0)"
+                                    data-order-supplier-value="@(o.SupplierName ?? "")"
+                                    data-order-status-value="@(o.Status ?? "")">
+                                    <td style="white-space: nowrap;">@o.Id</td>
+                                    <td style="white-space: nowrap;">@(o.OrderDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                                    <td style="white-space: nowrap;">@(o.OrderNumber?.ToString() ?? "-")</td>
+                                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(o.SupplierName ?? "-")</td>
+                                    <td>@(o.Status ?? "-")</td>
+                                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(o.Notes ?? "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <h5>Brak zamówień</h5>
+                    <p>@(string.IsNullOrEmpty(ViewBag.SearchText) 
+                        ? "Nie znaleziono żadnych zamówień." 
+                        : $"Nie znaleziono zamówień pasujących do wyszukiwania: \"{ViewBag.SearchText}\"")</p>
+                </div>
+            }
+        </div>
+        
+        <!-- Przyciski edycji zamówień (jak w OrdersView.xaml) -->
+        <div class="p-3 border-top bg-light flex-shrink-0">
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-primary btn-sm" onclick="addOrder()">Dodaj zamówienie</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="editOrderBtn" onclick="editOrder()" disabled>Edytuj zamówienie</button>
+                <button type="button" class="btn btn-danger btn-sm" id="deleteOrderBtn" onclick="deleteOrder()" disabled>Usuń zamówienie</button>
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm">Odśwież</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dolna połowa: Browse Pozycji Zamówienia (jak DataGrid w OrdersView.xaml) -->
+    <div class="d-flex flex-column orders-panel">
+        <div class="flex-grow-1 p-3 overflow-auto orders-scroll-area">
+            <h5 class="mb-2">Pozycje Zamówienia</h5>
+            <div id="positions-container">
+                <div class="alert alert-secondary">
+                    <p class="mb-0">Wybierz zamówienie z tabeli powyżej, aby zobaczyć jego pozycje.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Przyciski edycji pozycji zamówienia (jak w OrdersView.xaml) -->
+        <div class="p-3 border-top bg-light flex-shrink-0">
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-primary btn-sm" id="addPositionBtn" onclick="addPosition()" disabled>Dodaj pozycję</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="editPositionBtn" onclick="editPosition()" disabled>Edytuj pozycję</button>
+                <button type="button" class="btn btn-danger btn-sm" id="deletePositionBtn" onclick="deletePosition()" disabled>Usuń pozycję</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Okno zamówień dopasowane do wielkości ekranu – uwzględnia navbar + menu 23 przycisków + footer */
+    .orders-fullscreen {
+        height: calc(100vh - 215px);
+        height: calc(100dvh - 215px);
+        min-height: 300px;
+        overflow: hidden;
+    }
+    .orders-panel {
+        flex: 1;
+        min-height: 0;
+    }
+    .orders-scroll-area {
+        min-height: 0;
+    }
+    
+    /* Nagłówki tabel – kolor pomarańczowy */
+    .table-header-orange.sticky-header,
+    .table-header-orange.sticky-header th {
+        background-color: #e67e22 !important;
+        color: #fff !important;
+        border-bottom-color: #d35400 !important;
+    }
+    .table-header-orange .sortable:hover {
+        background-color: #d35400 !important;
+    }
+    
+    /* Stylizacja tabeli podobna do DataGrid - table-compact od razu, bez przejścia wysokie→niskie wiersze */
+    .table-compact {
+        font-size: 14px;
+    }
+    
+    .table-compact th {
+        font-weight: 600;
+        white-space: nowrap;
+        padding: 0.25rem 0.5rem !important;
+        vertical-align: middle;
+    }
+    
+    .table-compact td {
+        vertical-align: middle;
+        padding: 0.25rem 0.5rem !important;
+    }
+    
+    .table-compact.table-hover tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .order-row.selected {
+        background-color: #007bff !important;
+        color: white !important;
+    }
+    
+    .order-row.selected td {
+        color: white !important;
+        background-color: #007bff !important;
+    }
+    
+    .sortable:hover {
+        background-color: #e9ecef;
+    }
+    
+    .sort-indicator {
+        font-size: 10px;
+        margin-left: 5px;
+        opacity: 0.5;
+    }
+    
+    .sort-asc .sort-indicator::after {
+        content: " ↑";
+        opacity: 1;
+    }
+    
+    .sort-desc .sort-indicator::after {
+        content: " ↓";
+        opacity: 1;
+    }
+    
+    /* Zaznaczona pozycja zamówienia – niebiesko, jak w Browse Zamówień */
+    .position-row.selected {
+        background-color: #007bff !important;
+        color: white !important;
+    }
+    .position-row.selected td {
+        color: white !important;
+        background-color: #007bff !important;
+    }
+    
+    .position-summary-row {
+        border-top: 2px solid #dee2e6 !important;
+    }
+    
+    .table-compact .position-summary-row td {
+        padding: 0.25rem 0.5rem !important;
+    }
+    
+    /* Sticky headers dla tabel */
+    .sticky-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: #f8f9fa !important;
+    }
+    
+    .sticky-header th {
+        background-color: #f8f9fa !important;
+        border-bottom: 2px solid #dee2e6;
+    }
+</style>
+
+<script>
+    let selectedOrderId = null;
+    let selectedPositionId = null;
+    let allOrderRows = [];
+    let sortColumn = null;
+    let sortDirection = 'asc';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const positionsContainer = document.getElementById('positions-container');
+        const searchInput = document.getElementById('searchText');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        if (!positionsContainer) return;
+        
+        // Zapisz wszystkie wiersze zamówień do filtrowania
+        allOrderRows = Array.from(document.querySelectorAll('.order-row'));
+        
+        // Obsługa sortowania kolumn (tylko gdy jest tabela)
+        document.querySelectorAll('.sortable').forEach(header => {
+            header.addEventListener('click', function() {
+                const column = this.getAttribute('data-column');
+                
+                // Usuń wskaźniki sortowania z innych nagłówków
+                document.querySelectorAll('.sortable').forEach(h => {
+                    h.classList.remove('sort-asc', 'sort-desc');
+                });
+                
+                // Zmień kierunek sortowania jeśli kliknięto tę samą kolumnę
+                if (sortColumn === column) {
+                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortColumn = column;
+                    sortDirection = 'asc';
+                }
+                
+                // Dodaj wskaźnik sortowania
+                this.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+                
+                // Sortuj wiersze
+                sortOrders(column, sortDirection);
+            });
+        });
+        
+        // Funkcja sortowania zamówień
+        function sortOrders(column, direction) {
+            const tbody = document.getElementById('orders-tbody');
+            if (!tbody) return;
+            const rows = Array.from(allOrderRows);
+            
+            rows.sort((a, b) => {
+                let aValue, bValue;
+                
+                switch(column) {
+                    case 'id':
+                        aValue = parseInt(a.getAttribute('data-order-id-value') || '0');
+                        bValue = parseInt(b.getAttribute('data-order-id-value') || '0');
+                        break;
+                    case 'date':
+                        aValue = a.getAttribute('data-order-date-value') || '';
+                        bValue = b.getAttribute('data-order-date-value') || '';
+                        if (direction === 'asc') {
+                            return aValue.localeCompare(bValue);
+                        } else {
+                            return bValue.localeCompare(aValue);
+                        }
+                    case 'number':
+                        aValue = parseInt(a.getAttribute('data-order-number-value') || '0');
+                        bValue = parseInt(b.getAttribute('data-order-number-value') || '0');
+                        break;
+                    case 'supplier':
+                        aValue = (a.getAttribute('data-order-supplier-value') || '').toLowerCase();
+                        bValue = (b.getAttribute('data-order-supplier-value') || '').toLowerCase();
+                        if (direction === 'asc') {
+                            return aValue.localeCompare(bValue);
+                        } else {
+                            return bValue.localeCompare(aValue);
+                        }
+                    case 'status':
+                        aValue = (a.getAttribute('data-order-status-value') || '').toLowerCase();
+                        bValue = (b.getAttribute('data-order-status-value') || '').toLowerCase();
+                        if (direction === 'asc') {
+                            return aValue.localeCompare(bValue);
+                        } else {
+                            return bValue.localeCompare(aValue);
+                        }
+                    default:
+                        return 0;
+                }
+                
+                if (direction === 'asc') {
+                    return aValue - bValue;
+                } else {
+                    return bValue - aValue;
+                }
+            });
+            
+            // Usuń wszystkie wiersze z tbody
+            rows.forEach(row => tbody.removeChild(row));
+            
+            // Dodaj posortowane wiersze
+            rows.forEach(row => tbody.appendChild(row));
+            
+            // Zaktualizuj allOrderRows po sortowaniu
+            allOrderRows = rows;
+        }
+        
+        // Natychmiastowe wyszukiwanie podczas wpisywania
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                filterOrders(this.value);
+                if (clearSearchBtn) clearSearchBtn.style.display = this.value ? 'block' : 'none';
+            });
+        }
+        window.clearSearch = function() {
+            if (searchInput) searchInput.value = '';
+            filterOrders('');
+            if (clearSearchBtn) clearSearchBtn.style.display = 'none';
+        };
+        
+        // Funkcja filtrowania zamówień
+        function filterOrders(searchText) {
+            const searchTextLower = searchText.toLowerCase().trim();
+            const tbody = document.getElementById('orders-tbody');
+            
+            if (!searchTextLower) {
+                // Pokaż wszystkie wiersze
+                allOrderRows.forEach(row => {
+                    row.style.display = '';
+                });
+                return;
+            }
+            
+            // Filtruj wiersze
+            allOrderRows.forEach(row => {
+                const orderData = row.getAttribute('data-order-data') || '';
+                const matches = orderData.toLowerCase().includes(searchTextLower);
+                row.style.display = matches ? '' : 'none';
+            });
+        }
+        
+        const orderRows = document.querySelectorAll('.order-row');
+        
+        orderRows.forEach(row => {
+            row.addEventListener('click', function() {
+                // Usuń zaznaczenie z innych wierszy
+                orderRows.forEach(r => r.classList.remove('selected'));
+                // Zaznacz aktualny wiersz
+                this.classList.add('selected');
+                
+                selectedOrderId = this.getAttribute('data-order-id');
+                selectedPositionId = null; // Reset wybranej pozycji
+                
+                const editBtn = document.getElementById('editOrderBtn');
+                const delBtn = document.getElementById('deleteOrderBtn');
+                const addPosBtn = document.getElementById('addPositionBtn');
+                const editPosBtn = document.getElementById('editPositionBtn');
+                const delPosBtn = document.getElementById('deletePositionBtn');
+                if (editBtn) editBtn.disabled = false;
+                if (delBtn) delBtn.disabled = false;
+                if (addPosBtn) addPosBtn.disabled = false;
+                if (editPosBtn) editPosBtn.disabled = true;
+                if (delPosBtn) delPosBtn.disabled = true;
+                loadOrderPositions(selectedOrderId);
+            });
+        });
+        
+        // Od razu przejdź do 2 browse'y: auto-wybór pierwszego zamówienia (pomijamy „Wybierz zamówienie…”)
+        try {
+            if (orderRows.length > 0) orderRows[0].click();
+        } catch (e) {
+            console.warn('Auto-wybor pierwszego zamówienia:', e);
+        }
+        
+        function loadOrderPositions(orderId) {
+            if (!positionsContainer) return;
+            positionsContainer.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Ładowanie...</span></div></div>';
+            fetch(`/Orders/GetPositions?orderId=${orderId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        positionsContainer.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                        return;
+                    }
+                    
+                    if (data.length === 0) {
+                        positionsContainer.innerHTML = '<div class="alert alert-info">Brak pozycji dla wybranego zamówienia.</div>';
+                        return;
+                    }
+                    
+                    // Oblicz sumy
+                    let sumQuantity = 0;
+                    let sumPrice = 0;
+                    
+                    data.forEach(position => {
+                        if (position.quantity) {
+                            sumQuantity += parseFloat(position.quantity) || 0;
+                        }
+                        if (position.price) {
+                            sumPrice += parseFloat(position.price) || 0;
+                        }
+                    });
+                    
+                    // Tworzymy tabelę z pozycjami – table-compact od razu w HTML (bez przejścia wysokie→niskie wiersze)
+                    let html = '<div class="table-responsive" style="max-height: 100%;"><table class="table table-striped table-hover table-bordered table-compact"><thead class="sticky-header table-header-orange"><tr>';
+                    html += '<th style="width: 60px;">ID</th>';
+                    html += '<th>Nazwa towaru</th>';
+                    html += '<th style="width: 100px;">Ilość</th>';
+                    html += '<th style="width: 100px;">Cena</th>';
+                    html += '<th style="width: 80px;">Jedn.</th>';
+                    html += '<th>Uwagi</th>';
+                    html += '</tr></thead><tbody>';
+                    
+                    data.forEach(position => {
+                        html += `<tr class="position-row" data-position-id="${position.id}" style="cursor: pointer;">`;
+                        html += `<td>${position.id}</td>`;
+                        html += `<td>${position.productName || '-'}</td>`;
+                        html += `<td class="text-end">${position.quantity ? parseFloat(position.quantity).toFixed(2) : '-'}</td>`;
+                        html += `<td class="text-end">${position.price ? parseFloat(position.price).toFixed(2) : '-'}</td>`;
+                        html += `<td>${position.unit || '-'}</td>`;
+                        html += `<td>${position.notes || '-'}</td>`;
+                        html += '</tr>';
+                    });
+                    
+                    // Wiersz z sumami
+                    html += '<tr class="position-summary-row" style="background-color: #f8f9fa; font-weight: bold;">';
+                    html += '<td colspan="2" class="text-end">SUMA:</td>';
+                    html += `<td class="text-end">${sumQuantity.toFixed(2)}</td>`;
+                    html += `<td class="text-end">${sumPrice.toFixed(2)}</td>`;
+                    html += '<td colspan="2"></td>'; // Puste kolumny
+                    html += '</tr>';
+                    
+                    html += '</tbody></table></div>';
+                    positionsContainer.innerHTML = html;
+                    
+                    // Dodaj obsługę kliknięć w wiersze pozycji
+                    const positionRows = document.querySelectorAll('.position-row');
+                    positionRows.forEach(row => {
+                        row.addEventListener('click', function() {
+                            // Usuń zaznaczenie z innych wierszy
+                            positionRows.forEach(r => r.classList.remove('selected'));
+                            // Zaznacz aktualny wiersz
+                            this.classList.add('selected');
+                            
+                            selectedPositionId = this.getAttribute('data-position-id');
+                            
+                            // Aktywuj przyciski edycji pozycji
+                            document.getElementById('editPositionBtn').disabled = false;
+                            document.getElementById('deletePositionBtn').disabled = false;
+                        });
+                    });
+                })
+                .catch(error => {
+                    positionsContainer.innerHTML = `<div class="alert alert-danger">Błąd podczas ładowania pozycji: ${error.message}</div>`;
+                });
+        }
+    });
+    
+    // Funkcje dla przycisków zamówień
+    function addOrder() {
+        alert('Dodaj zamówienie - funkcjonalność w przygotowaniu');
+    }
+    
+    function editOrder() {
+        if (!selectedOrderId) {
+            alert('Wybierz zamówienie do edycji');
+            return;
+        }
+        alert(`Edytuj zamówienie ID: ${selectedOrderId} - funkcjonalność w przygotowaniu`);
+    }
+    
+    function deleteOrder() {
+        if (!selectedOrderId) {
+            alert('Wybierz zamówienie do usunięcia');
+            return;
+        }
+        if (confirm(`Czy na pewno chcesz usunąć zamówienie ID: ${selectedOrderId}?`)) {
+            alert('Usuń zamówienie - funkcjonalność w przygotowaniu');
+        }
+    }
+    
+    // Funkcje dla przycisków pozycji
+    function addPosition() {
+        if (!selectedOrderId) {
+            alert('Wybierz zamówienie, do którego chcesz dodać pozycję');
+            return;
+        }
+        alert(`Dodaj pozycję do zamówienia ID: ${selectedOrderId} - funkcjonalność w przygotowaniu`);
+    }
+    
+    function editPosition() {
+        if (!selectedPositionId) {
+            alert('Wybierz pozycję do edycji');
+            return;
+        }
+        alert(`Edytuj pozycję ID: ${selectedPositionId} - funkcjonalność w przygotowaniu`);
+    }
+    
+    function deletePosition() {
+        if (!selectedPositionId) {
+            alert('Wybierz pozycję do usunięcia');
+            return;
+        }
+        if (confirm(`Czy na pewno chcesz usunąć pozycję ID: ${selectedPositionId}?`)) {
+            alert('Usuń pozycję - funkcjonalność w przygotowaniu');
+        }
+    }
+</script>

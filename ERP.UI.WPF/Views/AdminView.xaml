@@ -1,0 +1,200 @@
+<UserControl x:Class="ERP.UI.WPF.Views.AdminView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="1000">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>   <!-- 0: Nagłówek Operatory -->
+            <RowDefinition Height="*"/>      <!-- 1: Browse Operatory -->
+            <RowDefinition Height="Auto"/>   <!-- 2: Przyciski edycji Operator -->
+            <RowDefinition Height="Auto"/>   <!-- 3: Nagłówek OperatorFirma -->
+            <RowDefinition Height="*"/>      <!-- 4: Browse OperatorFirma -->
+            <RowDefinition Height="Auto"/>   <!-- 5: Przyciski edycji OperatorFirma -->
+            <RowDefinition Height="Auto"/>   <!-- 6: Nagłówek OperatorLogin -->
+            <RowDefinition Height="*"/>      <!-- 7: Browse OperatorLogin -->
+            <RowDefinition Height="Auto"/>   <!-- 8: Przyciski edycji OperatorLogin -->
+            <RowDefinition Height="Auto"/>   <!-- 9: Nagłówek Uprawnienia -->
+            <RowDefinition Height="*"/>      <!-- 10: Browse Uprawnienia -->
+            <RowDefinition Height="Auto"/>   <!-- 11: Przyciski edycji Uprawnienia -->
+        </Grid.RowDefinitions>
+
+        <!-- Nagłówek Operator -->
+        <Label Grid.Row="0" Content="Operator" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+
+        <!-- Browse Operatory -->
+        <DataGrid Grid.Row="1" 
+                  ItemsSource="{Binding Operators}"
+                  SelectedItem="{Binding SelectedOperator}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  GridLinesVisibility="All"
+                  HeadersVisibility="Column"
+                  Margin="0,0,0,10">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60"/>
+                <DataGridTextColumn Header="Imię i Nazwisko" Binding="{Binding FullName}" Width="*"/>
+                <DataGridTextColumn Header="ID Firmy" Binding="{Binding DefaultCompanyId}" Width="100"/>
+                <DataGridTextColumn Header="Uprawnienia" Binding="{Binding Permissions}" Width="100"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Przyciski edycji Operator -->
+        <GroupBox Grid.Row="2" Header="Akcje - Operator" Padding="10" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Dodaj operatora" 
+                        Command="{Binding AddOperatorCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Edytuj operator" 
+                        Command="{Binding EditOperatorCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Usuń operator" 
+                        Command="{Binding DeleteOperatorCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Odśwież" 
+                        Command="{Binding LoadOperatorsCommand}"
+                        Padding="10,5"/>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Nagłówek OperatorFirma -->
+        <Label Grid.Row="3" Content="OperatorFirma" FontSize="16" FontWeight="Bold" Margin="0,10,0,10"/>
+
+        <!-- Browse OperatorFirma -->
+        <DataGrid Grid.Row="4" 
+                  ItemsSource="{Binding UserCompanies}"
+                  SelectedItem="{Binding SelectedUserCompany}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  GridLinesVisibility="All"
+                  HeadersVisibility="Column"
+                  Margin="0,0,0,10">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60"/>
+                <DataGridTextColumn Header="ID Operatora" Binding="{Binding UserId}" Width="100"/>
+                <DataGridTextColumn Header="ID Firmy" Binding="{Binding CompanyId}" Width="100"/>
+                <DataGridTextColumn Header="ID Roli" Binding="{Binding RoleId}" Width="100"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Przyciski edycji OperatorFirma -->
+        <GroupBox Grid.Row="5" Header="Akcje - OperatorFirma" Padding="10" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Dodaj" 
+                        Command="{Binding AddUserCompanyCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Edytuj" 
+                        Command="{Binding EditUserCompanyCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Usuń" 
+                        Command="{Binding DeleteUserCompanyCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Odśwież" 
+                        Command="{Binding LoadUserCompaniesCommand}"
+                        Padding="10,5"/>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Nagłówek OperatorLogin -->
+        <Label Grid.Row="6" Content="OperatorLogin" FontSize="16" FontWeight="Bold" Margin="0,10,0,10"/>
+
+        <!-- Browse OperatorLogin -->
+        <DataGrid Grid.Row="7" 
+                  ItemsSource="{Binding UserLogins}"
+                  SelectedItem="{Binding SelectedUserLogin}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  GridLinesVisibility="All"
+                  HeadersVisibility="Column"
+                  Margin="0,0,0,10">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60"/>
+                <DataGridTextColumn Header="ID Operatora" Binding="{Binding UserId}" Width="100"/>
+                <DataGridTextColumn Header="Login" Binding="{Binding Login}" Width="*"/>
+                <DataGridTextColumn Header="Password Hash" Binding="{Binding PasswordHash}" Width="200"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Przyciski edycji OperatorLogin -->
+        <GroupBox Grid.Row="8" Header="Akcje - OperatorLogin" Padding="10" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Dodaj" 
+                        Command="{Binding AddUserLoginCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Edytuj" 
+                        Command="{Binding EditUserLoginCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Usuń" 
+                        Command="{Binding DeleteUserLoginCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Odśwież" 
+                        Command="{Binding LoadUserLoginsCommand}"
+                        Padding="10,5"/>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Nagłówek Uprawnienia -->
+        <Label Grid.Row="9" Content="Uprawnienia operatorów do tabel" FontSize="16" FontWeight="Bold" Margin="0,10,0,10"/>
+
+        <!-- Browse Uprawnienia -->
+        <DataGrid Grid.Row="10" 
+                  ItemsSource="{Binding Permissions}"
+                  SelectedItem="{Binding SelectedPermission}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  GridLinesVisibility="All"
+                  HeadersVisibility="Column"
+                  Margin="0,0,0,10">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60"/>
+                <DataGridTextColumn Header="Operator" Binding="{Binding OperatorName}" Width="150"/>
+                <DataGridTextColumn Header="Tabela" Binding="{Binding TableName}" Width="*"/>
+                <DataGridCheckBoxColumn Header="SELECT" Binding="{Binding CanSelect}" Width="70"/>
+                <DataGridCheckBoxColumn Header="INSERT" Binding="{Binding CanInsert}" Width="70"/>
+                <DataGridCheckBoxColumn Header="UPDATE" Binding="{Binding CanUpdate}" Width="70"/>
+                <DataGridCheckBoxColumn Header="DELETE" Binding="{Binding CanDelete}" Width="70"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Przyciski edycji Uprawnienia -->
+        <GroupBox Grid.Row="11" Header="Akcje - Uprawnienia" Padding="10">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                    <Button Content="Dodaj" 
+                            Command="{Binding AddPermissionCommand}"
+                            Padding="10,5"
+                            Margin="0,0,5,0"/>
+                    <Button Content="Edytuj" 
+                            Command="{Binding EditPermissionCommand}"
+                            Padding="10,5"
+                            Margin="0,0,5,0"/>
+                    <Button Content="Usuń" 
+                            Command="{Binding DeletePermissionCommand}"
+                            Padding="10,5"
+                            Margin="0,0,5,0"/>
+                    <Button Content="Odśwież" 
+                            Command="{Binding LoadPermissionsCommand}"
+                            Padding="10,5"/>
+                </StackPanel>
+                <Button Content="Ustaw pełny dostęp do wszystkich tabel" 
+                        Command="{Binding SetFullAccessToAllTablesCommand}"
+                        Padding="10,5"
+                        Background="#FF4CAF50"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        ToolTip="Ustawia pełny dostęp (SELECT, INSERT, UPDATE, DELETE) dla wybranego operatora do wszystkich tabel w bazie danych"/>
+            </StackPanel>
+        </GroupBox>
+    </Grid>
+</UserControl>

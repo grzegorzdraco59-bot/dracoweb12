@@ -1,0 +1,303 @@
+@model IEnumerable<ERP.Application.DTOs.ProductDto>
+@{
+    ViewData["Title"] = "Towary";
+}
+
+<div class="container-fluid p-0 d-flex flex-column products-fullscreen">
+    <!-- Nagłówek Towary -->
+    <div class="p-3 border-bottom bg-light flex-shrink-0">
+        <h2 class="mb-0">10. Towary</h2>
+    </div>
+
+    <!-- Pole wyszukiwania – natychmiastowe -->
+    <div class="p-3 border-bottom flex-shrink-0">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <label for="searchText" class="form-label mb-0">Szukaj:</label>
+            <input type="text"
+                   class="form-control"
+                   id="searchText"
+                   placeholder="Wyszukaj po wszystkich kolumnach (natychmiastowe)"
+                   style="max-width: 300px;"
+                   autocomplete="off" />
+            <button type="button" class="btn btn-outline-secondary" id="clearSearchBtn" onclick="clearSearch()" style="display: none;">Wyczyść</button>
+        </div>
+    </div>
+
+    <!-- Panel: Browse Towarów (bez dolnego browse) -->
+    <div class="d-flex flex-column flex-grow-1 products-panel overflow-hidden">
+        <div class="flex-grow-1 p-3 overflow-auto products-scroll-area">
+            <h5 class="mb-2">Towary</h5>
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive" style="max-height: 100%;">
+                    <table class="table table-striped table-hover table-bordered table-compact">
+                        <thead class="sticky-header table-header-orange">
+                            <tr>
+                                <th class="sortable" data-column="id" style="width: 1%; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    ID <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="suppliername" style="max-width: 180px; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Dostawca <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="namepl" style="max-width: 250px; width: 25%; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Nazwa PL <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="nameeng" style="max-width: 250px; width: 25%; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Nazwa ENG <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="group" style="width: 120px; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Grupa <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="pricepln" style="width: 100px; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Cena PLN <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="unit" style="width: 90px; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Jednostka <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="status" style="width: 100px; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Status <span class="sort-indicator">↕</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-tbody">
+                            @foreach (var p in Model)
+                            {
+                                var rowData = $"{p.Id}|{p.SupplierName ?? ""}|{p.NamePl ?? ""}|{p.NameEng ?? ""}|{p.Group ?? ""}|{p.PricePln?.ToString("F2") ?? ""}|{p.Unit ?? ""}|{p.Status ?? ""}";
+                                <tr class="product-row" data-product-id="@p.Id" style="cursor: pointer;"
+                                    data-product-data="@rowData"
+                                    data-product-id-value="@p.Id"
+                                    data-product-namepl-value="@(p.NamePl ?? "")"
+                                    data-product-nameeng-value="@(p.NameEng ?? "")"
+                                    data-product-group-value="@(p.Group ?? "")"
+                                    data-product-pricepln-value="@(p.PricePln?.ToString("F2") ?? "")"
+                                    data-product-unit-value="@(p.Unit ?? "")"
+                                    data-product-suppliername-value="@(p.SupplierName ?? "")"
+                                    data-product-status-value="@(p.Status ?? "")">
+                                    <td style="white-space: nowrap;">@p.Id</td>
+                                    <td style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(p.SupplierName ?? "-")</td>
+                                    <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(p.NamePl ?? "-")</td>
+                                    <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(p.NameEng ?? "-")</td>
+                                    <td style="white-space: nowrap;">@(p.Group ?? "-")</td>
+                                    <td style="white-space: nowrap;">@(p.PricePln?.ToString("F2") ?? "-")</td>
+                                    <td style="white-space: nowrap;">@(p.Unit ?? "-")</td>
+                                    <td style="white-space: nowrap;">@(p.Status ?? "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <h5>Brak towarów</h5>
+                    <p class="mb-0">Nie znaleziono towarów dla wybranej firmy.</p>
+                </div>
+            }
+        </div>
+
+        <!-- Przyciski edycji (jak w Ofertach, bez pozycji) -->
+        <div class="p-3 border-top bg-light flex-shrink-0">
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-primary btn-sm" onclick="addProduct()">Dodaj towar</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="editProductBtn" onclick="editProduct()" disabled>Edytuj towar</button>
+                <button type="button" class="btn btn-danger btn-sm" id="deleteProductBtn" onclick="deleteProduct()" disabled>Usuń towar</button>
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm">Odśwież</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Okno towarów – jak Oferty, bez dolnego browse */
+    .products-fullscreen {
+        height: calc(100vh - 215px);
+        height: calc(100dvh - 215px);
+        min-height: 300px;
+        overflow: hidden;
+    }
+    .products-panel {
+        flex: 1;
+        min-height: 0;
+    }
+    .products-scroll-area {
+        min-height: 0;
+    }
+
+    /* Nagłówki tabel – pomarańczowy (jak Oferty) */
+    .table-header-orange.sticky-header,
+    .table-header-orange.sticky-header th {
+        background-color: #e67e22 !important;
+        color: #fff !important;
+        border-bottom-color: #d35400 !important;
+    }
+    .table-header-orange .sortable:hover {
+        background-color: #d35400 !important;
+    }
+
+    .table-compact {
+        font-size: 14px;
+    }
+    .table-compact th {
+        font-weight: 600;
+        white-space: nowrap;
+        padding: 0.25rem 0.5rem !important;
+        vertical-align: middle;
+    }
+    .table-compact td {
+        vertical-align: middle;
+        padding: 0.25rem 0.5rem !important;
+    }
+    .table-compact.table-hover tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    /* Zaznaczony wiersz – niebiesko (jak Oferty) */
+    .product-row.selected {
+        background-color: #007bff !important;
+        color: white !important;
+    }
+    .product-row.selected td {
+        color: white !important;
+        background-color: #007bff !important;
+    }
+
+    .sortable:hover {
+        background-color: #e9ecef;
+    }
+    .sort-indicator {
+        font-size: 10px;
+        margin-left: 5px;
+        opacity: 0.5;
+    }
+    .sort-asc .sort-indicator::after {
+        content: " ↑";
+        opacity: 1;
+    }
+    .sort-desc .sort-indicator::after {
+        content: " ↓";
+        opacity: 1;
+    }
+
+    .sticky-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: #f8f9fa !important;
+    }
+    .sticky-header th {
+        background-color: #f8f9fa !important;
+        border-bottom: 2px solid #dee2e6;
+    }
+    .table-header-orange.sticky-header th {
+        background-color: #e67e22 !important;
+        border-bottom-color: #d35400 !important;
+    }
+</style>
+
+<script>
+    let selectedProductId = null;
+    let allProductRows = [];
+    let sortColumn = null;
+    let sortDirection = 'asc';
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('searchText');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        const tbody = document.getElementById('products-tbody');
+        if (!tbody) return;
+
+        allProductRows = Array.from(document.querySelectorAll('.product-row'));
+
+        document.querySelectorAll('.sortable').forEach(function (header) {
+            header.addEventListener('click', function () {
+                const column = this.getAttribute('data-column');
+                document.querySelectorAll('.sortable').forEach(function (h) {
+                    h.classList.remove('sort-asc', 'sort-desc');
+                });
+                if (sortColumn === column) {
+                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortColumn = column;
+                    sortDirection = 'asc';
+                }
+                this.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+                sortProducts(column, sortDirection);
+            });
+        });
+
+        function sortProducts(column, direction) {
+            const rows = Array.from(allProductRows);
+            rows.sort(function (a, b) {
+                let aVal, bVal;
+                var attr = 'data-product-' + column + '-value';
+                aVal = a.getAttribute(attr) || '';
+                bVal = b.getAttribute(attr) || '';
+                if (column === 'id') {
+                    aVal = parseInt(aVal) || 0;
+                    bVal = parseInt(bVal) || 0;
+                    return direction === 'asc' ? aVal - bVal : bVal - aVal;
+                }
+                if (column === 'pricepln') {
+                    aVal = parseFloat(aVal) || 0;
+                    bVal = parseFloat(bVal) || 0;
+                    return direction === 'asc' ? aVal - bVal : bVal - aVal;
+                }
+                aVal = String(aVal).toLowerCase();
+                bVal = String(bVal).toLowerCase();
+                var cmp = aVal.localeCompare(bVal);
+                return direction === 'asc' ? cmp : -cmp;
+            });
+            rows.forEach(function (r) { tbody.removeChild(r); });
+            rows.forEach(function (r) { tbody.appendChild(r); });
+            allProductRows = rows;
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                filterProducts(this.value);
+                if (clearSearchBtn) clearSearchBtn.style.display = this.value ? 'block' : 'none';
+            });
+        }
+        window.clearSearch = function () {
+            if (searchInput) searchInput.value = '';
+            filterProducts('');
+            if (clearSearchBtn) clearSearchBtn.style.display = 'none';
+        };
+
+        function filterProducts(searchText) {
+            var q = (searchText || '').toLowerCase().trim();
+            allProductRows.forEach(function (row) {
+                var data = (row.getAttribute('data-product-data') || '').toLowerCase();
+                row.style.display = !q || data.includes(q) ? '' : 'none';
+            });
+        }
+
+        var rows = document.querySelectorAll('.product-row');
+        rows.forEach(function (row) {
+            row.addEventListener('click', function () {
+                rows.forEach(function (r) { r.classList.remove('selected'); });
+                this.classList.add('selected');
+                selectedProductId = this.getAttribute('data-product-id');
+                var editBtn = document.getElementById('editProductBtn');
+                var delBtn = document.getElementById('deleteProductBtn');
+                if (editBtn) editBtn.disabled = false;
+                if (delBtn) delBtn.disabled = false;
+            });
+        });
+    });
+
+    function addProduct() {
+        alert('Dodaj towar – funkcjonalność w przygotowaniu');
+    }
+    function editProduct() {
+        if (!selectedProductId) { alert('Wybierz towar do edycji'); return; }
+        alert('Edytuj towar ID: ' + selectedProductId + ' – funkcjonalność w przygotowaniu');
+    }
+    function deleteProduct() {
+        if (!selectedProductId) { alert('Wybierz towar do usunięcia'); return; }
+        if (confirm('Czy na pewno chcesz usunąć towar ID: ' + selectedProductId + '?')) {
+            alert('Usuń towar – funkcjonalność w przygotowaniu');
+        }
+    }
+</script>
