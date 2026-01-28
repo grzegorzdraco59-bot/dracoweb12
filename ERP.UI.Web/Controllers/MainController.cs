@@ -40,7 +40,13 @@ public class MainController : BaseController
             11 => RedirectToAction("Index", "Orders"), // Zamówienia
             13 => RedirectToAction("Index", "OrdersHala"), // zamowienia hala
             23 => RedirectToAction("Index", "Admin"), // Admin
-            _ => View("Index") // Placeholder dla pozostałych
+            _ => RedirectWithInfo(id)
         };
+    }
+
+    private IActionResult RedirectWithInfo(int id)
+    {
+        TempData["InfoMessage"] = $"Moduł (ID={id}) nie jest jeszcze zaimplementowany.";
+        return RedirectToAction(nameof(Index));
     }
 }

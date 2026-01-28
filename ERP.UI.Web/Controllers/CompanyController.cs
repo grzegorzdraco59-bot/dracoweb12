@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using ERP.Shared.Extensions;
 using ERP.UI.Web.Services;
 using AppAuthService = ERP.Application.Services.IAuthenticationService;
+using IUserContext = ERP.UI.Web.Services.IUserContext;
 
 namespace ERP.UI.Web.Controllers;
 

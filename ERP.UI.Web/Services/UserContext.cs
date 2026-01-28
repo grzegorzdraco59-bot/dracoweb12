@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using ERP.Application.Services;
 using ERP.Shared.Extensions;
 using Microsoft.AspNetCore.Http;
 
@@ -8,7 +9,7 @@ namespace ERP.UI.Web.Services;
 /// Implementacja IUserContext oparta o IHttpContextAccessor i Claims z HttpContext.User
 /// Scoped service - jeden na request
 /// </summary>
-public class UserContext : IUserContext
+public class UserContext : IUserContext, ERP.Application.Services.IUserContext
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
 

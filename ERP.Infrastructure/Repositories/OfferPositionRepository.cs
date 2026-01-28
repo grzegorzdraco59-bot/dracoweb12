@@ -1,8 +1,7 @@
+using ERP.Application.Services;
 using ERP.Domain.Entities;
 using ERP.Domain.Repositories;
 using ERP.Infrastructure.Data;
-using ERP.Shared.Extensions;
-using Microsoft.AspNetCore.Http;
 using MySqlConnector;
 
 namespace ERP.Infrastructure.Repositories;
@@ -13,12 +12,12 @@ namespace ERP.Infrastructure.Repositories;
 public class OfferPositionRepository : IOfferPositionRepository
 {
     private readonly DatabaseContext _context;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IUserContext _userContext;
 
-    public OfferPositionRepository(DatabaseContext context, IHttpContextAccessor httpContextAccessor)
+    public OfferPositionRepository(DatabaseContext context, IUserContext userContext)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
-        _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
+        _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
     }
 
     public async Task<OfferPosition?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -172,11 +171,7 @@ public class OfferPositionRepository : IOfferPositionRepository
 
     private int GetCurrentCompanyId()
     {
-        var httpContext = _httpContextAccessor.HttpContext;
-        if (httpContext == null)
-            throw new InvalidOperationException("Brak kontekstu HTTP. Metoda musi być wywołana w kontekście requestu HTTP.");
-
-        var companyId = httpContext.User.GetCompanyId();
+        var companyId = _userContext.CompanyId;
         if (!companyId.HasValue)
             throw new InvalidOperationException("Brak wybranej firmy. Użytkownik musi być zalogowany i wybrać firmę.");
         return companyId.Value;

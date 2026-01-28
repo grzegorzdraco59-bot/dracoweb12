@@ -15,39 +15,6 @@
           }
         }
       },
-      "Microsoft.AspNetCore.Http.Abstractions/2.2.0": {
-        "type": "package",
-        "dependencies": {
-          "Microsoft.AspNetCore.Http.Features": "2.2.0",
-          "System.Text.Encodings.Web": "4.5.0"
-        },
-        "compile": {
-          "lib/netstandard2.0/Microsoft.AspNetCore.Http.Abstractions.dll": {
-            "related": ".xml"
-          }
-        },
-        "runtime": {
-          "lib/netstandard2.0/Microsoft.AspNetCore.Http.Abstractions.dll": {
-            "related": ".xml"
-          }
-        }
-      },
-      "Microsoft.AspNetCore.Http.Features/2.2.0": {
-        "type": "package",
-        "dependencies": {
-          "Microsoft.Extensions.Primitives": "2.2.0"
-        },
-        "compile": {
-          "lib/netstandard2.0/Microsoft.AspNetCore.Http.Features.dll": {
-            "related": ".xml"
-          }
-        },
-        "runtime": {
-          "lib/netstandard2.0/Microsoft.AspNetCore.Http.Features.dll": {
-            "related": ".xml"
-          }
-        }
-      },
       "Microsoft.Extensions.Configuration/10.0.2": {
         "type": "package",
         "dependencies": {
@@ -782,7 +749,6 @@
           "ERP.Application": "1.0.0",
           "ERP.Domain": "1.0.0",
           "ERP.Shared": "1.0.0",
-          "Microsoft.AspNetCore.Http.Abstractions": "2.2.0",
           "MySqlConnector": "2.5.0"
         },
         "compile": {
@@ -834,32 +800,6 @@
         "lib/netstandard2.1/BCrypt.Net-Next.dll",
         "lib/netstandard2.1/BCrypt.Net-Next.xml",
         "readme.md"
-      ]
-    },
-    "Microsoft.AspNetCore.Http.Abstractions/2.2.0": {
-      "sha512": "Nxs7Z1q3f1STfLYKJSVXCs1iBl+Ya6E8o4Oy1bCxJ/rNI44E/0f6tbsrVqAWfB7jlnJfyaAtIalBVxPKUPQb4Q==",
-      "type": "package",
-      "path": "microsoft.aspnetcore.http.abstractions/2.2.0",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "lib/netstandard2.0/Microsoft.AspNetCore.Http.Abstractions.dll",
-        "lib/netstandard2.0/Microsoft.AspNetCore.Http.Abstractions.xml",
-        "microsoft.aspnetcore.http.abstractions.2.2.0.nupkg.sha512",
-        "microsoft.aspnetcore.http.abstractions.nuspec"
-      ]
-    },
-    "Microsoft.AspNetCore.Http.Features/2.2.0": {
-      "sha512": "ziFz5zH8f33En4dX81LW84I6XrYXKf9jg6aM39cM+LffN9KJahViKZ61dGMSO2gd3e+qe5yBRwsesvyqlZaSMg==",
-      "type": "package",
-      "path": "microsoft.aspnetcore.http.features/2.2.0",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "lib/netstandard2.0/Microsoft.AspNetCore.Http.Features.dll",
-        "lib/netstandard2.0/Microsoft.AspNetCore.Http.Features.xml",
-        "microsoft.aspnetcore.http.features.2.2.0.nupkg.sha512",
-        "microsoft.aspnetcore.http.features.nuspec"
       ]
     },
     "Microsoft.Extensions.Configuration/10.0.2": {
@@ -1988,8 +1928,10 @@
       "ERP.Application >= 1.0.0",
       "ERP.Domain >= 1.0.0",
       "ERP.Infrastructure >= 1.0.0",
+      "Microsoft.Extensions.Configuration.Json >= 10.0.2",
       "Microsoft.Extensions.DependencyInjection >= 10.0.2",
-      "Microsoft.Extensions.Hosting >= 10.0.2"
+      "Microsoft.Extensions.Hosting >= 10.0.2",
+      "MySqlConnector >= 2.5.0"
     ]
   },
   "packageFolders": {
@@ -1998,11 +1940,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\48603\\projektyC#\\dracoWEB5\\ERP.UI.WPF\\ERP.UI.WPF.csproj",
+      "projectUniqueName": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.UI.WPF\\ERP.UI.WPF.csproj",
       "projectName": "ERP.UI.WPF",
-      "projectPath": "C:\\Users\\48603\\projektyC#\\dracoWEB5\\ERP.UI.WPF\\ERP.UI.WPF.csproj",
+      "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.UI.WPF\\ERP.UI.WPF.csproj",
       "packagesPath": "C:\\Users\\48603\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\48603\\projektyC#\\dracoWEB5\\ERP.UI.WPF\\obj\\",
+      "outputPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.UI.WPF\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\48603\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -2019,14 +1961,14 @@
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
           "projectReferences": {
-            "C:\\Users\\48603\\projektyC#\\dracoWEB5\\ERP.Application\\ERP.Application.csproj": {
-              "projectPath": "C:\\Users\\48603\\projektyC#\\dracoWEB5\\ERP.Application\\ERP.Application.csproj"
+            "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj": {
+              "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj"
             },
-            "C:\\Users\\48603\\projektyC#\\dracoWEB5\\ERP.Domain\\ERP.Domain.csproj": {
-              "projectPath": "C:\\Users\\48603\\projektyC#\\dracoWEB5\\ERP.Domain\\ERP.Domain.csproj"
+            "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Domain\\ERP.Domain.csproj": {
+              "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Domain\\ERP.Domain.csproj"
             },
-            "C:\\Users\\48603\\projektyC#\\dracoWEB5\\ERP.Infrastructure\\ERP.Infrastructure.csproj": {
-              "projectPath": "C:\\Users\\48603\\projektyC#\\dracoWEB5\\ERP.Infrastructure\\ERP.Infrastructure.csproj"
+            "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Infrastructure\\ERP.Infrastructure.csproj": {
+              "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Infrastructure\\ERP.Infrastructure.csproj"
             }
           }
         }
@@ -2047,6 +1989,10 @@
       "net8.0-windows7.0": {
         "targetAlias": "net8.0-windows",
         "dependencies": {
+          "Microsoft.Extensions.Configuration.Json": {
+            "target": "Package",
+            "version": "[10.0.2, )"
+          },
           "Microsoft.Extensions.DependencyInjection": {
             "target": "Package",
             "version": "[10.0.2, )"
@@ -2054,6 +2000,10 @@
           "Microsoft.Extensions.Hosting": {
             "target": "Package",
             "version": "[10.0.2, )"
+          },
+          "MySqlConnector": {
+            "target": "Package",
+            "version": "[2.5.0, )"
           }
         },
         "imports": [

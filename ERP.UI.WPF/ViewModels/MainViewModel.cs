@@ -95,9 +95,11 @@ public class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            // Tymczasowa diagnostyka: pokazujemy pełne ex.ToString(),
+            // szczególnie przydatne dla widoków 8, 9 i 10.
             System.Windows.MessageBox.Show(
-                $"Błąd podczas otwierania widoku {viewNumber}:\n\n{ex.Message}\n\n{ex.StackTrace}",
-                "Błąd",
+                $"Błąd podczas otwierania widoku {viewNumber}:\n\n{ex}",
+                "Błąd nawigacji",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Error);
         }

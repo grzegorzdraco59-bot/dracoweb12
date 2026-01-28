@@ -7,8 +7,10 @@ using ERP.Application.DTOs;
 using ERP.Domain.Entities;
 using ERP.Domain.Repositories;
 using ERP.Infrastructure.Repositories;
+using ERP.Infrastructure.Services;
 using ERP.UI.WPF.Views;
 using ERP.UI.WPF.Services;
+using MySqlConnector;
 
 namespace ERP.UI.WPF.ViewModels;
 
@@ -22,6 +24,7 @@ public class OffersViewModel : ViewModelBase
     private readonly ProductRepository _productRepository;
     private readonly ICustomerRepository _customerRepository;
     private readonly IUserContext _userContext;
+    private readonly IUnitOfWork _unitOfWork;
     private OfferDto? _selectedOffer;
     private OfferPositionDto? _selectedOfferPosition;
     private string _searchText = string.Empty;
@@ -32,13 +35,15 @@ public class OffersViewModel : ViewModelBase
         IOfferPositionRepository offerPositionRepository, 
         ProductRepository productRepository, 
         ICustomerRepository customerRepository,
-        IUserContext userContext)
+        IUserContext userContext,
+        IUnitOfWork unitOfWork)
     {
         _offerRepository = offerRepository ?? throw new ArgumentNullException(nameof(offerRepository));
         _offerPositionRepository = offerPositionRepository ?? throw new ArgumentNullException(nameof(offerPositionRepository));
         _productRepository = productRepository ?? throw new ArgumentNullException(nameof(productRepository));
         _customerRepository = customerRepository ?? throw new ArgumentNullException(nameof(customerRepository));
         _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         
         Offers = new ObservableCollection<OfferDto>();
         OfferPositions = new ObservableCollection<OfferPositionDto>();
@@ -459,28 +464,47 @@ public class OffersViewModel : ViewModelBase
 
         if (result != System.Windows.MessageBoxResult.Yes) return;
 
+        if (!_userContext.CompanyId.HasValue)
+        {
+            System.Windows.MessageBox.Show("Brak wybranej firmy.", "Błąd", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            return;
+        }
+
+        var offerToDelete = SelectedOffer;
+        var companyId = _userContext.CompanyId.Value;
+
         try
         {
-            // Usuwamy wszystkie pozycje oferty (jeśli istnieją)
-            if (SelectedOffer != null)
+            // Pobieramy listę pozycji przed transakcją (tylko odczyt)
+            var positions = await _offerPositionRepository.GetByOfferIdAsync(offerToDelete.Id);
+
+            // Cała operacja usunięcia (pozycje + nagłówek) w jednej transakcji – przy wyjątku rollback
+            await _unitOfWork.ExecuteInTransactionAsync(async (transaction) =>
             {
-                var positions = await _offerPositionRepository.GetByOfferIdAsync(SelectedOffer.Id);
+                var conn = transaction.Connection!;
+                // Najpierw pozycje, potem nagłówek
                 foreach (var position in positions)
                 {
-                    await _offerPositionRepository.DeleteAsync(position.Id);
+                    using var cmdPos = new MySqlCommand(
+                        "DELETE FROM apozycjeoferty WHERE ID_pozycja_oferty = @Id AND id_firmy = @CompanyId",
+                        conn, transaction);
+                    cmdPos.Parameters.AddWithValue("@Id", position.Id);
+                    cmdPos.Parameters.AddWithValue("@CompanyId", companyId);
+                    await cmdPos.ExecuteNonQueryAsync();
                 }
-            }
+                using var cmdOffer = new MySqlCommand(
+                    "DELETE FROM aoferty WHERE ID_oferta = @Id AND id_firmy = @CompanyId",
+                    conn, transaction);
+                cmdOffer.Parameters.AddWithValue("@Id", offerToDelete.Id);
+                cmdOffer.Parameters.AddWithValue("@CompanyId", companyId);
+                await cmdOffer.ExecuteNonQueryAsync();
+            });
 
-            // Usuwamy ofertę
-            if (!_userContext.CompanyId.HasValue)
-                throw new InvalidOperationException("Brak wybranej firmy.");
-            await _offerRepository.DeleteAsync(SelectedOffer.Id, _userContext.CompanyId.Value);
-            
-            // Usuwamy z listy
-            Offers.Remove(SelectedOffer);
+            // Usuwamy z listy (tylko po udanym commicie)
+            Offers.Remove(offerToDelete);
             SelectedOffer = null;
             OfferPositions.Clear();
-            
+
             System.Windows.MessageBox.Show(
                 "Oferta została usunięta.",
                 "Sukces",

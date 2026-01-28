@@ -40,3 +40,11 @@ Model ról w aplikacji = **RoleId** (int, claim `"RoleId"`), a nie `ClaimTypes.R
 ## Checkpoint: audit-faza1_ok_faza2k5_ok
 
 Działa: start HTTP, login, wybór firmy, anti-forgery, returnUrl, uproszczony UserId, role model = RoleId.
+
+## Checkpoint: faza3a_wpf_login_okno_glowne_ok
+
+WPF: po loginie otwiera się okno główne.
+
+## Checkpoint: faza3a_wpf_menu_ok_di_sql_ok
+
+WPF: działają widoki 1,8,9,10,12,13; DI WPF kompletne; repo odcięte od IHttpContextAccessor; poprawione ORDER BY w SQL.

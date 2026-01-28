@@ -1,3 +1,5 @@
+using ERP.Application.Services;
+
 namespace ERP.UI.WPF.Services;
 
 /// <summary>
@@ -20,7 +22,7 @@ public interface IUserContext
 /// Implementacja serwisu przechowującego kontekst zalogowanego użytkownika w aplikacji WPF
 /// Scoped service - jeden na całą sesję aplikacji
 /// </summary>
-public class UserContext : IUserContext
+public class UserContext : IUserContext, ERP.Application.Services.IUserContext
 {
     private int? _userId;
     private int? _companyId;

@@ -4,6 +4,7 @@ using ERP.Application.DTOs;
 using ERP.Application.Services;
 using ERP.Domain.Entities;
 using ERP.Domain.Repositories;
+using ERP.Infrastructure.Services;
 using ERP.UI.WPF.Views;
 
 namespace ERP.UI.WPF.ViewModels;
@@ -19,6 +20,7 @@ public class AdminViewModel : ViewModelBase
     private readonly IUserLoginRepository _userLoginRepository;
     private readonly IOperatorPermissionService _permissionService;
     private readonly IAuthenticationService _authenticationService;
+    private readonly IUnitOfWork _unitOfWork;
     private UserDto? _selectedOperator;
     private UserCompanyDto? _selectedUserCompany;
     private UserLoginDto? _selectedUserLogin;
@@ -30,7 +32,8 @@ public class AdminViewModel : ViewModelBase
         IUserCompanyRepository userCompanyRepository,
         IUserLoginRepository userLoginRepository,
         IOperatorPermissionService permissionService,
-        IAuthenticationService authenticationService)
+        IAuthenticationService authenticationService,
+        IUnitOfWork unitOfWork)
     {
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         _companyRepository = companyRepository ?? throw new ArgumentNullException(nameof(companyRepository));
@@ -38,6 +41,7 @@ public class AdminViewModel : ViewModelBase
         _userLoginRepository = userLoginRepository ?? throw new ArgumentNullException(nameof(userLoginRepository));
         _permissionService = permissionService ?? throw new ArgumentNullException(nameof(permissionService));
         _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         
         Operators = new ObservableCollection<UserDto>();
         UserCompanies = new ObservableCollection<UserCompanyDto>();
@@ -525,7 +529,7 @@ public class AdminViewModel : ViewModelBase
                 PasswordHash = string.Empty
             };
 
-            var editViewModel = new UserLoginEditViewModel(_userLoginRepository, _authenticationService, newUserLogin, isNew: true);
+            var editViewModel = new UserLoginEditViewModel(_userLoginRepository, _authenticationService, _unitOfWork, newUserLogin, isNew: true);
             var editWindow = new UserLoginEditWindow(editViewModel)
             {
                 Owner = System.Windows.Application.Current.MainWindow
@@ -552,7 +556,7 @@ public class AdminViewModel : ViewModelBase
 
         try
         {
-            var editViewModel = new UserLoginEditViewModel(_userLoginRepository, _authenticationService, SelectedUserLogin, isNew: false);
+            var editViewModel = new UserLoginEditViewModel(_userLoginRepository, _authenticationService, _unitOfWork, SelectedUserLogin, isNew: false);
             var editWindow = new UserLoginEditWindow(editViewModel)
             {
                 Owner = System.Windows.Application.Current.MainWindow

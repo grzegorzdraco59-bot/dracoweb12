@@ -127,8 +127,8 @@ public class LoginViewModel : ViewModelBase
             errorDetails += $"\n\nStack trace: {ex.StackTrace}";
             ErrorMessage = errorDetails;
             
-            // Również wyświetlamy w MessageBox dla łatwiejszego debugowania
-            System.Windows.MessageBox.Show(errorDetails, "Błąd logowania", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            // Diagnostyka: wyjątek podczas logowania – MessageBox, żeby nie było „ciszy po zamknięciu okna”
+            System.Windows.MessageBox.Show(errorDetails, "Błąd logowania (wyjątek)", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
         }
     }
 

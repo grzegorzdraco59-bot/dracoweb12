@@ -4,6 +4,13 @@
 
 <div class="container-fluid p-0 d-flex flex-column" style="height: 100%;">
     <!-- Menu 23 przycisków jest w _Layout – wspólne dla wszystkich widoków -->
+    @if (TempData["InfoMessage"] is string infoMsg)
+    {
+        <div class="alert alert-info alert-dismissible fade show m-2" role="alert">
+            @infoMsg
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Zamknij"></button>
+        </div>
+    }
     <div class="flex-grow-1 p-4">
         @if (ViewBag.ViewNumber != null)
         {

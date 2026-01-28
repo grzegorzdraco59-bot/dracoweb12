@@ -5,6 +5,7 @@ using ERP.Application.DTOs;
 using ERP.Application.Services;
 using ERP.UI.WPF.Views;
 using ERP.UI.WPF.Services;
+using IUserContext = ERP.UI.WPF.Services.IUserContext;
 
 namespace ERP.UI.WPF.ViewModels;
 

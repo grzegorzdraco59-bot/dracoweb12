@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ERP.Migrations")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+aa475f06f9c69022d25ef31ca5c69105e12c0331")]
 [assembly: System.Reflection.AssemblyProductAttribute("ERP.Migrations")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ERP.Migrations")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

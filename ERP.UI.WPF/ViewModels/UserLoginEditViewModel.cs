@@ -3,6 +3,8 @@ using ERP.Application.DTOs;
 using ERP.Application.Services;
 using ERP.Domain.Entities;
 using ERP.Domain.Repositories;
+using ERP.Infrastructure.Services;
+using MySqlConnector;
 
 namespace ERP.UI.WPF.ViewModels;
 
@@ -13,6 +15,7 @@ public class UserLoginEditViewModel : ViewModelBase
 {
     private readonly IUserLoginRepository _repository;
     private readonly IAuthenticationService _authenticationService;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly UserLoginDto _originalDto;
     private readonly bool _isNew;
     
@@ -23,11 +26,13 @@ public class UserLoginEditViewModel : ViewModelBase
     public UserLoginEditViewModel(
         IUserLoginRepository repository, 
         IAuthenticationService authenticationService,
+        IUnitOfWork unitOfWork,
         UserLoginDto userLoginDto, 
         bool isNew = false)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _originalDto = userLoginDto ?? throw new ArgumentNullException(nameof(userLoginDto));
         _isNew = isNew;
         
@@ -129,10 +134,25 @@ public class UserLoginEditViewModel : ViewModelBase
                 // Aktualizujemy właściwości
                 if (existingUserLogin.UserId != UserId)
                 {
-                    // Jeśli zmienił się UserId, musimy usunąć stary i dodać nowy
-                    await _repository.DeleteAsync(_originalDto.Id);
-                    var newUserLogin = new UserLogin(UserId, Login, passwordHash);
-                    await _repository.AddAsync(newUserLogin);
+                    // DELETE + INSERT w jednej transakcji – przy wyjątku rollback, stary rekord pozostaje
+                    await _unitOfWork.ExecuteInTransactionAsync(async (transaction) =>
+                    {
+                        var conn = transaction.Connection!;
+                        using (var cmdDel = new MySqlCommand("DELETE FROM operator_login WHERE id = @Id", conn, transaction))
+                        {
+                            cmdDel.Parameters.AddWithValue("@Id", _originalDto.Id);
+                            await cmdDel.ExecuteNonQueryAsync();
+                        }
+                        using (var cmdIns = new MySqlCommand(
+                            "INSERT INTO operator_login (id_operatora, login, haslohash) VALUES (@UserId, @Login, @PasswordHash)",
+                            conn, transaction))
+                        {
+                            cmdIns.Parameters.AddWithValue("@UserId", UserId);
+                            cmdIns.Parameters.AddWithValue("@Login", Login);
+                            cmdIns.Parameters.AddWithValue("@PasswordHash", passwordHash);
+                            await cmdIns.ExecuteNonQueryAsync();
+                        }
+                    });
                 }
                 else
                 {

@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Windows;
 using ERP.Application.DTOs;
 using ERP.Application.Repositories;
@@ -5,9 +6,12 @@ using ERP.Application.Services;
 using ERP.Domain.Repositories;
 using ERP.Infrastructure.Data;
 using ERP.Infrastructure.Repositories;
+using ERP.Infrastructure.Services;
 using ERP.UI.WPF.ViewModels;
 using ERP.UI.WPF.Views;
 using ERP.UI.WPF.Services;
+using IUserContext = ERP.UI.WPF.Services.IUserContext;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ERP.UI.WPF;
@@ -22,6 +26,9 @@ public partial class App : System.Windows.Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // Zamknięcie okna logowania nie może kończyć aplikacji – dopiero główne okno lub jawne Shutdown()
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         // Globalna obsługa nieobsłużonych wyjątków
         DispatcherUnhandledException += App_DispatcherUnhandledException;
@@ -63,17 +70,17 @@ public partial class App : System.Windows.Application
         try
         {
             var loginViewModel = _serviceProvider!.GetRequiredService<LoginViewModel>();
-            var loginWindow = new LoginWindow(loginViewModel);
-        
             UserDto? loggedInUser = null;
             IEnumerable<CompanyDto>? userCompanies = null;
-            
+
+            // Subskrypcja PRZED utworzeniem okna – przy sukcesie najpierw zapisujemy user/companies, potem LoginWindow zamyka się
             loginViewModel.LoginSuccessful += (sender, data) =>
             {
                 loggedInUser = data.User;
                 userCompanies = data.Companies;
-                // DialogResult i Close() są obsługiwane w LoginWindow.OnLoginSuccessful
             };
+
+            var loginWindow = new LoginWindow(loginViewModel);
             
             if (loginWindow.ShowDialog() == true)
             {
@@ -215,11 +222,22 @@ public partial class App : System.Windows.Application
 
     private void ConfigureServices(IServiceCollection services)
     {
+        // Konfiguracja z appsettings.json (Copy to Output = PreserveNewest)
+        var config = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: false)
+            .Build();
+        services.AddSingleton<IConfiguration>(config);
+
         // Rejestracja UserContext - scoped service dla całej sesji aplikacji
         services.AddSingleton<IUserContext, UserContext>();
-        
-        // Rejestracja warstwy infrastruktury
-        services.AddSingleton<DatabaseContext>();
+        services.AddSingleton<ERP.Application.Services.IUserContext>(sp => (ERP.Application.Services.IUserContext)sp.GetRequiredService<IUserContext>());
+
+        // Rejestracja warstwy infrastruktury – DatabaseContext wymaga connection string z konfiguracji
+        var connectionString = config.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is missing in appsettings.json.");
+        services.AddSingleton<DatabaseContext>(_ => new DatabaseContext(connectionString));
+        services.AddTransient<IUnitOfWork, UnitOfWork>();
         
         // Rejestracja repozytoriów
         services.AddScoped<ICustomerRepository, CustomerRepository>();
@@ -242,6 +260,14 @@ public partial class App : System.Windows.Application
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<IOperatorPermissionService, OperatorPermissionService>();
         services.AddScoped<IOrderService, OrderService>();
+
+        // Automatyczna rejestracja walidatorów z ERP.Application.Validation (AddScoped, same typy)
+        var applicationAssembly = typeof(ERP.Application.Services.CustomerService).Assembly;
+        foreach (var type in applicationAssembly.GetTypes()
+            .Where(t => t.IsClass && !t.IsAbstract && t.Namespace == "ERP.Application.Validation"))
+        {
+            services.AddScoped(type);
+        }
         
         // Rejestracja ViewModels
         services.AddTransient<MainViewModel>();

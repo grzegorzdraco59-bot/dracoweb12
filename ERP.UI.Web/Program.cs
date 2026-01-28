@@ -78,6 +78,7 @@ builder.Services.AddScoped<ICustomerService, CustomerService>();
 
 // UserContext - oparty o IHttpContextAccessor i Claims
 builder.Services.AddScoped<ERP.UI.Web.Services.IUserContext, ERP.UI.Web.Services.UserContext>();
+builder.Services.AddScoped<ERP.Application.Services.IUserContext>(sp => (ERP.Application.Services.IUserContext)sp.GetRequiredService<ERP.UI.Web.Services.IUserContext>());
 
 // Unit of Work dla transakcji
 builder.Services.AddScoped<ERP.Infrastructure.Services.IUnitOfWork, ERP.Infrastructure.Services.UnitOfWork>();

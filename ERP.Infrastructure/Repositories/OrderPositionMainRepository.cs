@@ -39,7 +39,7 @@ public class OrderPositionMainRepository : IOrderPositionMainRepository
         var positions = new List<OrderPositionMainDto>();
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT * FROM pozycjezamowienia ORDER BY id_zamowienia, id",
+            "SELECT * FROM pozycjezamowienia ORDER BY id_zamowienia, id_pozycji_zamowienia",
             connection);
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
