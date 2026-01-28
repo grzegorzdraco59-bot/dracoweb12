@@ -48,3 +48,7 @@ WPF: po loginie otwiera się okno główne.
 ## Checkpoint: faza3a_wpf_menu_ok_di_sql_ok
 
 WPF: działają widoki 1,8,9,10,12,13; DI WPF kompletne; repo odcięte od IHttpContextAccessor; poprawione ORDER BY w SQL.
+
+## Checkpoint: faza3a_krok4_userlogin_uow_ok
+
+WPF: UserLoginEditViewModel SaveAsync (DELETE+INSERT) w transakcji.
