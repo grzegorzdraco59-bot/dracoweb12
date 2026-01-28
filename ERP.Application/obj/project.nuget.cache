@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "d+If+ETHBL4=",
+  "dgSpecHash": "l8xU6anYKhU=",
   "success": true,
-  "projectFilePath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj",
+  "projectFilePath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\48603\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512"
   ],

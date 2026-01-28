@@ -2,6 +2,7 @@ using System.Windows.Input;
 using ERP.Application.DTOs;
 using ERP.Domain.Entities;
 using ERP.Domain.Repositories;
+using ERP.Infrastructure.Services;
 using MySqlConnector;
 
 namespace ERP.UI.WPF.ViewModels;
@@ -12,6 +13,7 @@ namespace ERP.UI.WPF.ViewModels;
 public class UserCompanyEditViewModel : ViewModelBase
 {
     private readonly IUserCompanyRepository _repository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly UserCompanyDto _originalDto;
     private readonly bool _isNew;
     
@@ -20,9 +22,10 @@ public class UserCompanyEditViewModel : ViewModelBase
     private int? _roleId;
     private string _roleIdText = string.Empty;
 
-    public UserCompanyEditViewModel(IUserCompanyRepository repository, UserCompanyDto userCompanyDto, bool isNew = false)
+    public UserCompanyEditViewModel(IUserCompanyRepository repository, IUnitOfWork unitOfWork, UserCompanyDto userCompanyDto, bool isNew = false)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _originalDto = userCompanyDto ?? throw new ArgumentNullException(nameof(userCompanyDto));
         _isNew = isNew;
         
@@ -144,10 +147,25 @@ public class UserCompanyEditViewModel : ViewModelBase
                 // UserCompany ma tylko metodę UpdateRole, więc musimy utworzyć nowy obiekt jeśli się zmieniły UserId lub CompanyId
                 if (existingUserCompany.UserId != UserId || existingUserCompany.CompanyId != CompanyId)
                 {
-                    // Jeśli zmieniły się kluczowe pola, musimy usunąć stary i dodać nowy
-                    await _repository.DeleteByIdAsync(_originalDto.Id);
-                    var newUserCompany = new UserCompany(UserId, CompanyId, RoleId);
-                    await _repository.AddAsync(newUserCompany);
+                    // DELETE + INSERT w jednej transakcji – przy wyjątku rollback, stary rekord pozostaje
+                    await _unitOfWork.ExecuteInTransactionAsync(async (transaction) =>
+                    {
+                        var conn = transaction.Connection!;
+                        using (var cmdDel = new MySqlCommand("DELETE FROM operatorfirma WHERE id = @Id", conn, transaction))
+                        {
+                            cmdDel.Parameters.AddWithValue("@Id", _originalDto.Id);
+                            await cmdDel.ExecuteNonQueryAsync();
+                        }
+                        using (var cmdIns = new MySqlCommand(
+                            "INSERT INTO operatorfirma (id_operatora, id_firmy, rola) VALUES (@UserId, @CompanyId, @RoleId)",
+                            conn, transaction))
+                        {
+                            cmdIns.Parameters.AddWithValue("@UserId", UserId);
+                            cmdIns.Parameters.AddWithValue("@CompanyId", CompanyId);
+                            cmdIns.Parameters.AddWithValue("@RoleId", RoleId ?? (object)DBNull.Value);
+                            await cmdIns.ExecuteNonQueryAsync();
+                        }
+                    });
                 }
                 else
                 {

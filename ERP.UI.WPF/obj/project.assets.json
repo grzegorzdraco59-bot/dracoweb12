@@ -1940,11 +1940,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.UI.WPF\\ERP.UI.WPF.csproj",
+      "projectUniqueName": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.UI.WPF\\ERP.UI.WPF.csproj",
       "projectName": "ERP.UI.WPF",
-      "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.UI.WPF\\ERP.UI.WPF.csproj",
+      "projectPath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.UI.WPF\\ERP.UI.WPF.csproj",
       "packagesPath": "C:\\Users\\48603\\.nuget\\packages\\",
-      "outputPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.UI.WPF\\obj\\",
+      "outputPath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.UI.WPF\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\48603\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -1961,14 +1961,14 @@
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
           "projectReferences": {
-            "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj": {
-              "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj"
+            "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj": {
+              "projectPath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj"
             },
-            "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Domain\\ERP.Domain.csproj": {
-              "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Domain\\ERP.Domain.csproj"
+            "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Domain\\ERP.Domain.csproj": {
+              "projectPath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Domain\\ERP.Domain.csproj"
             },
-            "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Infrastructure\\ERP.Infrastructure.csproj": {
-              "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Infrastructure\\ERP.Infrastructure.csproj"
+            "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Infrastructure\\ERP.Infrastructure.csproj": {
+              "projectPath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Infrastructure\\ERP.Infrastructure.csproj"
             }
           }
         }

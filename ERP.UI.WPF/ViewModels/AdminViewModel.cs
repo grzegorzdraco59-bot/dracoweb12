@@ -415,7 +415,7 @@ public class AdminViewModel : ViewModelBase
                 RoleId = null
             };
 
-            var editViewModel = new UserCompanyEditViewModel(_userCompanyRepository, newUserCompany, isNew: true);
+            var editViewModel = new UserCompanyEditViewModel(_userCompanyRepository, _unitOfWork, newUserCompany, isNew: true);
             var editWindow = new UserCompanyEditWindow(editViewModel)
             {
                 Owner = System.Windows.Application.Current.MainWindow
@@ -442,7 +442,7 @@ public class AdminViewModel : ViewModelBase
 
         try
         {
-            var editViewModel = new UserCompanyEditViewModel(_userCompanyRepository, SelectedUserCompany, isNew: false);
+            var editViewModel = new UserCompanyEditViewModel(_userCompanyRepository, _unitOfWork, SelectedUserCompany, isNew: false);
             var editWindow = new UserCompanyEditWindow(editViewModel)
             {
                 Owner = System.Windows.Application.Current.MainWindow
