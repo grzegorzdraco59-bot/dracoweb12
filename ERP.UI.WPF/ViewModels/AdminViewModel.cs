@@ -55,7 +55,7 @@ public class AdminViewModel : ViewModelBase
         
         LoadUserCompaniesCommand = new RelayCommand(async () => await LoadUserCompaniesAsync());
         AddUserCompanyCommand = new RelayCommand(async () => await AddUserCompanyAsync());
-        EditUserCompanyCommand = new RelayCommand(() => EditUserCompany(), () => SelectedUserCompany != null);
+        EditUserCompanyCommand = new RelayCommand(async () => await EditUserCompanyAsync(), () => SelectedUserCompany != null);
         DeleteUserCompanyCommand = new RelayCommand(async () => await DeleteUserCompanyAsync(), () => SelectedUserCompany != null);
         
         LoadUserLoginsCommand = new RelayCommand(async () => await LoadUserLoginsAsync());
@@ -407,15 +407,25 @@ public class AdminViewModel : ViewModelBase
                 return;
             }
 
-            // Tworzymy nowy UserCompany - używamy wybranego operatora
-            var newUserCompany = new UserCompanyDto
-            {
-                UserId = SelectedOperator.Id,
-                CompanyId = SelectedOperator.DefaultCompanyId,
-                RoleId = null
-            };
+            // Jeśli powiązanie (UserId, CompanyId) już istnieje, otwieramy w trybie EDYCJI zamiast Dodawanie
+            var existing = await _userCompanyRepository.GetByUserAndCompanyAsync(SelectedOperator.Id, SelectedOperator.DefaultCompanyId);
+            bool isNew = existing == null;
+            var dto = isNew
+                ? new UserCompanyDto
+                {
+                    UserId = SelectedOperator.Id,
+                    CompanyId = SelectedOperator.DefaultCompanyId,
+                    RoleId = null
+                }
+                : new UserCompanyDto
+                {
+                    Id = existing!.Id,
+                    UserId = existing.UserId,
+                    CompanyId = existing.CompanyId,
+                    RoleId = existing.RoleId
+                };
 
-            var editViewModel = new UserCompanyEditViewModel(_userCompanyRepository, _unitOfWork, newUserCompany, isNew: true);
+            var editViewModel = new UserCompanyEditViewModel(_userCompanyRepository, _unitOfWork, dto, isNew);
             var editWindow = new UserCompanyEditWindow(editViewModel)
             {
                 Owner = System.Windows.Application.Current.MainWindow
@@ -436,13 +446,31 @@ public class AdminViewModel : ViewModelBase
         }
     }
 
-    private void EditUserCompany()
+    private async Task EditUserCompanyAsync()
     {
         if (SelectedUserCompany == null) return;
 
         try
         {
-            var editViewModel = new UserCompanyEditViewModel(_userCompanyRepository, _unitOfWork, SelectedUserCompany, isNew: false);
+            // Tryb NEW vs EDIT ustalamy na podstawie istnienia rekordu w bazie (UserId + CompanyId)
+            var existing = await _userCompanyRepository.GetByUserAndCompanyAsync(SelectedUserCompany.UserId, SelectedUserCompany.CompanyId);
+            bool isNew = existing == null;
+            var dto = isNew
+                ? new UserCompanyDto
+                {
+                    UserId = SelectedUserCompany.UserId,
+                    CompanyId = SelectedUserCompany.CompanyId,
+                    RoleId = SelectedUserCompany.RoleId
+                }
+                : new UserCompanyDto
+                {
+                    Id = existing!.Id,
+                    UserId = existing.UserId,
+                    CompanyId = existing.CompanyId,
+                    RoleId = existing.RoleId
+                };
+
+            var editViewModel = new UserCompanyEditViewModel(_userCompanyRepository, _unitOfWork, dto, isNew);
             var editWindow = new UserCompanyEditWindow(editViewModel)
             {
                 Owner = System.Windows.Application.Current.MainWindow
@@ -450,7 +478,7 @@ public class AdminViewModel : ViewModelBase
 
             if (editWindow.ShowDialog() == true)
             {
-                _ = LoadUserCompaniesAsync();
+                await LoadUserCompaniesAsync();
             }
         }
         catch (Exception ex)

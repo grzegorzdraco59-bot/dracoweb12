@@ -66,9 +66,9 @@ public class MainViewModel : ViewModelBase
                     var ordersMainViewModel = _serviceProvider.GetRequiredService<OrdersMainViewModel>();
                     CurrentView = new OrdersMainView { DataContext = ordersMainViewModel };
                     break;
-                case 12: // Pozycje Zamówienia
-                    var orderPositionsViewModel = _serviceProvider.GetRequiredService<OrderPositionsViewModel>();
-                    CurrentView = new OrderPositionsView { DataContext = orderPositionsViewModel };
+                case 12: // OperatorFirma (nowy moduł)
+                    var operatorCompanyListViewModel = _serviceProvider.GetRequiredService<OperatorCompanyListViewModel>();
+                    CurrentView = new OperatorCompanyListView { DataContext = operatorCompanyListViewModel };
                     break;
                 case 13: // Zamówienia hala
                     var ordersViewModel = _serviceProvider.GetRequiredService<OrdersViewModel>();

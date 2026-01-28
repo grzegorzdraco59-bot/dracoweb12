@@ -7,6 +7,9 @@
         Title="Edycja OperatorFirma" Height="300" Width="400"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
     <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -15,8 +18,13 @@
         </Grid.RowDefinitions>
 
         <!-- Nagłówek -->
-        <TextBlock Grid.Row="0" Text="{Binding Title}" 
-                   FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="{Binding Title}" 
+                       FontSize="18" FontWeight="Bold" Margin="0,0,0,5"/>
+            <TextBlock Text="{Binding InfoMessage}" 
+                       FontSize="12" Foreground="Gray" TextWrapping="Wrap" Margin="0,0,0,10"
+                       Visibility="{Binding IsNew, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        </StackPanel>
 
         <!-- Formularz -->
         <GroupBox Grid.Row="1" Header="Informacje" Padding="10">

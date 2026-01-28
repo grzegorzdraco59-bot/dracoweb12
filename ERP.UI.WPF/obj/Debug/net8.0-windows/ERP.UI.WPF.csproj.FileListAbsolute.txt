@@ -227,3 +227,7 @@ C:\Users\48603\projektyC#\dracoweb12\ERP.UI.WPF\obj\Debug\net8.0-windows\ERP.UI.
 C:\Users\48603\projektyC#\dracoweb12\ERP.UI.WPF\obj\Debug\net8.0-windows\ERP.UI.WPF.genruntimeconfig.cache
 C:\Users\48603\projektyC#\dracoweb12\ERP.UI.WPF\obj\Debug\net8.0-windows\ref\ERP.UI.WPF.dll
 C:\Users\48603\projektyC#\dracoweb12\ERP.UI.WPF\bin\Debug\net8.0-windows\appsettings.json
+c:\Users\48603\projektyC#\dracoweb12\ERP.UI.WPF\obj\Debug\net8.0-windows\Views\OperatorCompanyEditWindow.baml
+c:\Users\48603\projektyC#\dracoweb12\ERP.UI.WPF\obj\Debug\net8.0-windows\Views\OperatorCompanyEditWindow.g.cs
+c:\Users\48603\projektyC#\dracoweb12\ERP.UI.WPF\obj\Debug\net8.0-windows\Views\OperatorCompanyListView.baml
+c:\Users\48603\projektyC#\dracoweb12\ERP.UI.WPF\obj\Debug\net8.0-windows\Views\OperatorCompanyListView.g.cs

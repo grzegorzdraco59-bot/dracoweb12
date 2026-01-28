@@ -54,51 +54,80 @@ public class UnitOfWork : IUnitOfWork
             throw new InvalidOperationException("Transakcja już została rozpoczęta.");
 
         var connection = await _context.CreateConnectionAsync();
+        if (connection == null)
+            throw new InvalidOperationException("DatabaseContext returned null connection.");
         _transaction = await connection.BeginTransactionAsync(cancellationToken);
     }
 
     public async Task CommitAsync(CancellationToken cancellationToken = default)
     {
         if (_transaction == null)
-            throw new InvalidOperationException("Brak aktywnej transakcji do zatwierdzenia.");
+            return;
 
-        await _transaction.CommitAsync(cancellationToken);
-        await _transaction.Connection!.CloseAsync();
-        _transaction.Dispose();
+        var t = _transaction;
         _transaction = null;
+        try
+        {
+            await t.CommitAsync(cancellationToken);
+            if (t.Connection != null)
+                await t.Connection.CloseAsync();
+        }
+        finally
+        {
+            t.Dispose();
+        }
     }
 
     public async Task RollbackAsync(CancellationToken cancellationToken = default)
     {
         if (_transaction == null)
-            throw new InvalidOperationException("Brak aktywnej transakcji do cofnięcia.");
+            return;
 
-        await _transaction.RollbackAsync(cancellationToken);
-        await _transaction.Connection!.CloseAsync();
-        _transaction.Dispose();
+        var t = _transaction;
         _transaction = null;
+        try
+        {
+            await t.RollbackAsync(cancellationToken);
+            if (t.Connection != null)
+                await t.Connection.CloseAsync();
+        }
+        finally
+        {
+            t.Dispose();
+        }
     }
 
     public async Task<T> ExecuteInTransactionAsync<T>(Func<MySqlTransaction, Task<T>> operation, CancellationToken cancellationToken = default)
     {
         if (_transaction != null)
         {
-            // Używamy istniejącej transakcji
+            // Zagnieżdżenie: tylko wykonaj operację, bez Begin/Commit/Rollback
             return await operation(_transaction);
         }
 
-        // Tworzymy nową transakcję
+        // Root-transakcja: Begin → operation → Commit lub Rollback, sprzątanie tylko raz
         await BeginTransactionAsync(cancellationToken);
+        var committed = false;
         try
         {
             var result = await operation(_transaction!);
             await CommitAsync(cancellationToken);
+            committed = true;
             return result;
         }
         catch
         {
-            await RollbackAsync(cancellationToken);
+            if (!committed && _transaction != null)
+                await RollbackAsync(cancellationToken);
             throw;
+        }
+        finally
+        {
+            if (_transaction != null)
+            {
+                try { _transaction.Dispose(); } catch { }
+                _transaction = null;
+            }
         }
     }
 

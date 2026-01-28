@@ -43,6 +43,11 @@ public class UserCompanyEditViewModel : ViewModelBase
 
     public int Id => _originalDto.Id;
     public bool IsNew => _isNew;
+
+    /// <summary>
+    /// Informacja gdy brak powiązania (tryb dodawania) – wyświetlana opcjonalnie w UI.
+    /// </summary>
+    public string InfoMessage => _isNew ? "Brak powiązania operator–firma. Zostanie utworzone przy zapisie." : string.Empty;
     
     public string Title => _isNew ? "Dodawanie OperatorFirma" : "Edycja OperatorFirma";
 
@@ -135,14 +140,33 @@ public class UserCompanyEditViewModel : ViewModelBase
                 var existingUserCompany = await _repository.GetByIdAsync(_originalDto.Id);
                 if (existingUserCompany == null)
                 {
-                    System.Windows.MessageBox.Show(
-                        $"OperatorFirma o ID {_originalDto.Id} nie został znaleziony.",
-                        "Błąd",
-                        System.Windows.MessageBoxButton.OK,
-                        System.Windows.MessageBoxImage.Error);
-                    return;
+                    // Rekord nie istnieje (np. usunięty) – traktujemy jak dodawanie powiązania
+                    var existing = await _repository.GetByUserAndCompanyAsync(UserId, CompanyId);
+                    if (existing != null)
+                    {
+                        System.Windows.MessageBox.Show(
+                            $"Operator o ID {UserId} jest już powiązany z firmą o ID {CompanyId}.",
+                            "Rekord już istnieje",
+                            System.Windows.MessageBoxButton.OK,
+                            System.Windows.MessageBoxImage.Warning);
+                        return;
+                    }
+                    await _unitOfWork.ExecuteInTransactionAsync(async (transaction) =>
+                    {
+                        var conn = transaction.Connection ?? throw new InvalidOperationException("DatabaseContext returned null connection.");
+                        using (var cmdIns = new MySqlCommand(
+                            "INSERT INTO operatorfirma (id_operatora, id_firmy, rola) VALUES (@UserId, @CompanyId, @RoleId)",
+                            conn, transaction))
+                        {
+                            cmdIns.Parameters.AddWithValue("@UserId", UserId);
+                            cmdIns.Parameters.AddWithValue("@CompanyId", CompanyId);
+                            cmdIns.Parameters.AddWithValue("@RoleId", RoleId ?? (object)DBNull.Value);
+                            await cmdIns.ExecuteNonQueryAsync();
+                        }
+                    });
                 }
-
+                else
+                {
                 // Aktualizujemy właściwości
                 // UserCompany ma tylko metodę UpdateRole, więc musimy utworzyć nowy obiekt jeśli się zmieniły UserId lub CompanyId
                 if (existingUserCompany.UserId != UserId || existingUserCompany.CompanyId != CompanyId)
@@ -150,7 +174,7 @@ public class UserCompanyEditViewModel : ViewModelBase
                     // DELETE + INSERT w jednej transakcji – przy wyjątku rollback, stary rekord pozostaje
                     await _unitOfWork.ExecuteInTransactionAsync(async (transaction) =>
                     {
-                        var conn = transaction.Connection!;
+                        var conn = transaction.Connection ?? throw new InvalidOperationException("DatabaseContext returned null connection.");
                         using (var cmdDel = new MySqlCommand("DELETE FROM operatorfirma WHERE id = @Id", conn, transaction))
                         {
                             cmdDel.Parameters.AddWithValue("@Id", _originalDto.Id);
@@ -173,24 +197,18 @@ public class UserCompanyEditViewModel : ViewModelBase
                     existingUserCompany.UpdateRole(RoleId);
                     await _repository.UpdateAsync(existingUserCompany);
                 }
+                }
             }
 
             Saved?.Invoke(this, EventArgs.Empty);
         }
         catch (MySqlConnector.MySqlException sqlEx)
         {
-            string errorMessage = $"Błąd podczas zapisywania operatorfirma:\n\n{sqlEx.Message}";
-            
-            // Sprawdź typy błędów SQL
-            if (sqlEx.Number == 1062) // Duplicate entry
-            {
-                errorMessage = $"Rekord już istnieje: Operator o ID {UserId} jest już powiązany z firmą o ID {CompanyId}.";
-            }
-            else if (sqlEx.Number == 1452) // Foreign key constraint fails
-            {
-                errorMessage = $"Błąd klucza obcego: Operator o ID {UserId} lub firma o ID {CompanyId} nie istnieje w bazie danych.";
-            }
-            
+            string errorMessage = $"Błąd podczas zapisywania operatorfirma:\n\n{sqlEx}";
+            if (sqlEx.Number == 1062)
+                errorMessage = $"Rekord już istnieje: Operator o ID {UserId} jest już powiązany z firmą o ID {CompanyId}.\n\n{sqlEx}";
+            else if (sqlEx.Number == 1452)
+                errorMessage = $"Błąd klucza obcego: Operator o ID {UserId} lub firma o ID {CompanyId} nie istnieje.\n\n{sqlEx}";
             System.Windows.MessageBox.Show(
                 errorMessage,
                 "Błąd bazy danych",
@@ -200,7 +218,7 @@ public class UserCompanyEditViewModel : ViewModelBase
         catch (Exception ex)
         {
             System.Windows.MessageBox.Show(
-                $"Błąd podczas zapisywania operatorfirma:\n\n{ex.Message}\n\nTyp: {ex.GetType().Name}",
+                $"Błąd podczas zapisywania operatorfirma:\n\n{ex.ToString()}",
                 "Błąd",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Error);

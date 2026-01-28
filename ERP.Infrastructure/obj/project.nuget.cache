@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "6/x0QFwpedo=",
+  "dgSpecHash": "i8XKdiUmYC0=",
   "success": true,
-  "projectFilePath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Infrastructure\\ERP.Infrastructure.csproj",
+  "projectFilePath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Infrastructure\\ERP.Infrastructure.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\48603\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\48603\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\8.0.2\\microsoft.extensions.dependencyinjection.abstractions.8.0.2.nupkg.sha512",

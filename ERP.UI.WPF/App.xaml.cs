@@ -245,6 +245,7 @@ public partial class App : System.Windows.Application
         services.AddScoped<IUserLoginRepository, UserLoginRepository>();
         services.AddScoped<ICompanyRepository, CompanyRepository>();
         services.AddScoped<IUserCompanyRepository, UserCompanyRepository>();
+        services.AddScoped<OperatorCompanyRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IOfferRepository, OfferRepository>();
         services.AddScoped<IOfferPositionRepository, OfferPositionRepository>();
@@ -280,6 +281,7 @@ public partial class App : System.Windows.Application
         services.AddTransient<OrdersMainViewModel>();
         services.AddTransient<OrderPositionsViewModel>();
         services.AddTransient<AdminViewModel>();
+        services.AddTransient<OperatorCompanyListViewModel>();
     }
 
     protected override void OnExit(ExitEventArgs e)

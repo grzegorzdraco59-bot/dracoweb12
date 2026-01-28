@@ -22,6 +22,8 @@ public class DatabaseContext
     {
         var connection = new MySqlConnection(_connectionString);
         await connection.OpenAsync();
+        if (connection == null)
+            throw new InvalidOperationException("DatabaseContext returned null connection.");
         return connection;
     }
 

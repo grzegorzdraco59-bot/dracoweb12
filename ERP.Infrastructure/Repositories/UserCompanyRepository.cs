@@ -19,130 +19,178 @@ public class UserCompanyRepository : IUserCompanyRepository
 
     public async Task<UserCompany?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand(
-            "SELECT id, id_operatora, id_firmy, rola FROM operatorfirma WHERE id = @Id",
-            connection);
-        command.Parameters.AddWithValue("@Id", id);
-
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (await reader.ReadAsync(cancellationToken))
+        var connection = await _context.CreateConnectionAsync();
+        if (connection == null)
+            throw new InvalidOperationException("DatabaseContext returned null connection.");
+        await using (connection)
         {
-            return MapToUserCompany(reader);
-        }
+            var command = new MySqlCommand(
+                "SELECT id, id_operatora, id_firmy, rola FROM operatorfirma WHERE id = @Id",
+                connection);
+            command.Connection = connection;
+            command.Parameters.AddWithValue("@Id", id);
 
-        return null;
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                return MapToUserCompany(reader);
+            }
+
+            return null;
+        }
     }
 
     public async Task<UserCompany?> GetByUserAndCompanyAsync(int userId, int companyId, CancellationToken cancellationToken = default)
     {
-        await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand(
-            "SELECT id, id_operatora, id_firmy, rola FROM operatorfirma " +
-            "WHERE id_operatora = @UserId AND id_firmy = @CompanyId LIMIT 1",
-            connection);
-        command.Parameters.AddWithValue("@UserId", userId);
-        command.Parameters.AddWithValue("@CompanyId", companyId);
-
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (await reader.ReadAsync(cancellationToken))
+        var connection = await _context.CreateConnectionAsync();
+        if (connection == null)
+            throw new InvalidOperationException("DatabaseContext returned null connection.");
+        await using (connection)
         {
-            return MapToUserCompany(reader);
-        }
+            var command = new MySqlCommand(
+                "SELECT id, id_operatora, id_firmy, rola FROM operatorfirma " +
+                "WHERE id_operatora = @UserId AND id_firmy = @CompanyId LIMIT 1",
+                connection);
+            command.Connection = connection;
+            command.Parameters.AddWithValue("@UserId", userId);
+            command.Parameters.AddWithValue("@CompanyId", companyId);
 
-        return null;
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                return MapToUserCompany(reader);
+            }
+
+            return null;
+        }
     }
 
     public async Task<IEnumerable<UserCompany>> GetByUserIdAsync(int userId, CancellationToken cancellationToken = default)
     {
         var userCompanies = new List<UserCompany>();
-        await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand(
-            "SELECT id, id_operatora, id_firmy, rola FROM operatorfirma " +
-            "WHERE id_operatora = @UserId",
-            connection);
-        command.Parameters.AddWithValue("@UserId", userId);
-
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
+        var connection = await _context.CreateConnectionAsync();
+        if (connection == null)
+            throw new InvalidOperationException("DatabaseContext returned null connection.");
+        await using (connection)
         {
-            userCompanies.Add(MapToUserCompany(reader));
-        }
+            var command = new MySqlCommand(
+                "SELECT id, id_operatora, id_firmy, rola FROM operatorfirma " +
+                "WHERE id_operatora = @UserId",
+                connection);
+            command.Connection = connection;
+            command.Parameters.AddWithValue("@UserId", userId);
 
-        return userCompanies;
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                userCompanies.Add(MapToUserCompany(reader));
+            }
+
+            return userCompanies;
+        }
     }
 
     public async Task<IEnumerable<UserCompany>> GetByCompanyIdAsync(int companyId, CancellationToken cancellationToken = default)
     {
         var userCompanies = new List<UserCompany>();
-        await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand(
-            "SELECT id, id_operatora, id_firmy, rola FROM operatorfirma " +
-            "WHERE id_firmy = @CompanyId",
-            connection);
-        command.Parameters.AddWithValue("@CompanyId", companyId);
-
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
+        var connection = await _context.CreateConnectionAsync();
+        if (connection == null)
+            throw new InvalidOperationException("DatabaseContext returned null connection.");
+        await using (connection)
         {
-            userCompanies.Add(MapToUserCompany(reader));
-        }
+            var command = new MySqlCommand(
+                "SELECT id, id_operatora, id_firmy, rola FROM operatorfirma " +
+                "WHERE id_firmy = @CompanyId",
+                connection);
+            command.Connection = connection;
+            command.Parameters.AddWithValue("@CompanyId", companyId);
 
-        return userCompanies;
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                userCompanies.Add(MapToUserCompany(reader));
+            }
+
+            return userCompanies;
+        }
     }
 
     public async Task<int> AddAsync(UserCompany userCompany, CancellationToken cancellationToken = default)
     {
-        await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand(
-            "INSERT INTO operatorfirma (id_operatora, id_firmy, rola) " +
-            "VALUES (@UserId, @CompanyId, @RoleId); " +
-            "SELECT LAST_INSERT_ID();",
-            connection);
+        var connection = await _context.CreateConnectionAsync();
+        if (connection == null)
+            throw new InvalidOperationException("DatabaseContext returned null connection.");
+        await using (connection)
+        {
+            var command = new MySqlCommand(
+                "INSERT INTO operatorfirma (id_operatora, id_firmy, rola) " +
+                "VALUES (@UserId, @CompanyId, @RoleId); " +
+                "SELECT LAST_INSERT_ID();",
+                connection);
+            command.Connection = connection;
 
-        command.Parameters.AddWithValue("@UserId", userCompany.UserId);
-        command.Parameters.AddWithValue("@CompanyId", userCompany.CompanyId);
-        command.Parameters.AddWithValue("@RoleId", userCompany.RoleId ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@UserId", userCompany.UserId);
+            command.Parameters.AddWithValue("@CompanyId", userCompany.CompanyId);
+            command.Parameters.AddWithValue("@RoleId", userCompany.RoleId ?? (object)DBNull.Value);
 
-        var result = await command.ExecuteScalarAsync(cancellationToken);
-        return Convert.ToInt32(result);
+            var result = await command.ExecuteScalarAsync(cancellationToken);
+            return Convert.ToInt32(result);
+        }
     }
 
     public async Task UpdateAsync(UserCompany userCompany, CancellationToken cancellationToken = default)
     {
-        await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand(
-            "UPDATE operatorfirma SET id_operatora = @UserId, id_firmy = @CompanyId, rola = @RoleId " +
-            "WHERE id = @Id",
-            connection);
+        var connection = await _context.CreateConnectionAsync();
+        if (connection == null)
+            throw new InvalidOperationException("DatabaseContext returned null connection.");
+        await using (connection)
+        {
+            var command = new MySqlCommand(
+                "UPDATE operatorfirma SET id_operatora = @UserId, id_firmy = @CompanyId, rola = @RoleId " +
+                "WHERE id = @Id",
+                connection);
+            command.Connection = connection;
 
-        command.Parameters.AddWithValue("@Id", userCompany.Id);
-        command.Parameters.AddWithValue("@UserId", userCompany.UserId);
-        command.Parameters.AddWithValue("@CompanyId", userCompany.CompanyId);
-        command.Parameters.AddWithValue("@RoleId", userCompany.RoleId ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@Id", userCompany.Id);
+            command.Parameters.AddWithValue("@UserId", userCompany.UserId);
+            command.Parameters.AddWithValue("@CompanyId", userCompany.CompanyId);
+            command.Parameters.AddWithValue("@RoleId", userCompany.RoleId ?? (object)DBNull.Value);
 
-        await command.ExecuteNonQueryAsync(cancellationToken);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
     }
 
     public async Task DeleteAsync(int userId, int companyId, CancellationToken cancellationToken = default)
     {
-        await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand(
-            "DELETE FROM operatorfirma WHERE id_operatora = @UserId AND id_firmy = @CompanyId",
-            connection);
-        command.Parameters.AddWithValue("@UserId", userId);
-        command.Parameters.AddWithValue("@CompanyId", companyId);
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        var connection = await _context.CreateConnectionAsync();
+        if (connection == null)
+            throw new InvalidOperationException("DatabaseContext returned null connection.");
+        await using (connection)
+        {
+            var command = new MySqlCommand(
+                "DELETE FROM operatorfirma WHERE id_operatora = @UserId AND id_firmy = @CompanyId",
+                connection);
+            command.Connection = connection;
+            command.Parameters.AddWithValue("@UserId", userId);
+            command.Parameters.AddWithValue("@CompanyId", companyId);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
     }
 
     public async Task DeleteByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand(
-            "DELETE FROM operatorfirma WHERE id = @Id",
-            connection);
-        command.Parameters.AddWithValue("@Id", id);
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        var connection = await _context.CreateConnectionAsync();
+        if (connection == null)
+            throw new InvalidOperationException("DatabaseContext returned null connection.");
+        await using (connection)
+        {
+            var command = new MySqlCommand(
+                "DELETE FROM operatorfirma WHERE id = @Id",
+                connection);
+            command.Connection = connection;
+            command.Parameters.AddWithValue("@Id", id);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
     }
 
     private static UserCompany MapToUserCompany(MySqlDataReader reader)

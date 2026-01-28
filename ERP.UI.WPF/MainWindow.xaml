@@ -28,7 +28,7 @@
                     <Button Content="9. Odbiorcy" Command="{Binding NavigateCommand}" CommandParameter="9" Padding="6,3" Margin="0,0,3,0" MinWidth="75" FontSize="11"/>
                     <Button Content="10. Towary" Command="{Binding NavigateCommand}" CommandParameter="10" Padding="6,3" Margin="0,0,3,0" MinWidth="70" FontSize="11"/>
                     <Button Content="11. Zamówienia" Command="{Binding NavigateCommand}" CommandParameter="11" Padding="6,3" Margin="0,0,3,0" MinWidth="100" FontSize="11"/>
-                    <Button Content="12" Command="{Binding NavigateCommand}" CommandParameter="12" Padding="6,3" Margin="0,0,3,0" MinWidth="35" FontSize="11"/>
+                    <Button Content="12. OperatorFirma" Command="{Binding NavigateCommand}" CommandParameter="12" Padding="6,3" Margin="0,0,3,0" MinWidth="120" FontSize="11"/>
                     <Button Content="13. zamowienia hala" Command="{Binding NavigateCommand}" CommandParameter="13" Padding="6,3" Margin="0,0,3,0" MinWidth="120" FontSize="11"/>
                     <Button Content="14" Command="{Binding NavigateCommand}" CommandParameter="14" Padding="6,3" Margin="0,0,3,0" MinWidth="35" FontSize="11"/>
                     <Button Content="15" Command="{Binding NavigateCommand}" CommandParameter="15" Padding="6,3" Margin="0,0,3,0" MinWidth="35" FontSize="11"/>
