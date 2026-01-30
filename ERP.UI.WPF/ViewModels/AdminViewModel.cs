@@ -359,38 +359,17 @@ public class AdminViewModel : ViewModelBase
         }
     }
 
+    // FAZA 3B: Delete operatora niezaimplementowane. Przy implementacji dodać obsługę FK (MySqlException 1451) i/lub soft delete (IsActive).
     private async Task DeleteOperatorAsync()
     {
         if (SelectedOperator == null) return;
 
-        try
-        {
-            var result = System.Windows.MessageBox.Show(
-                $"Czy na pewno chcesz usunąć operatora '{SelectedOperator.FullName}' (ID: {SelectedOperator.Id})?\n\n" +
-                "Uwaga: Spowoduje to również usunięcie powiązanych rekordów z operatorfirma i operatorlogin.",
-                "Potwierdzenie usunięcia",
-                System.Windows.MessageBoxButton.YesNo,
-                System.Windows.MessageBoxImage.Warning);
-
-            if (result == System.Windows.MessageBoxResult.Yes)
-            {
-                // TODO: Implementuj usuwanie operatora gdy będzie potrzebne
-                // Na razie pokazujemy MessageBox
-                System.Windows.MessageBox.Show(
-                    "Funkcjonalność usuwania operatora - w przygotowaniu",
-                    "Info",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Information);
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Windows.MessageBox.Show(
-                $"Błąd podczas usuwania operatora: {ex.Message}",
-                "Błąd",
-                System.Windows.MessageBoxButton.OK,
-                System.Windows.MessageBoxImage.Error);
-        }
+        System.Windows.MessageBox.Show(
+            "Usuwanie nie jest jeszcze zaimplementowane. Użyj dezaktywacji (IsActive) w przyszłości.",
+            "Info",
+            System.Windows.MessageBoxButton.OK,
+            System.Windows.MessageBoxImage.Information);
+        await Task.CompletedTask;
     }
 
     private async Task AddUserCompanyAsync()

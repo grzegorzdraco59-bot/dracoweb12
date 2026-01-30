@@ -1,7 +1,7 @@
 namespace ERP.Application.DTOs;
 
 /// <summary>
-/// DTO powiązania operator–firma (tabela operatorfirma: id, id_operatora, id_firmy, rola).
+/// DTO powiązania operator–firma (tabela operatorfirma: id, id_operatora, id_firmy, rola, IsActive).
 /// </summary>
 public class OperatorCompanyDto
 {
@@ -9,4 +9,5 @@ public class OperatorCompanyDto
     public int UserId { get; set; }
     public int CompanyId { get; set; }
     public int? RoleId { get; set; }
+    public bool IsActive { get; set; } = true;
 }

@@ -1940,11 +1940,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.UI.WPF\\ERP.UI.WPF.csproj",
+      "projectUniqueName": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.UI.WPF\\ERP.UI.WPF.csproj",
       "projectName": "ERP.UI.WPF",
-      "projectPath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.UI.WPF\\ERP.UI.WPF.csproj",
+      "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.UI.WPF\\ERP.UI.WPF.csproj",
       "packagesPath": "C:\\Users\\48603\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.UI.WPF\\obj\\",
+      "outputPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.UI.WPF\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\48603\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -1961,8 +1961,8 @@
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
           "projectReferences": {
-            "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj": {
-              "projectPath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj"
+            "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj": {
+              "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj"
             },
             "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Domain\\ERP.Domain.csproj": {
               "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Domain\\ERP.Domain.csproj"

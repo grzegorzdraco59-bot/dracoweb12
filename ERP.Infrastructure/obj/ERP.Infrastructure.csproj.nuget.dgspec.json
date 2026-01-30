@@ -4,14 +4,14 @@
     "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Infrastructure\\ERP.Infrastructure.csproj": {}
   },
   "projects": {
-    "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj": {
+    "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj",
+        "projectUniqueName": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj",
         "projectName": "ERP.Application",
-        "projectPath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj",
+        "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj",
         "packagesPath": "C:\\Users\\48603\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\obj\\",
+        "outputPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\48603\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -31,8 +31,8 @@
               "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Domain\\ERP.Domain.csproj": {
                 "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Domain\\ERP.Domain.csproj"
               },
-              "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\ERP.Shared.csproj": {
-                "projectPath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\ERP.Shared.csproj"
+              "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\ERP.Shared.csproj": {
+                "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\ERP.Shared.csproj"
               }
             }
           }
@@ -102,8 +102,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\ERP.Shared.csproj": {
-                "projectPath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\ERP.Shared.csproj"
+              "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\ERP.Shared.csproj": {
+                "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\ERP.Shared.csproj"
               }
             }
           }
@@ -167,14 +167,14 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj": {
-                "projectPath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj"
+              "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj": {
+                "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Application\\ERP.Application.csproj"
               },
               "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Domain\\ERP.Domain.csproj": {
                 "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Domain\\ERP.Domain.csproj"
               },
-              "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\ERP.Shared.csproj": {
-                "projectPath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\ERP.Shared.csproj"
+              "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\ERP.Shared.csproj": {
+                "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\ERP.Shared.csproj"
               }
             }
           }
@@ -220,14 +220,14 @@
         }
       }
     },
-    "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\ERP.Shared.csproj": {
+    "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\ERP.Shared.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\ERP.Shared.csproj",
+        "projectUniqueName": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\ERP.Shared.csproj",
         "projectName": "ERP.Shared",
-        "projectPath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\ERP.Shared.csproj",
+        "projectPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\ERP.Shared.csproj",
         "packagesPath": "C:\\Users\\48603\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\obj\\",
+        "outputPath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.Shared\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\48603\\AppData\\Roaming\\NuGet\\NuGet.Config",

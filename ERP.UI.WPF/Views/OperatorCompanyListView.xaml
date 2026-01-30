@@ -18,7 +18,8 @@
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
             <Label Content="ID operatora:" VerticalAlignment="Center" Margin="0,0,5,0"/>
             <TextBox Text="{Binding CurrentUserId, UpdateSourceTrigger=PropertyChanged}" Width="80" Padding="5" VerticalAlignment="Center" Margin="0,0,10,0"/>
-            <Button Content="Ładuj listę" Command="{Binding LoadCommand}" Padding="10,5" VerticalAlignment="Center"/>
+            <Button Content="Ładuj listę" Command="{Binding LoadCommand}" Padding="10,5" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <CheckBox Content="Pokaż nieaktywne" IsChecked="{Binding IncludeInactive, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
         </StackPanel>
 
         <DataGrid Grid.Row="2"
@@ -34,6 +35,7 @@
                 <DataGridTextColumn Header="ID operatora" Binding="{Binding UserId}" Width="90"/>
                 <DataGridTextColumn Header="ID firmy" Binding="{Binding CompanyId}" Width="80"/>
                 <DataGridTextColumn Header="Rola" Binding="{Binding RoleId}" Width="60"/>
+                <DataGridCheckBoxColumn Header="Aktywny" Binding="{Binding IsActive}" Width="60" IsReadOnly="True"/>
             </DataGrid.Columns>
         </DataGrid>
 
@@ -41,7 +43,7 @@
             <StackPanel Orientation="Horizontal">
                 <Button Content="Dodaj" Command="{Binding AddCommand}" Padding="10,5" Margin="0,0,5,0"/>
                 <Button Content="Edytuj" Command="{Binding EditCommand}" Padding="10,5" Margin="0,0,5,0"/>
-                <Button Content="Usuń" Command="{Binding DeleteCommand}" Padding="10,5"/>
+                <Button Content="Dezaktywuj" Command="{Binding DeactivateCommand}" Padding="10,5"/>
             </StackPanel>
         </GroupBox>
     </Grid>

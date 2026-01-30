@@ -1,6 +1,7 @@
 using System.Windows.Input;
 using ERP.Application.DTOs;
 using ERP.Infrastructure.Repositories;
+using MySqlConnector;
 
 namespace ERP.UI.WPF.ViewModels;
 
@@ -76,6 +77,28 @@ public class OperatorCompanyEditViewModel : ViewModelBase
     {
         try
         {
+            if (Model.UserId <= 0 || Model.CompanyId <= 0)
+            {
+                System.Windows.MessageBox.Show(
+                    "Wybierz operatora (UserId > 0) i firmę (CompanyId > 0).",
+                    "Wymagane pola",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
+            var excludeId = IsNew ? null : (int?)Model.Id;
+            var exists = await _repository.ExistsActiveByUserAndCompanyAsync(Model.UserId, Model.CompanyId, excludeId);
+            if (exists)
+            {
+                System.Windows.MessageBox.Show(
+                    "Powiązanie operator–firma już istnieje.",
+                    "Unikalność",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
             if (IsNew)
             {
                 var newId = await _repository.AddAsync(Model);
@@ -87,10 +110,22 @@ public class OperatorCompanyEditViewModel : ViewModelBase
             }
             Saved?.Invoke(this, EventArgs.Empty);
         }
+        catch (MySqlException sqlEx)
+        {
+            var message = sqlEx.Number switch
+            {
+                1062 => "Powiązanie operator–firma już istnieje.",
+                1451 => "Nie można wykonać operacji z powodu powiązań w bazie danych.",
+                _ => $"Błąd bazy danych: {sqlEx.Message}"
+            };
+            System.Diagnostics.Trace.WriteLine($"OperatorCompanyEdit Save: {sqlEx}");
+            System.Windows.MessageBox.Show(message, "Błąd", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
         catch (Exception ex)
         {
+            System.Diagnostics.Trace.WriteLine($"OperatorCompanyEdit Save: {ex}");
             System.Windows.MessageBox.Show(
-                $"Błąd podczas zapisu:\n\n{ex.ToString()}",
+                "Wystąpił błąd podczas zapisu. Szczegóły w logu.",
                 "Błąd",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Error);

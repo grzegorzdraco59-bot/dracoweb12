@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "/4N6MwDBJhk=",
+  "dgSpecHash": "n2aUgh6kv7s=",
   "success": true,
-  "projectFilePath": "C:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.UI.WPF\\ERP.UI.WPF.csproj",
+  "projectFilePath": "c:\\Users\\48603\\projektyC#\\dracoweb12\\ERP.UI.WPF\\ERP.UI.WPF.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\48603\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\48603\\.nuget\\packages\\microsoft.extensions.configuration\\10.0.2\\microsoft.extensions.configuration.10.0.2.nupkg.sha512",
