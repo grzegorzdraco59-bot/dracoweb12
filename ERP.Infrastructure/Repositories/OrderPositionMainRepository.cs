@@ -97,6 +97,22 @@ public class OrderPositionMainRepository : IOrderPositionMainRepository
         return positions;
     }
 
+    public async Task<int?> GetOrderIdLinkedToOfferAsync(int offerId, int companyId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _context.CreateConnectionAsync();
+        var command = new MySqlCommand(
+            "SELECT p.id_zamowienia FROM pozycjezamowienia p " +
+            "INNER JOIN apozycjeoferty a ON a.ID_pozycja_oferty = p.id_pozycji_pozycji_oferty AND a.id_firmy = @CompanyId " +
+            "WHERE a.ID_oferta = @OfferId AND p.id_firmy = @CompanyId " +
+            "LIMIT 1",
+            connection);
+        command.Parameters.AddWithValue("@OfferId", offerId);
+        command.Parameters.AddWithValue("@CompanyId", companyId);
+        var result = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+        if (result == null || result == DBNull.Value) return null;
+        return Convert.ToInt32(result);
+    }
+
     public async Task<int> AddAsync(OrderPositionMainDto position, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();

@@ -1,4 +1,5 @@
 using ERP.Application.DTOs;
+using ERP.Domain.Enums;
 
 namespace ERP.Application.Repositories;
 
@@ -13,4 +14,5 @@ public interface IOrderMainRepository
     Task<int> AddAsync(OrderMainDto order, CancellationToken cancellationToken = default);
     Task UpdateAsync(OrderMainDto order, CancellationToken cancellationToken = default);
     Task DeleteAsync(int id, CancellationToken cancellationToken = default);
+    Task SetStatusAsync(int id, OrderStatus status, CancellationToken cancellationToken = default);
 }

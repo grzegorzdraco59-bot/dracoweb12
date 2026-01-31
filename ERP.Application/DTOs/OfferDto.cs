@@ -32,6 +32,7 @@ public class OfferDto
     public string TradeNotes { get; set; } = string.Empty;
     public bool ForInvoice { get; set; }
     public string History { get; set; } = string.Empty;
+    public string? Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }

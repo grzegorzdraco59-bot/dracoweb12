@@ -75,6 +75,9 @@ builder.Services.AddScoped<IOperatorTablePermissionRepository, OperatorTablePerm
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IOperatorPermissionService, OperatorPermissionService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IOfferService, OfferService>();
+builder.Services.AddScoped<IOrderFromOfferConversionService, ERP.Infrastructure.Services.OrderFromOfferConversionService>();
+builder.Services.AddScoped<IOrderMainService, OrderMainService>();
 
 // UserContext - oparty o IHttpContextAccessor i Claims
 builder.Services.AddScoped<ERP.UI.Web.Services.IUserContext, ERP.UI.Web.Services.UserContext>();

@@ -63,6 +63,10 @@
                         Command="{Binding DeleteOrderCommand}"
                         Padding="10,5"
                         Margin="0,0,5,0"/>
+                <Button Content="Zmień status" 
+                        Command="{Binding ChangeStatusCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
                 <Button Content="Odśwież" 
                         Command="{Binding LoadOrdersCommand}"
                         Padding="10,5"/>

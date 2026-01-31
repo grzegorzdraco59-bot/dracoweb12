@@ -4,13 +4,15 @@ using System.ComponentModel;
 using System.Windows.Data;
 using System.Windows.Input;
 using ERP.Application.DTOs;
+using ERP.Application.Services;
 using ERP.Domain.Entities;
+using ERP.Domain.Enums;
+using IUserContext = ERP.UI.WPF.Services.IUserContext;
 using ERP.Domain.Repositories;
 using ERP.Infrastructure.Repositories;
 using ERP.Infrastructure.Services;
 using ERP.UI.WPF.Views;
 using ERP.UI.WPF.Services;
-using MySqlConnector;
 
 namespace ERP.UI.WPF.ViewModels;
 
@@ -19,31 +21,28 @@ namespace ERP.UI.WPF.ViewModels;
 /// </summary>
 public class OffersViewModel : ViewModelBase
 {
-    private readonly IOfferRepository _offerRepository;
-    private readonly IOfferPositionRepository _offerPositionRepository;
+    private readonly IOfferService _offerService;
+    private readonly IOrderMainService _orderMainService;
     private readonly ProductRepository _productRepository;
     private readonly ICustomerRepository _customerRepository;
     private readonly IUserContext _userContext;
-    private readonly IUnitOfWork _unitOfWork;
     private OfferDto? _selectedOffer;
     private OfferPositionDto? _selectedOfferPosition;
     private string _searchText = string.Empty;
     private CollectionViewSource _offersViewSource;
     
     public OffersViewModel(
-        IOfferRepository offerRepository, 
-        IOfferPositionRepository offerPositionRepository, 
+        IOfferService offerService,
+        IOrderMainService orderMainService,
         ProductRepository productRepository, 
         ICustomerRepository customerRepository,
-        IUserContext userContext,
-        IUnitOfWork unitOfWork)
+        IUserContext userContext)
     {
-        _offerRepository = offerRepository ?? throw new ArgumentNullException(nameof(offerRepository));
-        _offerPositionRepository = offerPositionRepository ?? throw new ArgumentNullException(nameof(offerPositionRepository));
+        _offerService = offerService ?? throw new ArgumentNullException(nameof(offerService));
+        _orderMainService = orderMainService ?? throw new ArgumentNullException(nameof(orderMainService));
         _productRepository = productRepository ?? throw new ArgumentNullException(nameof(productRepository));
         _customerRepository = customerRepository ?? throw new ArgumentNullException(nameof(customerRepository));
         _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
-        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         
         Offers = new ObservableCollection<OfferDto>();
         OfferPositions = new ObservableCollection<OfferPositionDto>();
@@ -55,6 +54,8 @@ public class OffersViewModel : ViewModelBase
         AddOfferCommand = new RelayCommand(async () => await AddOfferAsync());
         EditOfferCommand = new RelayCommand(() => EditOffer(), () => SelectedOffer != null);
         DeleteOfferCommand = new RelayCommand(async () => await DeleteOfferAsync(), () => SelectedOffer != null);
+        ChangeStatusCommand = new RelayCommand(async () => await ChangeStatusAsync(), () => SelectedOffer != null);
+        CreateOrderFromOfferCommand = new RelayCommand(async () => await CreateOrderFromOfferAsync(), () => SelectedOffer != null);
         AddPositionCommand = new RelayCommand(async () => await AddPositionAsync(), () => SelectedOffer != null);
         EditPositionCommand = new RelayCommand(() => EditPosition(), () => SelectedOfferPosition != null);
         DeletePositionCommand = new RelayCommand(async () => await DeletePositionAsync(), () => SelectedOfferPosition != null);
@@ -105,6 +106,10 @@ public class OffersViewModel : ViewModelBase
                     editCmd.RaiseCanExecuteChanged();
                 if (DeleteOfferCommand is RelayCommand deleteCmd)
                     deleteCmd.RaiseCanExecuteChanged();
+                if (ChangeStatusCommand is RelayCommand changeStatusCmd)
+                    changeStatusCmd.RaiseCanExecuteChanged();
+                if (CreateOrderFromOfferCommand is RelayCommand createOrderCmd)
+                    createOrderCmd.RaiseCanExecuteChanged();
                 if (AddPositionCommand is RelayCommand addPosCmd)
                     addPosCmd.RaiseCanExecuteChanged();
                 if (PrintOfferPlCommand is RelayCommand printPlCmd)
@@ -156,6 +161,8 @@ public class OffersViewModel : ViewModelBase
     public ICommand AddOfferCommand { get; }
     public ICommand EditOfferCommand { get; }
     public ICommand DeleteOfferCommand { get; }
+    public ICommand ChangeStatusCommand { get; }
+    public ICommand CreateOrderFromOfferCommand { get; }
     public ICommand AddPositionCommand { get; }
     public ICommand EditPositionCommand { get; }
     public ICommand DeletePositionCommand { get; }
@@ -182,7 +189,7 @@ public class OffersViewModel : ViewModelBase
                 return;
             }
 
-            var offers = await _offerRepository.GetByCompanyIdAsync(_userContext.CompanyId.Value);
+            var offers = await _offerService.GetByCompanyIdAsync(_userContext.CompanyId.Value);
             Offers.Clear();
             foreach (var offer in offers)
             {
@@ -201,7 +208,7 @@ public class OffersViewModel : ViewModelBase
     {
         try
         {
-            var positions = await _offerPositionRepository.GetByOfferIdAsync(offerId);
+            var positions = await _offerService.GetPositionsByOfferIdAsync(offerId);
             OfferPositions.Clear();
             foreach (var position in positions)
             {
@@ -264,6 +271,7 @@ public class OffersViewModel : ViewModelBase
             TradeNotes = offer.TradeNotes,
             ForInvoice = offer.ForInvoice,
             History = offer.History,
+            Status = offer.Status.ToString(),
             CreatedAt = offer.CreatedAt,
             UpdatedAt = offer.UpdatedAt
         };
@@ -330,7 +338,7 @@ public class OffersViewModel : ViewModelBase
         try
         {
             var editViewModel = new OfferPositionEditViewModel(
-                _offerPositionRepository, 
+                _offerService, 
                 _productRepository, 
                 SelectedOfferPosition,
                 _userContext);
@@ -365,7 +373,7 @@ public class OffersViewModel : ViewModelBase
         try
         {
             var editViewModel = new OfferEditViewModel(
-                _offerRepository, 
+                _offerService, 
                 _customerRepository, 
                 SelectedOffer,
                 _userContext);
@@ -406,17 +414,17 @@ public class OffersViewModel : ViewModelBase
             var offerDate = (int)(today - baseDate).TotalDays;
             
             // Pobieramy kolejny numer oferty dla dzisiejszego dnia
-            var nextOfferNumber = await _offerRepository.GetNextOfferNumberForDateAsync(offerDate, companyId);
+            var nextOfferNumber = await _offerService.GetNextOfferNumberForDateAsync(offerDate, companyId);
             
             // Tworzymy nową ofertę
             var offer = new Offer(companyId, operatorName);
             offer.UpdateOfferInfo(offerDate, nextOfferNumber, "PLN");
             
             // Dodajemy ofertę do bazy
-            var id = await _offerRepository.AddAsync(offer);
+            var id = await _offerService.AddAsync(offer);
             
             // Pobieramy utworzoną ofertę z bazy
-            var createdOffer = await _offerRepository.GetByIdAsync(id, companyId);
+            var createdOffer = await _offerService.GetByIdAsync(id, companyId);
             if (createdOffer == null)
             {
                 System.Windows.MessageBox.Show(
@@ -450,6 +458,80 @@ public class OffersViewModel : ViewModelBase
         }
     }
 
+    private async Task ChangeStatusAsync()
+    {
+        if (SelectedOffer == null || !_userContext.CompanyId.HasValue) return;
+
+        var current = OfferStatusMapping.FromDb(SelectedOffer.Status);
+        OfferStatus? newStatus = null;
+        string? prompt = null;
+
+        if (current == OfferStatus.Draft)
+            prompt = "Ustaw status: Wysłana (Sent)?";
+        else if (current == OfferStatus.Sent)
+            prompt = "Ustaw status: Zaakceptowana (Accepted)?";
+
+        if (string.IsNullOrEmpty(prompt))
+        {
+            System.Windows.MessageBox.Show(
+                "Brak dozwolonego przejścia do testu (tylko Draft→Sent, Sent→Accepted).",
+                "Zmień status",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
+            return;
+        }
+
+        var result = System.Windows.MessageBox.Show(prompt, "Zmień status",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Question);
+        if (result != System.Windows.MessageBoxResult.Yes) return;
+
+        newStatus = current == OfferStatus.Draft ? OfferStatus.Sent : OfferStatus.Accepted;
+
+        try
+        {
+            await _offerService.SetStatusAsync(SelectedOffer.Id, _userContext.CompanyId.Value, newStatus.Value);
+            await LoadOffersAsync();
+            System.Windows.MessageBox.Show($"Status zmieniony na {newStatus}.", "Zmień status",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        }
+        catch (ERP.Domain.Exceptions.BusinessRuleException ex)
+        {
+            System.Windows.MessageBox.Show(ex.Message, "Reguła biznesowa",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Błąd: {ex.Message}", "Błąd",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+    }
+
+    private async Task CreateOrderFromOfferAsync()
+    {
+        if (SelectedOffer == null || !_userContext.CompanyId.HasValue) return;
+
+        try
+        {
+            var orderId = await _orderMainService.CreateFromOfferAsync(SelectedOffer.Id);
+            System.Windows.MessageBox.Show(
+                $"Zamówienie utworzone z oferty. ID zamówienia: {orderId}.",
+                "Utwórz zamówienie z oferty",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
+        }
+        catch (ERP.Domain.Exceptions.BusinessRuleException ex)
+        {
+            System.Windows.MessageBox.Show(ex.Message, "Reguła biznesowa",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Błąd: {ex.Message}", "Utwórz zamówienie z oferty",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+    }
+
     private async Task DeleteOfferAsync()
     {
         if (SelectedOffer == null) return;
@@ -475,32 +557,8 @@ public class OffersViewModel : ViewModelBase
 
         try
         {
-            // Pobieramy listę pozycji przed transakcją (tylko odczyt)
-            var positions = await _offerPositionRepository.GetByOfferIdAsync(offerToDelete.Id);
+            await _offerService.DeleteAsync(offerToDelete.Id, companyId);
 
-            // Cała operacja usunięcia (pozycje + nagłówek) w jednej transakcji – przy wyjątku rollback
-            await _unitOfWork.ExecuteInTransactionAsync(async (transaction) =>
-            {
-                var conn = transaction.Connection!;
-                // Najpierw pozycje, potem nagłówek
-                foreach (var position in positions)
-                {
-                    using var cmdPos = new MySqlCommand(
-                        "DELETE FROM apozycjeoferty WHERE ID_pozycja_oferty = @Id AND id_firmy = @CompanyId",
-                        conn, transaction);
-                    cmdPos.Parameters.AddWithValue("@Id", position.Id);
-                    cmdPos.Parameters.AddWithValue("@CompanyId", companyId);
-                    await cmdPos.ExecuteNonQueryAsync();
-                }
-                using var cmdOffer = new MySqlCommand(
-                    "DELETE FROM aoferty WHERE ID_oferta = @Id AND id_firmy = @CompanyId",
-                    conn, transaction);
-                cmdOffer.Parameters.AddWithValue("@Id", offerToDelete.Id);
-                cmdOffer.Parameters.AddWithValue("@CompanyId", companyId);
-                await cmdOffer.ExecuteNonQueryAsync();
-            });
-
-            // Usuwamy z listy (tylko po udanym commicie)
             Offers.Remove(offerToDelete);
             SelectedOffer = null;
             OfferPositions.Clear();
@@ -510,6 +568,11 @@ public class OffersViewModel : ViewModelBase
                 "Sukces",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Information);
+        }
+        catch (ERP.Domain.Exceptions.BusinessRuleException ex)
+        {
+            System.Windows.MessageBox.Show(ex.Message, "Reguła biznesowa",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
         }
         catch (Exception ex)
         {
@@ -547,7 +610,7 @@ public class OffersViewModel : ViewModelBase
             position.UpdateVatInfo("23", 0, 0);
             
             // Dodajemy pozycję do bazy
-            var id = await _offerPositionRepository.AddAsync(position);
+            var id = await _offerService.AddPositionAsync(position);
             
             // Odświeżamy listę pozycji
             await LoadOfferPositionsAsync(SelectedOffer.Id);
@@ -561,6 +624,11 @@ public class OffersViewModel : ViewModelBase
                 // Otwieramy okno edycji nowo utworzonej pozycji
                 EditPosition();
             }
+        }
+        catch (ERP.Domain.Exceptions.BusinessRuleException ex)
+        {
+            System.Windows.MessageBox.Show(ex.Message, "Reguła biznesowa",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
         }
         catch (Exception ex)
         {
@@ -589,8 +657,7 @@ public class OffersViewModel : ViewModelBase
 
         try
         {
-            // Usuwamy pozycję z bazy
-            await _offerPositionRepository.DeleteAsync(SelectedOfferPosition.Id);
+            await _offerService.DeletePositionAsync(SelectedOfferPosition.Id);
             
             // Usuwamy z listy
             var positionToRemove = SelectedOfferPosition;
@@ -602,6 +669,11 @@ public class OffersViewModel : ViewModelBase
                 "Sukces",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Information);
+        }
+        catch (ERP.Domain.Exceptions.BusinessRuleException ex)
+        {
+            System.Windows.MessageBox.Show(ex.Message, "Reguła biznesowa",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
         }
         catch (Exception ex)
         {

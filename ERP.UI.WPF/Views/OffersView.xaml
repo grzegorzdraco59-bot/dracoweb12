@@ -89,6 +89,7 @@
                 <DataGridTextColumn Header="Waluta" Binding="{Binding Currency}" Width="80"/>
                 <DataGridTextColumn Header="Wartość" Binding="{Binding TotalBrutto, StringFormat='{}{0:N2}'}" Width="120"/>
                 <DataGridTextColumn Header="Operator" Binding="{Binding Operator}" Width="100"/>
+                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="80"/>
             </DataGrid.Columns>
         </DataGrid>
 
@@ -105,6 +106,14 @@
                         Margin="0,0,5,0"/>
                 <Button Content="Usuń ofertę" 
                         Command="{Binding DeleteOfferCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Zmień status" 
+                        Command="{Binding ChangeStatusCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Utwórz zamówienie z oferty" 
+                        Command="{Binding CreateOrderFromOfferCommand}"
                         Padding="10,5"
                         Margin="0,0,5,0"/>
                 <Button Content="Odśwież" 

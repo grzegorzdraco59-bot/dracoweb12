@@ -261,6 +261,9 @@ public partial class App : System.Windows.Application
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<IOperatorPermissionService, OperatorPermissionService>();
         services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<IOfferService, OfferService>();
+        services.AddScoped<IOrderFromOfferConversionService, OrderFromOfferConversionService>();
+        services.AddScoped<IOrderMainService, OrderMainService>();
 
         // Automatyczna rejestracja walidatorów z ERP.Application.Validation (AddScoped, same typy)
         var applicationAssembly = typeof(ERP.Application.Services.CustomerService).Assembly;

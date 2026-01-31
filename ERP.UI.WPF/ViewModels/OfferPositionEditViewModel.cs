@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using ERP.Application.DTOs;
+using ERP.Application.Services;
 using ERP.Domain.Entities;
+using IUserContext = ERP.UI.WPF.Services.IUserContext;
 using ERP.Domain.Repositories;
 using ERP.Infrastructure.Repositories;
 using ERP.UI.WPF.Views;
@@ -14,7 +16,7 @@ namespace ERP.UI.WPF.ViewModels;
 /// </summary>
 public class OfferPositionEditViewModel : ViewModelBase
 {
-    private readonly IOfferPositionRepository _repository;
+    private readonly IOfferService _offerService;
     private readonly ProductRepository _productRepository;
     private readonly IUserContext _userContext;
     private readonly OfferPositionDto _originalPosition;
@@ -22,12 +24,12 @@ public class OfferPositionEditViewModel : ViewModelBase
     private readonly ObservableCollection<ProductDto> _allProducts;
 
     public OfferPositionEditViewModel(
-        IOfferPositionRepository repository, 
+        IOfferService offerService, 
         ProductRepository productRepository, 
         OfferPositionDto position,
         IUserContext userContext)
     {
-        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _offerService = offerService ?? throw new ArgumentNullException(nameof(offerService));
         _productRepository = productRepository ?? throw new ArgumentNullException(nameof(productRepository));
         _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
         _originalPosition = position ?? throw new ArgumentNullException(nameof(position));
@@ -315,7 +317,7 @@ public class OfferPositionEditViewModel : ViewModelBase
             else
             {
                 // Pobierz istniejącą encję z bazy
-                position = await _repository.GetByIdAsync(_position.Id);
+                position = await _offerService.GetPositionByIdAsync(_position.Id);
                 if (position == null)
                 {
                     System.Windows.MessageBox.Show(
@@ -342,17 +344,22 @@ public class OfferPositionEditViewModel : ViewModelBase
             if (isNewPosition)
             {
                 // Dodajemy nową pozycję do bazy
-                var newId = await _repository.AddAsync(position);
+                var newId = await _offerService.AddPositionAsync(position);
                 // Aktualizujemy ID w DTO, aby w razie potrzeby można było ponownie edytować
                 _position.Id = newId;
             }
             else
             {
                 // Aktualizujemy istniejącą pozycję
-                await _repository.UpdateAsync(position);
+                await _offerService.UpdatePositionAsync(position);
             }
             
             OnSaved();
+        }
+        catch (ERP.Domain.Exceptions.BusinessRuleException ex)
+        {
+            System.Windows.MessageBox.Show(ex.Message, "Reguła biznesowa",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
         }
         catch (Exception ex)
         {

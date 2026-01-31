@@ -4,6 +4,14 @@
 }
 
 <div class="container-fluid p-0 d-flex flex-column orders-fullscreen">
+    @if (ViewBag.Message != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show m-2" role="alert">@ViewBag.Message</div>
+    }
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show m-2" role="alert">@ViewBag.Error</div>
+    }
     <!-- Nagłówek Zamówienia -->
     <div class="p-3 border-bottom bg-light flex-shrink-0">
         <h2 class="mb-0">11. Zamówienia</h2>
@@ -88,6 +96,12 @@
                 <button type="button" class="btn btn-primary btn-sm" onclick="addOrder()">Dodaj zamówienie</button>
                 <button type="button" class="btn btn-secondary btn-sm" id="editOrderBtn" onclick="editOrder()" disabled>Edytuj zamówienie</button>
                 <button type="button" class="btn btn-danger btn-sm" id="deleteOrderBtn" onclick="deleteOrder()" disabled>Usuń zamówienie</button>
+                <form id="formSetStatusOrder" method="post" action="@Url.Action("SetStatus", "Orders")" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="orderId" id="setStatusOrderId" />
+                    <input type="hidden" name="newStatus" id="setStatusOrderNewStatus" />
+                    <button type="button" class="btn btn-info btn-sm" id="changeStatusOrderBtn" onclick="submitSetStatusOrder()" disabled>Zmień status</button>
+                </form>
                 <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm">Odśwież</a>
             </div>
         </div>
@@ -383,6 +397,8 @@
                 const delPosBtn = document.getElementById('deletePositionBtn');
                 if (editBtn) editBtn.disabled = false;
                 if (delBtn) delBtn.disabled = false;
+                const changeStatusBtn = document.getElementById('changeStatusOrderBtn');
+                if (changeStatusBtn) changeStatusBtn.disabled = false;
                 if (addPosBtn) addPosBtn.disabled = false;
                 if (editPosBtn) editPosBtn.disabled = true;
                 if (delPosBtn) delPosBtn.disabled = true;
@@ -529,5 +545,19 @@
         if (confirm(`Czy na pewno chcesz usunąć pozycję ID: ${selectedPositionId}?`)) {
             alert('Usuń pozycję - funkcjonalność w przygotowaniu');
         }
+    }
+    
+    function submitSetStatusOrder() {
+        if (!selectedOrderId) return;
+        const row = document.querySelector('.order-row.selected');
+        const current = (row && row.getAttribute('data-order-status-value')) || 'Draft';
+        if (current !== 'Draft' && current !== 'draft') {
+            alert('Test: tylko Draft→Confirmed. Wybierz zamówienie w statusie Draft.');
+            return;
+        }
+        if (!confirm('Ustaw status: Confirmed?')) return;
+        document.getElementById('setStatusOrderId').value = selectedOrderId;
+        document.getElementById('setStatusOrderNewStatus').value = 'Confirmed';
+        document.getElementById('formSetStatusOrder').submit();
     }
 </script>

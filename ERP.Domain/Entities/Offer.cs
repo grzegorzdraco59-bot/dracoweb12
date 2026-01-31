@@ -1,3 +1,5 @@
+using ERP.Domain.Enums;
+
 namespace ERP.Domain.Entities;
 
 /// <summary>
@@ -6,6 +8,7 @@ namespace ERP.Domain.Entities;
 public class Offer : BaseEntity
 {
     public int CompanyId { get; private set; }
+    public OfferStatus Status { get; private set; } = OfferStatus.Draft;
     public bool? ForProforma { get; private set; }
     public bool? ForOrder { get; private set; }
     public int? OfferDate { get; private set; } // Unix timestamp
@@ -96,6 +99,12 @@ public class Offer : BaseEntity
     public void UpdateHistory(string history)
     {
         History = history ?? string.Empty;
+        UpdateTimestamp();
+    }
+
+    public void UpdateStatus(OfferStatus status)
+    {
+        Status = status;
         UpdateTimestamp();
     }
 }

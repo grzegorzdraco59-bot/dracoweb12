@@ -4,6 +4,14 @@
 }
 
 <div class="container-fluid p-0 d-flex flex-column offers-fullscreen">
+    @if (ViewBag.Message != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show m-2" role="alert">@ViewBag.Message</div>
+    }
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show m-2" role="alert">@ViewBag.Error</div>
+    }
     <!-- Nagłówek Oferty -->
     <div class="p-3 border-bottom bg-light flex-shrink-0">
         <h2 class="mb-0">Oferty</h2>
@@ -80,12 +88,13 @@
                                 <th class="sortable" data-column="operator" style="width: 100px; white-space: nowrap; cursor: pointer; user-select: none;">
                                     Operator <span class="sort-indicator">↕</span>
                                 </th>
+                                <th style="width: 80px; white-space: nowrap;">Status</th>
                             </tr>
                         </thead>
                         <tbody id="offers-tbody">
                             @foreach (var offer in Model)
                             {
-                                <tr class="offer-row" data-offer-id="@offer.Id" style="cursor: pointer;" 
+                                <tr class="offer-row" data-offer-id="@offer.Id" data-offer-status="@(offer.Status ?? "Draft")" style="cursor: pointer;" 
                                     data-offer-data="@($"{offer.Id}|{offer.OfferNumber}|{offer.FormattedOfferDate}|{offer.ForProforma}|{offer.ForInvoice}|{offer.ForOrder}|{offer.CustomerName}|{offer.CustomerCountry}|{offer.Currency}|{offer.TotalBrutto}|{offer.Operator}|{offer.CustomerStreet}|{offer.CustomerCity}|{offer.CustomerNip}")"
                                     data-offer-id-value="@offer.Id"
                                     data-offer-date-value="@(offer.OfferDate ?? 0)"
@@ -109,6 +118,7 @@
                                     <td>@(offer.Currency ?? "-")</td>
                                     <td class="text-end">@(offer.TotalBrutto?.ToString("N2") ?? "-")</td>
                                     <td>@(offer.Operator ?? "-")</td>
+                                    <td>@(offer.Status ?? "Draft")</td>
                                 </tr>
                             }
                         </tbody>
@@ -132,6 +142,12 @@
                 <button type="button" class="btn btn-primary btn-sm" onclick="addOffer()">Dodaj ofertę</button>
                 <button type="button" class="btn btn-secondary btn-sm" id="editOfferBtn" onclick="editOffer()" disabled>Edytuj ofertę</button>
                 <button type="button" class="btn btn-danger btn-sm" id="deleteOfferBtn" onclick="deleteOffer()" disabled>Usuń ofertę</button>
+                <form id="formSetStatusOffer" method="post" action="@Url.Action("SetStatus", "Offers")" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="offerId" id="setStatusOfferId" />
+                    <input type="hidden" name="newStatus" id="setStatusOfferNewStatus" />
+                    <button type="button" class="btn btn-info btn-sm" id="changeStatusOfferBtn" onclick="submitSetStatusOffer()" disabled>Zmień status</button>
+                </form>
                 <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm">Odśwież</a>
             </div>
         </div>
@@ -470,6 +486,8 @@
                 const delPosBtn = document.getElementById('deletePositionBtn');
                 if (editBtn) editBtn.disabled = false;
                 if (delBtn) delBtn.disabled = false;
+                const changeStatusBtn = document.getElementById('changeStatusOfferBtn');
+                if (changeStatusBtn) changeStatusBtn.disabled = false;
                 if (addPosBtn) addPosBtn.disabled = false;
                 if (editPosBtn) editPosBtn.disabled = true;
                 if (delPosBtn) delPosBtn.disabled = true;
@@ -681,5 +699,20 @@
             return;
         }
         alert(`Kopiuj do FV ID: ${selectedOfferId} - funkcjonalność w przygotowaniu`);
+    }
+    
+    function submitSetStatusOffer() {
+        if (!selectedOfferId) return;
+        const row = document.querySelector('.offer-row.selected');
+        const current = (row && row.getAttribute('data-offer-status')) || 'Draft';
+        const nextStatus = current === 'Draft' ? 'Sent' : (current === 'Sent' ? 'Accepted' : null);
+        if (!nextStatus) {
+            alert('Test: tylko Draft→Sent lub Sent→Accepted.');
+            return;
+        }
+        if (!confirm('Ustaw status: ' + nextStatus + '?')) return;
+        document.getElementById('setStatusOfferId').value = selectedOfferId;
+        document.getElementById('setStatusOfferNewStatus').value = nextStatus;
+        document.getElementById('formSetStatusOffer').submit();
     }
 </script>

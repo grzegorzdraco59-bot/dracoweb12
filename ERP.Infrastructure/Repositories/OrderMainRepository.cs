@@ -1,6 +1,7 @@
 using ERP.Application.DTOs;
 using ERP.Application.Repositories;
 using ERP.Application.Services;
+using ERP.Domain.Enums;
 using ERP.Infrastructure.Data;
 using MySqlConnector;
 
@@ -116,7 +117,7 @@ public class OrderMainRepository : IOrderMainRepository
         command.Parameters.AddWithValue("@SupplierId", order.SupplierId ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@SupplierName", order.SupplierName ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@Notes", order.Notes ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Status", order.Status ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@Status", OrderStatusMapping.ToDb(OrderStatusMapping.FromDb(order.Status)));
 
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return Convert.ToInt32(result);
@@ -149,7 +150,7 @@ public class OrderMainRepository : IOrderMainRepository
         command.Parameters.AddWithValue("@SupplierId", order.SupplierId ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@SupplierName", order.SupplierName ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@Notes", order.Notes ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Status", order.Status ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@Status", OrderStatusMapping.ToDb(OrderStatusMapping.FromDb(order.Status)));
 
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
@@ -157,13 +158,25 @@ public class OrderMainRepository : IOrderMainRepository
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
-        // Użyjmy dynamicznego sprawdzania nazwy kolumny ID
         var idColumnName = await GetIdColumnNameAsync(connection, cancellationToken);
         var command = new MySqlCommand(
             $"DELETE FROM zamowienia WHERE {idColumnName} = @Id AND id_firmy = @CompanyId",
             connection);
         command.Parameters.AddWithValue("@Id", id);
         command.Parameters.AddWithValue("@CompanyId", GetCurrentCompanyId());
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    public async Task SetStatusAsync(int id, OrderStatus status, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _context.CreateConnectionAsync();
+        var idColumnName = await GetIdColumnNameAsync(connection, cancellationToken);
+        var command = new MySqlCommand(
+            $"UPDATE zamowienia SET status = @Status WHERE {idColumnName} = @Id AND id_firmy = @CompanyId",
+            connection);
+        command.Parameters.AddWithValue("@Id", id);
+        command.Parameters.AddWithValue("@CompanyId", GetCurrentCompanyId());
+        command.Parameters.AddWithValue("@Status", OrderStatusMapping.ToDb(status));
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
@@ -227,7 +240,7 @@ public class OrderMainRepository : IOrderMainRepository
             SupplierId = GetNullableInt(reader, availableColumns.Contains("id_dostawcy") ? "id_dostawcy" : null),
             SupplierName = GetNullableString(reader, availableColumns.Contains("dostawca") ? "dostawca" : availableColumns.Contains("nazwa_dostawcy") ? "nazwa_dostawcy" : null),
             Notes = GetNullableString(reader, availableColumns.Contains("uwagi") ? "uwagi" : null),
-            Status = GetNullableString(reader, availableColumns.Contains("status") ? "status" : null),
+            Status = OrderStatusMapping.ToDb(OrderStatusMapping.FromDb(GetNullableString(reader, availableColumns.Contains("status") ? "status" : null))),
             CreatedAt = GetDateTime(reader, availableColumns.Contains("CreatedAt") ? "CreatedAt" : availableColumns.Contains("created_at") ? "created_at" : null),
             UpdatedAt = GetNullableDateTime(reader, availableColumns.Contains("UpdatedAt") ? "UpdatedAt" : availableColumns.Contains("updated_at") ? "updated_at" : null)
         };

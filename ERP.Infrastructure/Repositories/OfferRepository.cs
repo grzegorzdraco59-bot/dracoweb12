@@ -1,4 +1,5 @@
 using ERP.Domain.Entities;
+using ERP.Domain.Enums;
 using ERP.Domain.Repositories;
 using ERP.Infrastructure.Data;
 using MySqlConnector;
@@ -26,7 +27,7 @@ public class OfferRepository : IOfferRepository
             "odbiorca_ID_odbiorcy, odbiorca_nazwa, odbiorca_ulica, odbiorca_kod_poczt, odbiorca_miasto, " +
             "odbiorca_panstwo, odbiorca_nip, odbiorca_mail, Waluta, Cena_calkowita, stawka_vat, " +
             "total_vat, total_brutto, uwagi_do_oferty, dane_dodatkowe, operator, uwagi_targi, " +
-            "do_faktury, historia " +
+            "do_faktury, historia, status " +
             "FROM aoferty WHERE ID_oferta = @Id AND id_firmy = @CompanyId",
             connection);
         command.Parameters.AddWithValue("@Id", id);
@@ -55,7 +56,7 @@ public class OfferRepository : IOfferRepository
             "odbiorca_ID_odbiorcy, odbiorca_nazwa, odbiorca_ulica, odbiorca_kod_poczt, odbiorca_miasto, " +
             "odbiorca_panstwo, odbiorca_nip, odbiorca_mail, Waluta, Cena_calkowita, stawka_vat, " +
             "total_vat, total_brutto, uwagi_do_oferty, dane_dodatkowe, operator, uwagi_targi, " +
-            "do_faktury, historia " +
+            "do_faktury, historia, status " +
             "FROM aoferty WHERE id_firmy = @CompanyId ORDER BY Data_oferty DESC, Nr_oferty DESC",
             connection);
         command.Parameters.AddWithValue("@CompanyId", companyId);
@@ -77,11 +78,11 @@ public class OfferRepository : IOfferRepository
             "odbiorca_ID_odbiorcy, odbiorca_nazwa, odbiorca_ulica, odbiorca_kod_poczt, odbiorca_miasto, " +
             "odbiorca_panstwo, odbiorca_nip, odbiorca_mail, Waluta, Cena_calkowita, stawka_vat, " +
             "total_vat, total_brutto, uwagi_do_oferty, dane_dodatkowe, operator, uwagi_targi, " +
-            "do_faktury, historia) " +
+            "do_faktury, historia, status) " +
             "VALUES (@CompanyId, @ForProforma, @ForOrder, @OfferDate, @OfferNumber, @CustomerId, " +
             "@CustomerName, @CustomerStreet, @CustomerPostalCode, @CustomerCity, @CustomerCountry, " +
             "@CustomerNip, @CustomerEmail, @Currency, @TotalPrice, @VatRate, @TotalVat, @TotalBrutto, " +
-            "@OfferNotes, @AdditionalData, @Operator, @TradeNotes, @ForInvoice, @History); " +
+            "@OfferNotes, @AdditionalData, @Operator, @TradeNotes, @ForInvoice, @History, @Status); " +
             "SELECT LAST_INSERT_ID();",
             connection);
         
@@ -103,7 +104,7 @@ public class OfferRepository : IOfferRepository
             "odbiorca_mail = @CustomerEmail, Waluta = @Currency, Cena_calkowita = @TotalPrice, " +
             "stawka_vat = @VatRate, total_vat = @TotalVat, total_brutto = @TotalBrutto, " +
             "uwagi_do_oferty = @OfferNotes, dane_dodatkowe = @AdditionalData, operator = @Operator, " +
-            "uwagi_targi = @TradeNotes, do_faktury = @ForInvoice, historia = @History " +
+            "uwagi_targi = @TradeNotes, do_faktury = @ForInvoice, historia = @History, status = @Status " +
             "WHERE ID_oferta = @Id AND id_firmy = @CompanyId",
             connection);
         
@@ -121,6 +122,18 @@ public class OfferRepository : IOfferRepository
             connection);
         command.Parameters.AddWithValue("@Id", id);
         command.Parameters.AddWithValue("@CompanyId", companyId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    public async Task SetStatusAsync(int id, int companyId, OfferStatus status, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _context.CreateConnectionAsync();
+        var command = new MySqlCommand(
+            "UPDATE aoferty SET status = @Status WHERE ID_oferta = @Id AND id_firmy = @CompanyId",
+            connection);
+        command.Parameters.AddWithValue("@Id", id);
+        command.Parameters.AddWithValue("@CompanyId", companyId);
+        command.Parameters.AddWithValue("@Status", OfferStatusMapping.ToDb(status));
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
@@ -203,7 +216,10 @@ public class OfferRepository : IOfferRepository
         );
         
         offer.UpdateHistory(reader.GetString(reader.GetOrdinal("historia")));
-        
+
+        var statusStr = GetNullableString(reader, "status");
+        offer.UpdateStatus(OfferStatusMapping.FromDb(statusStr));
+
         return offer;
     }
 
@@ -257,5 +273,6 @@ public class OfferRepository : IOfferRepository
         command.Parameters.AddWithValue("@TradeNotes", offer.TradeNotes);
         command.Parameters.AddWithValue("@ForInvoice", offer.ForInvoice);
         command.Parameters.AddWithValue("@History", offer.History);
+        command.Parameters.AddWithValue("@Status", OfferStatusMapping.ToDb(offer.Status));
     }
 }

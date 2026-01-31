@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using ERP.Application.DTOs;
+using ERP.Application.Services;
 using ERP.Domain.Entities;
+using IUserContext = ERP.UI.WPF.Services.IUserContext;
 using ERP.Domain.Repositories;
 using ERP.Infrastructure.Repositories;
 using ERP.UI.WPF.Views;
@@ -14,7 +16,7 @@ namespace ERP.UI.WPF.ViewModels;
 /// </summary>
 public class OfferEditViewModel : ViewModelBase
 {
-    private readonly IOfferRepository _repository;
+    private readonly IOfferService _offerService;
     private readonly ICustomerRepository _customerRepository;
     private readonly IUserContext _userContext;
     private readonly OfferDto _originalOffer;
@@ -22,12 +24,12 @@ public class OfferEditViewModel : ViewModelBase
     private ObservableCollection<CustomerDto> _allCustomers = new();
 
     public OfferEditViewModel(
-        IOfferRepository repository, 
+        IOfferService offerService, 
         ICustomerRepository customerRepository, 
         OfferDto offer,
         IUserContext userContext)
     {
-        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _offerService = offerService ?? throw new ArgumentNullException(nameof(offerService));
         _customerRepository = customerRepository ?? throw new ArgumentNullException(nameof(customerRepository));
         _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
         _originalOffer = offer ?? throw new ArgumentNullException(nameof(offer));
@@ -344,7 +346,7 @@ public class OfferEditViewModel : ViewModelBase
             }
 
             // Pobierz encję z bazy
-            var offer = await _repository.GetByIdAsync(_offer.Id, _userContext.CompanyId.Value);
+            var offer = await _offerService.GetByIdAsync(_offer.Id, _userContext.CompanyId.Value);
             if (offer == null)
             {
                 System.Windows.MessageBox.Show(
@@ -377,7 +379,7 @@ public class OfferEditViewModel : ViewModelBase
             offer.UpdateNotes(_offer.OfferNotes, _offer.AdditionalData, _offer.TradeNotes);
             offer.UpdateHistory(_offer.History);
 
-            await _repository.UpdateAsync(offer);
+            await _offerService.UpdateAsync(offer);
             
             System.Windows.MessageBox.Show(
                 "Oferta została zaktualizowana.",
@@ -386,6 +388,11 @@ public class OfferEditViewModel : ViewModelBase
                 System.Windows.MessageBoxImage.Information);
 
             OnSaved();
+        }
+        catch (ERP.Domain.Exceptions.BusinessRuleException ex)
+        {
+            System.Windows.MessageBox.Show(ex.Message, "Reguła biznesowa",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
         }
         catch (Exception ex)
         {

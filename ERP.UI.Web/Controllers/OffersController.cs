@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using ERP.Application.Services;
+using ERP.Domain.Enums;
 using ERP.Domain.Repositories;
 using ERP.Application.DTOs;
 using ERP.UI.Web.Services;
+using IUserContext = ERP.UI.Web.Services.IUserContext;
 
 namespace ERP.UI.Web.Controllers;
 
@@ -14,12 +17,14 @@ public class OffersController : BaseController
 {
     private readonly IOfferRepository _offerRepository;
     private readonly IOfferPositionRepository _offerPositionRepository;
+    private readonly IOfferService _offerService;
     private readonly IUserContext _userContext;
 
-    public OffersController(IOfferRepository offerRepository, IOfferPositionRepository offerPositionRepository, IUserContext userContext)
+    public OffersController(IOfferRepository offerRepository, IOfferPositionRepository offerPositionRepository, IOfferService offerService, IUserContext userContext)
     {
         _offerRepository = offerRepository ?? throw new ArgumentNullException(nameof(offerRepository));
         _offerPositionRepository = offerPositionRepository ?? throw new ArgumentNullException(nameof(offerPositionRepository));
+        _offerService = offerService ?? throw new ArgumentNullException(nameof(offerService));
         _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
     }
 
@@ -171,8 +176,34 @@ public class OffersController : BaseController
             TradeNotes = offer.TradeNotes,
             ForInvoice = offer.ForInvoice,
             History = offer.History,
+            Status = offer.Status.ToString(),
             CreatedAt = offer.CreatedAt,
             UpdatedAt = offer.UpdatedAt
         };
+    }
+
+    /// <summary>
+    /// Zmiana statusu oferty (FAZA4 – test: Draft→Sent, Sent→Accepted).
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetStatus(int offerId, string newStatus, CancellationToken cancellationToken = default)
+    {
+        var companyId = _userContext.CompanyId;
+        if (!companyId.HasValue)
+            return RedirectToAction("Select", "Company");
+
+        if (!Enum.TryParse<OfferStatus>(newStatus, true, out var status))
+            return RedirectToAction(nameof(Index), new { error = "Nieprawidłowy status" });
+
+        try
+        {
+            await _offerService.SetStatusAsync(offerId, companyId.Value, status, cancellationToken);
+            return RedirectToAction(nameof(Index), new { message = $"Status zmieniony na {status}" });
+        }
+        catch (ERP.Domain.Exceptions.BusinessRuleException ex)
+        {
+            return RedirectToAction(nameof(Index), new { error = ex.Message });
+        }
     }
 }

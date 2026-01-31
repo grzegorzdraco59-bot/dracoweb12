@@ -1,4 +1,5 @@
 using ERP.Domain.Entities;
+using ERP.Domain.Enums;
 
 namespace ERP.Domain.Repositories;
 
@@ -13,6 +14,7 @@ public interface IOfferRepository
     Task<int> AddAsync(Offer offer, CancellationToken cancellationToken = default);
     Task UpdateAsync(Offer offer, CancellationToken cancellationToken = default);
     Task DeleteAsync(int id, int companyId, CancellationToken cancellationToken = default);
+    Task SetStatusAsync(int id, int companyId, OfferStatus status, CancellationToken cancellationToken = default);
     Task<bool> ExistsAsync(int id, int companyId, CancellationToken cancellationToken = default);
     Task<int?> GetNextOfferNumberForDateAsync(int offerDate, int companyId, CancellationToken cancellationToken = default);
 }
