@@ -7,5 +7,5 @@ namespace ERP.Application.Repositories;
 /// </summary>
 public interface IInvoicePositionRepository
 {
-    Task<IEnumerable<InvoicePositionDto>> GetByInvoiceIdAsync(int invoiceId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<InvoicePositionDto>> GetByInvoiceIdAsync(long invoiceId, CancellationToken cancellationToken = default);
 }

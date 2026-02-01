@@ -136,7 +136,7 @@ public class InvoicesViewModel : ViewModelBase
         }
     }
 
-    private async Task LoadPositionsAsync(int invoiceId)
+    private async Task LoadPositionsAsync(long invoiceId)
     {
         if (invoiceId <= 0)
         {

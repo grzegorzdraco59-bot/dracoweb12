@@ -50,7 +50,7 @@ public class InvoiceRepository : IInvoiceRepository
         {
             list.Add(new OfferDocumentDto
             {
-                InvoiceId = GetInt(reader, "id"),
+                InvoiceId = (int)GetLong(reader, "id"),
                 DocType = GetNullableString(reader, "doc_type") ?? "",
                 DocFullNo = GetNullableString(reader, "doc_full_no"),
                 DataFaktury = GetNullableInt(reader, "data_faktury"),
@@ -65,7 +65,7 @@ public class InvoiceRepository : IInvoiceRepository
     {
         return new InvoiceDto
         {
-            Id = GetInt(reader, "id"),
+            Id = GetLong(reader, "id"),
             CompanyId = GetInt(reader, "id_firmy"),
             IdOferty = GetNullableInt(reader, "id_oferty"),
             DataFaktury = GetNullableInt(reader, "data_faktury"),
@@ -88,6 +88,12 @@ public class InvoiceRepository : IInvoiceRepository
     {
         var ordinal = reader.GetOrdinal(columnName);
         return reader.IsDBNull(ordinal) ? 0 : reader.GetInt32(ordinal);
+    }
+
+    private static long GetLong(MySqlDataReader reader, string columnName)
+    {
+        var ordinal = reader.GetOrdinal(columnName);
+        return reader.IsDBNull(ordinal) ? 0L : reader.GetInt64(ordinal);
     }
 
     private static int? GetNullableInt(MySqlDataReader reader, string columnName)

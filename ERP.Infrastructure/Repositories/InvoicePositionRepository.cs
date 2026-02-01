@@ -17,14 +17,14 @@ public class InvoicePositionRepository : IInvoicePositionRepository
         _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
-    public async Task<IEnumerable<InvoicePositionDto>> GetByInvoiceIdAsync(int invoiceId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<InvoicePositionDto>> GetByInvoiceIdAsync(long invoiceId, CancellationToken cancellationToken = default)
     {
         var list = new List<InvoicePositionDto>();
         await using var connection = await _context.CreateConnectionAsync();
         var cmd = new MySqlCommand(
-            "SELECT COALESCE(id, id_pozycji_faktury) AS id, COALESCE(faktura_id, id_faktury) AS faktura_id, " +
-            "Nazwa_towaru, Nazwa_towaru_eng, jednostki, ilosc, cena_netto, rabat, stawka_vat, netto_poz, vat_poz, brutto_poz " +
-            "FROM pozycjefaktury WHERE COALESCE(faktura_id, id_faktury) = @InvoiceId ORDER BY COALESCE(id, id_pozycji_faktury)",
+            "SELECT p.id_pozycji_faktury AS IdPozycjiFaktury, p.faktura_id AS FakturaId, " +
+            "p.Nazwa_towaru, p.Nazwa_towaru_eng, p.jednostki, p.ilosc, p.cena_netto, p.rabat, p.stawka_vat, p.netto_poz, p.vat_poz, p.brutto_poz " +
+            "FROM pozycjefaktury p WHERE p.faktura_id = @InvoiceId ORDER BY p.id_pozycji_faktury",
             connection);
         cmd.Parameters.AddWithValue("@InvoiceId", invoiceId);
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
@@ -39,8 +39,8 @@ public class InvoicePositionRepository : IInvoicePositionRepository
     {
         return new InvoicePositionDto
         {
-            Id = GetInt(reader, "id"),
-            InvoiceId = GetInt(reader, "faktura_id"),
+            IdPozycjiFaktury = GetInt(reader, "IdPozycjiFaktury"),
+            FakturaId = GetLong(reader, "FakturaId"),
             NazwaTowaru = GetNullableString(reader, "Nazwa_towaru") ?? "",
             NazwaTowaruEng = GetNullableString(reader, "Nazwa_towaru_eng"),
             Jednostki = GetNullableString(reader, "jednostki") ?? "szt",
@@ -58,6 +58,12 @@ public class InvoicePositionRepository : IInvoicePositionRepository
     {
         var ordinal = reader.GetOrdinal(columnName);
         return reader.IsDBNull(ordinal) ? 0 : reader.GetInt32(ordinal);
+    }
+
+    private static long GetLong(MySqlDataReader reader, string columnName)
+    {
+        var ordinal = reader.GetOrdinal(columnName);
+        return reader.IsDBNull(ordinal) ? 0L : reader.GetInt64(ordinal);
     }
 
     private static decimal GetDecimal(MySqlDataReader reader, string columnName)

@@ -2,11 +2,12 @@ namespace ERP.Application.DTOs;
 
 /// <summary>
 /// DTO dla nagłówka faktury z tabeli faktury (odczyt – lista/edycja).
-/// ZASADA: sum_netto, sum_vat, sum_brutto są TYLKO wyliczane (RecalculateTotals) – NIE umożliwiaj edycji w UI.
+/// Id mapuje do faktury.id (BIGINT). ZASADA: sum_netto, sum_vat, sum_brutto są TYLKO wyliczane (RecalculateTotals) – NIE umożliwiaj edycji w UI.
 /// </summary>
 public class InvoiceDto
 {
-    public int Id { get; set; }
+    /// <summary>Mapuje do faktury.id (BIGINT, identyfikator nagłówka).</summary>
+    public long Id { get; set; }
     public int CompanyId { get; set; }
     public int? IdOferty { get; set; }
     public int? DataFaktury { get; set; }
