@@ -67,7 +67,7 @@ public class OffersViewModel : ViewModelBase
         DeleteOfferCommand = new RelayCommand(async () => await DeleteOfferAsync(), () => SelectedOffer != null);
         ChangeStatusCommand = new RelayCommand(async () => await ChangeStatusAsync(), () => SelectedOffer != null);
         CreateOrderFromOfferCommand = new RelayCommand(async () => await CreateOrderFromOfferAsync(), () => SelectedOffer != null);
-        AddPositionCommand = new RelayCommand(async () => await AddPositionAsync(), () => SelectedOffer != null);
+        AddPositionCommand = new RelayCommand(AddPositionAsync, () => SelectedOffer != null);
         EditPositionCommand = new RelayCommand(() => EditPosition(), () => SelectedOfferPosition != null);
         DeletePositionCommand = new RelayCommand(async () => await DeletePositionAsync(), () => SelectedOfferPosition != null);
         
@@ -775,7 +775,7 @@ public class OffersViewModel : ViewModelBase
         }
     }
 
-    private async Task AddPositionAsync()
+    private void AddPositionAsync()
     {
         if (SelectedOffer == null)
         {
@@ -789,41 +789,45 @@ public class OffersViewModel : ViewModelBase
 
         try
         {
-            var companyId = _userContext.CompanyId 
+            var companyId = _userContext.CompanyId
                 ?? throw new InvalidOperationException("Brak wybranej firmy. Użytkownik musi być zalogowany i wybrać firmę.");
 
-            // Tworzymy nową pozycję oferty
-            var position = new OfferPosition(companyId, SelectedOffer.Id, "szt");
-            
-            // Ustawiamy domyślne wartości
-            position.UpdateProductInfo(null, null, null, "Nowa pozycja", null);
-            position.UpdatePricing(1, 0, 0, 0, 0);
-            position.UpdateVatInfo("23", 0, 0);
-            
-            // Dodajemy pozycję do bazy (serwis przelicza SumBrutto)
-            var offerId = SelectedOffer.Id;
-            var id = await _offerService.AddPositionAsync(position);
-            await RefreshPositionsAndSumBruttoAsync(offerId);
-
-            // Ustawiamy nowo utworzoną pozycję jako wybraną
-            var positionDto = OfferPositions.FirstOrDefault(p => p.Id == (long)id);
-            if (positionDto != null)
+            // Nowa pozycja – DTO z Id=0; INSERT nastąpi dopiero po "Zapisz" w oknie edycji
+            var newPositionDto = new OfferPositionDto
             {
-                SelectedOfferPosition = positionDto;
-                
-                // Otwieramy okno edycji nowo utworzonej pozycji
-                EditPosition();
+                Id = 0,
+                OfferId = SelectedOffer.Id,
+                CompanyId = companyId,
+                Unit = "szt",
+                Name = null,
+                Ilosc = 1,
+                CenaNetto = 0,
+                Discount = 0,
+                VatRate = "23",
+                NettoPoz = 0,
+                VatPoz = 0,
+                BruttoPoz = 0
+            };
+
+            var editViewModel = new OfferPositionEditViewModel(
+                _offerService,
+                _productRepository,
+                newPositionDto,
+                _userContext);
+            var editWindow = new OfferPositionEditWindow(editViewModel)
+            {
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+
+            if (editWindow.ShowDialog() == true && SelectedOffer != null)
+            {
+                _ = RefreshPositionsAndSumBruttoAsync(SelectedOffer.Id);
             }
-        }
-        catch (ERP.Domain.Exceptions.BusinessRuleException ex)
-        {
-            System.Windows.MessageBox.Show(ex.Message, "Reguła biznesowa",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
         }
         catch (Exception ex)
         {
             System.Windows.MessageBox.Show(
-                $"Błąd podczas dodawania pozycji oferty: {ex.Message}",
+                $"Błąd podczas otwierania okna pozycji: {ex.Message}",
                 "Błąd",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Error);

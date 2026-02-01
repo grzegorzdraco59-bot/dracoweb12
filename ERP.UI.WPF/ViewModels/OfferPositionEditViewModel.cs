@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using System.Windows;
 using ERP.Application.DTOs;
 using ERP.Application.Services;
 using ERP.Domain.Entities;
@@ -117,6 +118,8 @@ public class OfferPositionEditViewModel : ViewModelBase
         {
             _position.Name = value;
             OnPropertyChanged();
+            if (SaveCommand is RelayCommand saveCmd)
+                saveCmd.RaiseCanExecuteChanged();
         }
     }
 
@@ -138,6 +141,8 @@ public class OfferPositionEditViewModel : ViewModelBase
             _position.Ilosc = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(QuantityTimesPrice));
+            if (SaveCommand is RelayCommand saveCmd)
+                saveCmd.RaiseCanExecuteChanged();
         }
     }
 
@@ -149,6 +154,8 @@ public class OfferPositionEditViewModel : ViewModelBase
             _position.CenaNetto = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(QuantityTimesPrice));
+            if (SaveCommand is RelayCommand saveCmd)
+                saveCmd.RaiseCanExecuteChanged();
         }
     }
 
@@ -236,9 +243,12 @@ public class OfferPositionEditViewModel : ViewModelBase
     public ICommand CancelCommand { get; }
     public ICommand SelectProductCommand { get; }
 
+    /// <summary>Przycisk Zapisz włączony gdy OfertaId &gt; 0, ilość &gt; 0, cena netto &gt;= 0. Walidacja szczegółowa w SaveAsync.</summary>
     private bool CanSave()
     {
-        return !string.IsNullOrWhiteSpace(Name);
+        return _position.OfferId > 0
+            && (_position.Ilosc ?? 0) > 0
+            && (_position.CenaNetto ?? -1) >= 0;
     }
 
     // Kwoty (netto_poz, vat_poz, brutto_poz) liczone w serwisie/DB – UI tylko pokazuje (zgodnie z zasadą architektoniczną).
@@ -262,24 +272,39 @@ public class OfferPositionEditViewModel : ViewModelBase
 
     private async Task SaveAsync()
     {
+        // Walidacja przed zapisem
+        if (_position.OfferId <= 0)
+        {
+            System.Windows.MessageBox.Show("Nieprawidłowy identyfikator oferty (OfertaId > 0).", "Walidacja",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+        if (!(_position.Ilosc.HasValue && _position.Ilosc.Value > 0))
+        {
+            System.Windows.MessageBox.Show("Ilość musi być większa od zera.", "Walidacja",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+        if (!_position.CenaNetto.HasValue || _position.CenaNetto.Value < 0)
+        {
+            System.Windows.MessageBox.Show("Cena netto musi być podana i nieujemna.", "Walidacja",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
         try
         {
-            // Sprawdzamy, czy to nowa pozycja (ID = 0) czy edycja istniejącej
             bool isNewPosition = _position.Id == 0;
-            
             OfferPosition position;
-            
+
             if (isNewPosition)
             {
-                // Tworzymy nową pozycję
-                var companyId = _userContext.CompanyId 
+                var companyId = _userContext.CompanyId
                     ?? throw new InvalidOperationException("Brak wybranej firmy. Użytkownik musi być zalogowany i wybrać firmę.");
-                
                 position = new OfferPosition(companyId, (int)_position.OfferId, _position.Unit ?? "szt");
             }
             else
             {
-                // Pobierz istniejącą encję z bazy
                 position = await _offerService.GetPositionByIdAsync((int)_position.Id);
                 if (position == null)
                 {
@@ -292,32 +317,27 @@ public class OfferPositionEditViewModel : ViewModelBase
                 }
             }
 
-            // Aktualizujemy wszystkie pola
             position.UpdateProductInfo(_position.ProductId, _position.SupplierId, _position.ProductCode, _position.Name, _position.NameEng);
             position.UpdateUnits(_position.Unit ?? "szt", _position.UnitEng);
-            position.UpdatePricing(_position.Ilosc, _position.CenaNetto, _position.Discount, 
+            position.UpdatePricing(_position.Ilosc, _position.CenaNetto, _position.Discount,
                 _position.PriceAfterDiscount, _position.NettoPoz);
             position.UpdateVatInfo(_position.VatRate, _position.VatPoz, _position.BruttoPoz);
             position.UpdateNotes(_position.OfferNotes, _position.InvoiceNotes, _position.Other1);
             if (_position.GroupNumber.HasValue)
-            {
                 position.UpdateGroupNumber(_position.GroupNumber);
-            }
 
             if (isNewPosition)
             {
-                // Dodajemy nową pozycję do bazy
                 var newId = await _offerService.AddPositionAsync(position);
-                // Aktualizujemy ID w DTO, aby w razie potrzeby można było ponownie edytować
                 _position.Id = (long)newId;
             }
             else
             {
-                // Aktualizujemy istniejącą pozycję
                 await _offerService.UpdatePositionAsync(position);
             }
-            
-            OnSaved();
+
+            // Zamykanie okna (DialogResult + Close) musi być na wątku UI
+            System.Windows.Application.Current.Dispatcher.Invoke(() => OnSaved());
         }
         catch (ERP.Domain.Exceptions.BusinessRuleException ex)
         {
@@ -326,11 +346,11 @@ public class OfferPositionEditViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show(
-                $"Błąd podczas zapisywania pozycji oferty: {ex.Message}",
-                "Błąd",
-                System.Windows.MessageBoxButton.OK,
-                System.Windows.MessageBoxImage.Error);
+            var text = ex.ToString();
+            if (ex.InnerException != null)
+                text += "\n\nInner: " + ex.InnerException.ToString();
+            System.Windows.MessageBox.Show(text, "Błąd zapisu",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
         }
     }
 

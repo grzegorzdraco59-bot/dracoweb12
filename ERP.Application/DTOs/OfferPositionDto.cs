@@ -2,11 +2,11 @@ namespace ERP.Application.DTOs;
 
 /// <summary>
 /// DTO (Data Transfer Object) dla OfferPosition - używane w warstwie aplikacji i UI.
-/// Id i OfferId mapują na ofertypozycje.id i ofertypozycje.oferta_id.
+/// Używane wyłącznie: ofertypozycje.id (PK) i ofertypozycje.oferta_id (FK). Kolumna ID_pozycja_oferty nie jest używana.
 /// </summary>
 public class OfferPositionDto
 {
-    /// <summary>Mapuje na ofertypozycje.id (PK).</summary>
+    /// <summary>Mapuje na ofertypozycje.id (PK, AUTO_INCREMENT).</summary>
     public long Id { get; set; }
     public int CompanyId { get; set; }
     /// <summary>Mapuje na ofertypozycje.oferta_id (FK do oferty.id).</summary>

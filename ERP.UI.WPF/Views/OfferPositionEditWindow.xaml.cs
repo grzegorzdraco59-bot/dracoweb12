@@ -13,8 +13,16 @@ public partial class OfferPositionEditWindow : Window
         InitializeComponent();
         DataContext = viewModel;
         
-        // Zamknij okno po zapisaniu
-        viewModel.Saved += (sender, e) => DialogResult = true;
-        viewModel.Cancelled += (sender, e) => DialogResult = false;
+        // Zamknij okno po Zapisz (DialogResult=true) lub Anuluj (DialogResult=false)
+        viewModel.Saved += (sender, e) =>
+        {
+            DialogResult = true;
+            Close();
+        };
+        viewModel.Cancelled += (sender, e) =>
+        {
+            DialogResult = false;
+            Close();
+        };
     }
 }
