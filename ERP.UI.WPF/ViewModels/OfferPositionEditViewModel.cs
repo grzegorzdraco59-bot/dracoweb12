@@ -47,14 +47,14 @@ public class OfferPositionEditViewModel : ViewModelBase
             NameEng = position.NameEng,
             Unit = position.Unit,
             UnitEng = position.UnitEng,
-            Quantity = position.Quantity,
-            Price = position.Price,
+            Ilosc = position.Ilosc,
+            CenaNetto = position.CenaNetto,
             Discount = position.Discount,
             PriceAfterDiscount = position.PriceAfterDiscount,
-            PriceAfterDiscountAndQuantity = position.PriceAfterDiscountAndQuantity,
+            NettoPoz = position.NettoPoz,
             VatRate = position.VatRate,
-            Vat = position.Vat,
-            PriceBrutto = position.PriceBrutto,
+            VatPoz = position.VatPoz,
+            BruttoPoz = position.BruttoPoz,
             OfferNotes = position.OfferNotes,
             InvoiceNotes = position.InvoiceNotes,
             Other1 = position.Other1,
@@ -76,9 +76,9 @@ public class OfferPositionEditViewModel : ViewModelBase
     public event EventHandler? Saved;
     public event EventHandler? Cancelled;
 
-    // Właściwości do edycji
-    public int Id => _position.Id;
-    public int OfferId => _position.OfferId;
+    // Właściwości do edycji (mapowane na ofertypozycje.id i ofertypozycje.oferta_id)
+    public long Id => _position.Id;
+    public long OfferId => _position.OfferId;
 
     public int? ProductId
     {
@@ -130,27 +130,25 @@ public class OfferPositionEditViewModel : ViewModelBase
         }
     }
 
-    public decimal? Quantity
+    public decimal? Ilosc
     {
-        get => _position.Quantity;
+        get => _position.Ilosc;
         set
         {
-            _position.Quantity = value;
+            _position.Ilosc = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(QuantityTimesPrice));
-            CalculatePrices();
         }
     }
 
-    public decimal? Price
+    public decimal? CenaNetto
     {
-        get => _position.Price;
+        get => _position.CenaNetto;
         set
         {
-            _position.Price = value;
+            _position.CenaNetto = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(QuantityTimesPrice));
-            CalculatePrices();
         }
     }
 
@@ -161,7 +159,6 @@ public class OfferPositionEditViewModel : ViewModelBase
         {
             _position.Discount = value;
             OnPropertyChanged();
-            CalculatePrices();
         }
     }
 
@@ -192,7 +189,6 @@ public class OfferPositionEditViewModel : ViewModelBase
         {
             _position.VatRate = value;
             OnPropertyChanged();
-            CalculatePrices();
         }
     }
 
@@ -245,53 +241,20 @@ public class OfferPositionEditViewModel : ViewModelBase
         return !string.IsNullOrWhiteSpace(Name);
     }
 
-    private void CalculatePrices()
-    {
-        // Obliczanie ceny po rabacie
-        if (Price.HasValue && Discount.HasValue)
-        {
-            _position.PriceAfterDiscount = Price.Value * (1 - Discount.Value / 100);
-        }
-        else if (Price.HasValue)
-        {
-            _position.PriceAfterDiscount = Price.Value;
-        }
-
-        // Obliczanie ceny po rabacie * ilość
-        if (_position.PriceAfterDiscount.HasValue && Quantity.HasValue)
-        {
-            _position.PriceAfterDiscountAndQuantity = _position.PriceAfterDiscount.Value * Quantity.Value;
-        }
-
-        // Obliczanie VAT i brutto
-        if (_position.PriceAfterDiscountAndQuantity.HasValue && VatRate != null && decimal.TryParse(VatRate, out var vatRateDecimal))
-        {
-            _position.Vat = _position.PriceAfterDiscountAndQuantity.Value * vatRateDecimal / 100;
-            _position.PriceBrutto = _position.PriceAfterDiscountAndQuantity.Value + _position.Vat;
-        }
-
-        OnPropertyChanged(nameof(PriceAfterDiscount));
-        OnPropertyChanged(nameof(PriceAfterDiscountAndQuantity));
-        OnPropertyChanged(nameof(Vat));
-        OnPropertyChanged(nameof(PriceBrutto));
-        OnPropertyChanged(nameof(QuantityTimesPrice));
-    }
-
+    // Kwoty (netto_poz, vat_poz, brutto_poz) liczone w serwisie/DB – UI tylko pokazuje (zgodnie z zasadą architektoniczną).
     public decimal? PriceAfterDiscount => _position.PriceAfterDiscount;
-    public decimal? PriceAfterDiscountAndQuantity => _position.PriceAfterDiscountAndQuantity;
-    public decimal? Vat => _position.Vat;
-    public decimal? PriceBrutto => _position.PriceBrutto;
+    public decimal? NettoPoz => _position.NettoPoz;
+    public decimal? VatPoz => _position.VatPoz;
+    public decimal? BruttoPoz => _position.BruttoPoz;
     
-    /// <summary>
-    /// Wylicza ilość * cena (sztuki * cena)
-    /// </summary>
+    /// <summary>Ilość × cena netto (jednostkowa) – tylko podgląd, nie używane do zapisu.</summary>
     public decimal? QuantityTimesPrice
     {
         get
         {
-            if (Quantity.HasValue && Price.HasValue)
+            if (Ilosc.HasValue && CenaNetto.HasValue)
             {
-                return Quantity.Value * Price.Value;
+                return Ilosc.Value * CenaNetto.Value;
             }
             return null;
         }
@@ -312,12 +275,12 @@ public class OfferPositionEditViewModel : ViewModelBase
                 var companyId = _userContext.CompanyId 
                     ?? throw new InvalidOperationException("Brak wybranej firmy. Użytkownik musi być zalogowany i wybrać firmę.");
                 
-                position = new OfferPosition(companyId, _position.OfferId, _position.Unit ?? "szt");
+                position = new OfferPosition(companyId, (int)_position.OfferId, _position.Unit ?? "szt");
             }
             else
             {
                 // Pobierz istniejącą encję z bazy
-                position = await _offerService.GetPositionByIdAsync(_position.Id);
+                position = await _offerService.GetPositionByIdAsync((int)_position.Id);
                 if (position == null)
                 {
                     System.Windows.MessageBox.Show(
@@ -332,9 +295,9 @@ public class OfferPositionEditViewModel : ViewModelBase
             // Aktualizujemy wszystkie pola
             position.UpdateProductInfo(_position.ProductId, _position.SupplierId, _position.ProductCode, _position.Name, _position.NameEng);
             position.UpdateUnits(_position.Unit ?? "szt", _position.UnitEng);
-            position.UpdatePricing(_position.Quantity, _position.Price, _position.Discount, 
-                _position.PriceAfterDiscount, _position.PriceAfterDiscountAndQuantity);
-            position.UpdateVatInfo(_position.VatRate, _position.Vat, _position.PriceBrutto);
+            position.UpdatePricing(_position.Ilosc, _position.CenaNetto, _position.Discount, 
+                _position.PriceAfterDiscount, _position.NettoPoz);
+            position.UpdateVatInfo(_position.VatRate, _position.VatPoz, _position.BruttoPoz);
             position.UpdateNotes(_position.OfferNotes, _position.InvoiceNotes, _position.Other1);
             if (_position.GroupNumber.HasValue)
             {
@@ -346,7 +309,7 @@ public class OfferPositionEditViewModel : ViewModelBase
                 // Dodajemy nową pozycję do bazy
                 var newId = await _offerService.AddPositionAsync(position);
                 // Aktualizujemy ID w DTO, aby w razie potrzeby można było ponownie edytować
-                _position.Id = newId;
+                _position.Id = (long)newId;
             }
             else
             {
@@ -404,14 +367,14 @@ public class OfferPositionEditViewModel : ViewModelBase
                 _position.Name = selectedProduct.NamePl;
                 _position.NameEng = selectedProduct.NameEng;
                 _position.Unit = selectedProduct.Unit ?? "szt"; // jednostki_sprzedazy -> jednostki
-                _position.Price = selectedProduct.PricePln; // cena_sprzedazy -> cena
+                _position.CenaNetto = selectedProduct.PricePln;
                 
                 OnPropertyChanged(nameof(ProductId));
                 OnPropertyChanged(nameof(Name));
                 OnPropertyChanged(nameof(NameEng));
                 OnPropertyChanged(nameof(Unit));
-                OnPropertyChanged(nameof(Price));
-                CalculatePrices(); // Przeliczamy ceny po zmianie ceny i jednostek
+                OnPropertyChanged(nameof(CenaNetto));
+                OnPropertyChanged(nameof(QuantityTimesPrice));
             }
         }
         catch (Exception ex)

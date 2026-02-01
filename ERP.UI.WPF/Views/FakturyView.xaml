@@ -72,7 +72,7 @@
                 <DataGridTextColumn Header="Nr" Binding="{Binding NrFaktury}" Width="80"/>
                 <DataGridTextColumn Header="Kontrahent" Binding="{Binding OdbiorcaNazwa}" Width="*"/>
                 <DataGridTextColumn Header="Waluta" Binding="{Binding Waluta}" Width="60"/>
-                <DataGridTextColumn Header="Brutto" Binding="{Binding KwotaBrutto, StringFormat='{}{0:N2}'}" Width="100"/>
+                <DataGridTextColumn Header="Brutto" Binding="{Binding SumBrutto, StringFormat='{}{0:N2}', TargetNullValue='0,00'}" Width="100"/>
                 <DataGridTemplateColumn Header="Akcje" Width="180">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>

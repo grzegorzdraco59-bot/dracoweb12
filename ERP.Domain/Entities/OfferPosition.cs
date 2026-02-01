@@ -14,14 +14,14 @@ public class OfferPosition : BaseEntity
     public string? NameEng { get; private set; }
     public string Unit { get; private set; }
     public string? UnitEng { get; private set; }
-    public decimal? Quantity { get; private set; }
-    public decimal? Price { get; private set; }
+    public decimal? Ilosc { get; private set; }
+    public decimal? CenaNetto { get; private set; }
     public decimal? Discount { get; private set; }
     public decimal? PriceAfterDiscount { get; private set; }
-    public decimal? PriceAfterDiscountAndQuantity { get; private set; }
+    public decimal? NettoPoz { get; private set; }
     public string? VatRate { get; private set; }
-    public decimal? Vat { get; private set; }
-    public decimal? PriceBrutto { get; private set; }
+    public decimal? VatPoz { get; private set; }
+    public decimal? BruttoPoz { get; private set; }
     public string? OfferNotes { get; private set; }
     public string? InvoiceNotes { get; private set; }
     public string? Other1 { get; private set; }
@@ -56,22 +56,22 @@ public class OfferPosition : BaseEntity
         UpdateTimestamp();
     }
 
-    public void UpdatePricing(decimal? quantity, decimal? price, decimal? discount, 
-        decimal? priceAfterDiscount, decimal? priceAfterDiscountAndQuantity)
+    public void UpdatePricing(decimal? ilosc, decimal? cenaNetto, decimal? discount, 
+        decimal? priceAfterDiscount, decimal? nettoPoz)
     {
-        Quantity = quantity;
-        Price = price;
+        Ilosc = ilosc;
+        CenaNetto = cenaNetto;
         Discount = discount;
         PriceAfterDiscount = priceAfterDiscount;
-        PriceAfterDiscountAndQuantity = priceAfterDiscountAndQuantity;
+        NettoPoz = nettoPoz;
         UpdateTimestamp();
     }
 
-    public void UpdateVatInfo(string? vatRate, decimal? vat, decimal? priceBrutto)
+    public void UpdateVatInfo(string? vatRate, decimal? vatPoz, decimal? bruttoPoz)
     {
         VatRate = vatRate;
-        Vat = vat;
-        PriceBrutto = priceBrutto;
+        VatPoz = vatPoz;
+        BruttoPoz = bruttoPoz;
         UpdateTimestamp();
     }
 

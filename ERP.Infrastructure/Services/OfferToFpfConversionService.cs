@@ -85,7 +85,7 @@ public class OfferToFpfConversionService : IOfferToFpfConversionService
     {
         await using var connection = await _context.CreateConnectionAsync();
         var cmd = new MySqlCommand(
-            "SELECT Id_faktury FROM faktury WHERE id_oferty = @OfferId AND doc_type = @Skrot LIMIT 1",
+            "SELECT id FROM faktury WHERE id_oferty = @OfferId AND doc_type = @Skrot LIMIT 1",
             connection);
         cmd.Parameters.AddWithValue("@OfferId", offerId);
         cmd.Parameters.AddWithValue("@Skrot", FpfSkrot);
@@ -108,8 +108,8 @@ public class OfferToFpfConversionService : IOfferToFpfConversionService
         foreach (var pos in positions)
         {
             var (netto, vat, brutto) = ComputePositionAmounts(
-                pos.Quantity ?? 0m,
-                pos.Price ?? 0m,
+                pos.Ilosc ?? 0m,
+                pos.CenaNetto ?? 0m,
                 pos.Discount ?? 0m,
                 pos.VatRate);
             sNetto += netto;
@@ -196,14 +196,14 @@ public class OfferToFpfConversionService : IOfferToFpfConversionService
 
     private static async Task InsertPozycjaFakturyAsync(MySqlConnection conn, MySqlTransaction transaction, int invoiceId, int offerId, int companyId, OfferPosition pos, CancellationToken cancellationToken)
     {
-        var ilosc = pos.Quantity ?? 0m;
-        var cenaNetto = pos.Price ?? 0m;
+        var ilosc = pos.Ilosc ?? 0m;
+        var cenaNetto = pos.CenaNetto ?? 0m;
         var rabat = pos.Discount ?? 0m;
         var (nettoPoz, vatPoz, bruttoPoz) = ComputePositionAmounts(ilosc, cenaNetto, rabat, pos.VatRate);
 
         var cmd = new MySqlCommand(
-            "INSERT INTO pozycjefaktury (id_firmy, id_faktury, id_oferty, po_korekcie, Nazwa_towaru, Nazwa_towaru_eng, jednostki, ilosc, cena_netto, rabat, stawka_vat, netto_poz, vat_poz, brutto_poz, id_towaru, nr_zespolu, id_pozycji_oferty) " +
-            "VALUES (@IdFirmy, @IdFaktury, @IdOferty, 0, @NazwaTowaru, @NazwaTowaruEng, @Jednostki, @Ilosc, @CenaNetto, @Rabat, @StawkaVat, @NettoPoz, @VatPoz, @BruttoPoz, @IdTowaru, @NrZespolu, @IdPozycjiOferty);",
+            "INSERT INTO pozycjefaktury (id_firmy, faktura_id, id_faktury, id_oferty, po_korekcie, Nazwa_towaru, Nazwa_towaru_eng, jednostki, ilosc, cena_netto, rabat, stawka_vat, netto_poz, vat_poz, brutto_poz, id_towaru, nr_zespolu, id_pozycji_oferty) " +
+            "VALUES (@IdFirmy, @IdFaktury, @IdFaktury, @IdOferty, 0, @NazwaTowaru, @NazwaTowaruEng, @Jednostki, @Ilosc, @CenaNetto, @Rabat, @StawkaVat, @NettoPoz, @VatPoz, @BruttoPoz, @IdTowaru, @NrZespolu, @IdPozycjiOferty);",
             conn, transaction);
         cmd.Parameters.AddWithValue("@IdFirmy", companyId);
         cmd.Parameters.AddWithValue("@IdFaktury", invoiceId);
@@ -230,7 +230,7 @@ public class OfferToFpfConversionService : IOfferToFpfConversionService
     {
         var cmd = new MySqlCommand(
             "UPDATE oferty o " +
-            "INNER JOIN faktury f ON f.Id_faktury = @FpfId AND f.id_firmy = @CompanyId " +
+            "INNER JOIN faktury f ON f.id = @FpfId AND f.id_firmy = @CompanyId " +
             "SET o.sum_brutto = f.sum_brutto " +
             "WHERE o.id = @OfferId AND o.id_firmy = @CompanyId",
             conn, transaction);

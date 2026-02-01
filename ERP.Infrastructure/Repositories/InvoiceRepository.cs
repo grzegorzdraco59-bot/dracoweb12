@@ -22,9 +22,9 @@ public class InvoiceRepository : IInvoiceRepository
         var list = new List<InvoiceDto>();
         await using var connection = await _context.CreateConnectionAsync();
         var cmd = new MySqlCommand(
-            "SELECT Id_faktury, id_firmy, id_oferty, data_faktury, nr_faktury, nr_faktury_text, doc_type, " +
+            "SELECT id, id_firmy, id_oferty, data_faktury, nr_faktury, nr_faktury_text, doc_type, " +
             "odbiorca_nazwa, waluta, kwota_netto, total_vat, kwota_brutto, sum_netto, sum_vat, sum_brutto, operator " +
-            "FROM faktury WHERE id_firmy = @CompanyId ORDER BY Id_faktury DESC",
+            "FROM faktury WHERE id_firmy = @CompanyId ORDER BY id DESC",
             connection);
         cmd.Parameters.AddWithValue("@CompanyId", companyId);
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
@@ -40,8 +40,8 @@ public class InvoiceRepository : IInvoiceRepository
         var list = new List<OfferDocumentDto>();
         await using var connection = await _context.CreateConnectionAsync();
         var cmd = new MySqlCommand(
-            "SELECT Id_faktury, doc_type, doc_full_no, data_faktury, sum_brutto, do_zaplaty_brutto " +
-            "FROM faktury WHERE id_oferty = @OfferId AND id_firmy = @CompanyId ORDER BY doc_type, Id_faktury",
+            "SELECT id, doc_type, doc_full_no, data_faktury, sum_brutto, do_zaplaty_brutto " +
+            "FROM faktury WHERE id_oferty = @OfferId AND id_firmy = @CompanyId ORDER BY doc_type, id",
             connection);
         cmd.Parameters.AddWithValue("@OfferId", offerId);
         cmd.Parameters.AddWithValue("@CompanyId", companyId);
@@ -50,7 +50,7 @@ public class InvoiceRepository : IInvoiceRepository
         {
             list.Add(new OfferDocumentDto
             {
-                InvoiceId = GetInt(reader, "Id_faktury"),
+                InvoiceId = GetInt(reader, "id"),
                 DocType = GetNullableString(reader, "doc_type") ?? "",
                 DocFullNo = GetNullableString(reader, "doc_full_no"),
                 DataFaktury = GetNullableInt(reader, "data_faktury"),
@@ -65,7 +65,7 @@ public class InvoiceRepository : IInvoiceRepository
     {
         return new InvoiceDto
         {
-            Id = GetInt(reader, "Id_faktury"),
+            Id = GetInt(reader, "id"),
             CompanyId = GetInt(reader, "id_firmy"),
             IdOferty = GetNullableInt(reader, "id_oferty"),
             DataFaktury = GetNullableInt(reader, "data_faktury"),

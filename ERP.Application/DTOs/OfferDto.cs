@@ -9,9 +9,18 @@ public class OfferDto
     public int CompanyId { get; set; }
     public bool? ForProforma { get; set; }
     public bool? ForOrder { get; set; }
-    public int? OfferDate { get; set; } // Clarion date (liczba dni od 28.12.1800)
+    public int? OfferDate { get; set; } // Clarion date (liczba dni od 28.12.1800) – data_oferty
     public string? FormattedOfferDate { get; set; } // Formatowana data dd/MM/yyyy
+    /// <summary>Data oferty (mapowanie z data_oferty). Do wyświetlania w browse.</summary>
+    public DateTime? DataOferty { get; set; }
+    /// <summary>Numer oferty (mapowanie z nr_oferty). Do wyświetlania w browse.</summary>
+    public int? NrOferty { get; set; }
+    /// <summary>Data oferty w formacie yyyy-MM-dd (do listy ofert / drzewka).</summary>
+    public string FormattedOfferDateYyyyMmDd =>
+        DataOferty.HasValue ? DataOferty.Value.ToString("yyyy-MM-dd") : (OfferDate.HasValue && OfferDate.Value > 0 ? new DateTime(1800, 12, 28).AddDays(OfferDate.Value).ToString("yyyy-MM-dd") : "");
     public int? OfferNumber { get; set; }
+    /// <summary>Pełny numer prezentacyjny OF/yyyy/MM/dd-NrOferty (tylko do wyświetlania, bez DB).</summary>
+    public string FullNo => (DataOferty.HasValue && NrOferty.HasValue) ? $"OF/{DataOferty:yyyy/MM/dd}-{NrOferty}" : (NrOferty?.ToString() ?? "");
     public int? CustomerId { get; set; }
     public string? CustomerName { get; set; }
     public string? CustomerStreet { get; set; }

@@ -102,9 +102,9 @@ public class OrderFromOfferConversionService : IOrderFromOfferConversionService
         cmd.Parameters.AddWithValue("@Product", pos.ProductCode ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@ProductNameEng", pos.NameEng ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@OrderUnit", pos.Unit ?? (object)DBNull.Value);
-        cmd.Parameters.AddWithValue("@OrderQuantity", pos.Quantity ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@OrderQuantity", pos.Ilosc ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@DeliveredQuantity", (object)DBNull.Value);
-        cmd.Parameters.AddWithValue("@OrderPrice", (pos.PriceAfterDiscount ?? pos.Price) ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@OrderPrice", (pos.PriceAfterDiscount ?? pos.CenaNetto) ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@ProductStatus", (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@PurchaseUnit", (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@PurchaseQuantity", (object)DBNull.Value);

@@ -26,6 +26,7 @@ public class OffersViewModel : ViewModelBase
     private readonly IOrderMainService _orderMainService;
     private readonly IOfferToFpfConversionService _offerToFpfService;
     private readonly IInvoiceRepository _invoiceRepository;
+    private readonly IOfferTotalsService _offerTotalsService;
     private readonly ProductRepository _productRepository;
     private readonly ICustomerRepository _customerRepository;
     private readonly IUserContext _userContext;
@@ -39,6 +40,7 @@ public class OffersViewModel : ViewModelBase
         IOrderMainService orderMainService,
         IOfferToFpfConversionService offerToFpfService,
         IInvoiceRepository invoiceRepository,
+        IOfferTotalsService offerTotalsService,
         ProductRepository productRepository, 
         ICustomerRepository customerRepository,
         IUserContext userContext)
@@ -47,6 +49,7 @@ public class OffersViewModel : ViewModelBase
         _orderMainService = orderMainService ?? throw new ArgumentNullException(nameof(orderMainService));
         _offerToFpfService = offerToFpfService ?? throw new ArgumentNullException(nameof(offerToFpfService));
         _invoiceRepository = invoiceRepository ?? throw new ArgumentNullException(nameof(invoiceRepository));
+        _offerTotalsService = offerTotalsService ?? throw new ArgumentNullException(nameof(offerTotalsService));
         _productRepository = productRepository ?? throw new ArgumentNullException(nameof(productRepository));
         _customerRepository = customerRepository ?? throw new ArgumentNullException(nameof(customerRepository));
         _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
@@ -88,7 +91,10 @@ public class OffersViewModel : ViewModelBase
     public ObservableCollection<DocumentTreeNode> DocumentTreeItems { get; }
     
     public ICollectionView FilteredOffers => _offersViewSource.View;
-    
+
+    /// <summary>True gdy wybrano ofertę – panele po prawej są aktywne.</summary>
+    public bool HasSelectedOffer => SelectedOffer != null;
+
     public string SearchText
     {
         get => _searchText;
@@ -112,6 +118,7 @@ public class OffersViewModel : ViewModelBase
             {
                 _selectedOffer = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(HasSelectedOffer));
                 if (EditOfferCommand is RelayCommand editCmd)
                     editCmd.RaiseCanExecuteChanged();
                 if (DeleteOfferCommand is RelayCommand deleteCmd)
@@ -216,6 +223,72 @@ public class OffersViewModel : ViewModelBase
         }
     }
 
+    private async Task ReloadOffersAndReselectAsync(int? offerId)
+    {
+        await LoadOffersAsync();
+        SelectedOffer = offerId.HasValue ? Offers.FirstOrDefault(o => o.Id == offerId.Value) : null;
+    }
+
+    /// <summary>Odświeża pozycje oferty i sumę brutto w UI bez przeładowania całej listy ofert.</summary>
+    private async Task RefreshPositionsAndSumBruttoAsync(int offerId)
+    {
+        await LoadOfferPositionsAsync(offerId);
+        var newSum = await _offerTotalsService.GetSumBruttoAsync(offerId);
+        var idx = -1;
+        for (var i = 0; i < Offers.Count; i++)
+        {
+            if (Offers[i].Id == offerId) { idx = i; break; }
+        }
+        if (idx >= 0)
+        {
+            var current = Offers[idx];
+            var updated = CloneOfferWithSumBrutto(current, newSum);
+            Offers[idx] = updated;
+            if (SelectedOffer?.Id == offerId)
+                SelectedOffer = updated;
+        }
+    }
+
+    private static OfferDto CloneOfferWithSumBrutto(OfferDto source, decimal sumBrutto)
+    {
+        return new OfferDto
+        {
+            Id = source.Id,
+            CompanyId = source.CompanyId,
+            ForProforma = source.ForProforma,
+            ForOrder = source.ForOrder,
+            OfferDate = source.OfferDate,
+            DataOferty = source.DataOferty,
+            NrOferty = source.NrOferty,
+            FormattedOfferDate = source.FormattedOfferDate,
+            OfferNumber = source.OfferNumber,
+            CustomerId = source.CustomerId,
+            CustomerName = source.CustomerName,
+            CustomerStreet = source.CustomerStreet,
+            CustomerPostalCode = source.CustomerPostalCode,
+            CustomerCity = source.CustomerCity,
+            CustomerCountry = source.CustomerCountry,
+            CustomerNip = source.CustomerNip,
+            CustomerEmail = source.CustomerEmail,
+            RecipientName = source.RecipientName,
+            Currency = source.Currency,
+            TotalPrice = source.TotalPrice,
+            VatRate = source.VatRate,
+            TotalVat = source.TotalVat,
+            TotalBrutto = source.TotalBrutto,
+            SumBrutto = sumBrutto,
+            OfferNotes = source.OfferNotes,
+            AdditionalData = source.AdditionalData,
+            Operator = source.Operator,
+            TradeNotes = source.TradeNotes,
+            ForInvoice = source.ForInvoice,
+            History = source.History,
+            Status = source.Status,
+            CreatedAt = source.CreatedAt,
+            UpdatedAt = source.UpdatedAt
+        };
+    }
+
     private async Task LoadOfferPositionsAsync(int offerId)
     {
         try
@@ -235,30 +308,49 @@ public class OffersViewModel : ViewModelBase
     }
 
     /// <summary>Drzewko dokumentów: oferta (TotalBrutto) + dokumenty (faktury.sum_brutto). 1 zapytanie po nagłówki.</summary>
-    private async Task LoadDocumentTreeAsync(OfferDto offer)
+    /// <summary>Ładuje drzewko dokumentów. Gdy selectFirstDocumentNode=true (np. po Kopiuj do FPF), zaznacza pierwszy węzeł dokumentu i zgłasza RequestBringIntoView.</summary>
+    private async Task LoadDocumentTreeAsync(OfferDto offer, bool selectFirstDocumentNode = false)
     {
         DocumentTreeItems.Clear();
         if (!_userContext.CompanyId.HasValue) return;
         try
         {
+            var dateStr = offer.FormattedOfferDateYyyyMmDd;
             var root = new DocumentTreeNode
             {
-                DisplayText = $"OFERTA {offer.OfferNumber} | {offer.FormattedOfferDate ?? ""} | {(offer.SumBrutto ?? offer.TotalBrutto ?? 0m):N2}"
+                DisplayText = $"OFERTA {offer.FullNo} | {dateStr} | {(offer.SumBrutto ?? offer.TotalBrutto ?? 0m):N2}",
+                IsExpanded = true
             };
-            var documents = await _invoiceRepository.GetDocumentsByOfferIdAsync(offer.Id, _userContext.CompanyId.Value);
-            foreach (var doc in documents)
+            var documents = (await _invoiceRepository.GetDocumentsByOfferIdAsync(offer.Id, _userContext.CompanyId.Value)).ToList();
+            if (documents.Count == 0)
             {
-                var label = DocumentTreeNode.GetLabelForDocType(doc.DocType);
-                var docNo = doc.DocFullNo ?? "";
-                var data = doc.FormattedDataFaktury;
-                var brutto = (doc.SumBrutto ?? 0m).ToString("N2");
-                var displayText = $"{label} {docNo} | {data} | {brutto}";
-                if (string.Equals(doc.DocType, "FV", StringComparison.OrdinalIgnoreCase))
-                    displayText += $" | DO ZAPŁATY: {(doc.DoZaplatyBrutto ?? 0m):N2}";
-                root.Children.Add(new DocumentTreeNode
+                root.Children.Add(new DocumentTreeNode { DisplayText = "Brak proformy (FPF)" });
+            }
+            else
+            {
+                DocumentTreeNode? firstDocNode = null;
+                foreach (var doc in documents)
                 {
-                    DisplayText = displayText
-                });
+                    var label = DocumentTreeNode.GetLabelForDocType(doc.DocType);
+                    var docNo = doc.DocFullNo ?? "";
+                    var data = doc.FormattedDataFaktury;
+                    var brutto = (doc.SumBrutto ?? 0m).ToString("N2");
+                    var displayText = $"{label} {docNo} | {data} | {brutto}";
+                    if (string.Equals(doc.DocType, "FV", StringComparison.OrdinalIgnoreCase))
+                        displayText += $" | DO ZAPŁATY: {(doc.DoZaplatyBrutto ?? 0m):N2}";
+                    var node = new DocumentTreeNode
+                    {
+                        DisplayText = displayText,
+                        IsExpanded = string.Equals(doc.DocType, "FPF", StringComparison.OrdinalIgnoreCase)
+                    };
+                    if (firstDocNode == null) firstDocNode = node;
+                    root.Children.Add(node);
+                }
+                if (selectFirstDocumentNode && firstDocNode != null)
+                {
+                    firstDocNode.IsSelected = true;
+                    RequestBringIntoView?.Invoke(this, EventArgs.Empty);
+                }
             }
             DocumentTreeItems.Add(root);
         }
@@ -269,25 +361,25 @@ public class OffersViewModel : ViewModelBase
         }
     }
 
+    /// <summary>Wywołane po ustawieniu IsSelected na węźle – View może przewinąć do zaznaczonego (BringIntoView).</summary>
+    public event EventHandler? RequestBringIntoView;
+
+    private static DateTime? ClarionToDateTime(int? clarionDate)
+    {
+        if (!clarionDate.HasValue || clarionDate.Value <= 0) return null;
+        try
+        {
+            return new DateTime(1800, 12, 28).AddDays(clarionDate.Value);
+        }
+        catch { return null; }
+    }
+
     private static OfferDto MapToDto(Offer offer)
     {
-        // Konwersja daty Clarion (liczba dni od 28.12.1800) na format dd/MM/yyyy
-        string? formattedDate = null;
-        if (offer.OfferDate.HasValue)
-        {
-            try
-            {
-                // Data bazowa Clarion: 28 grudnia 1800
-                var baseDate = new DateTime(1800, 12, 28);
-                var offerDateTime = baseDate.AddDays(offer.OfferDate.Value);
-                formattedDate = offerDateTime.ToString("dd/MM/yyyy");
-            }
-            catch
-            {
-                // Jeśli konwersja się nie powiedzie, zostawiamy datę jako pustą lub wartość numeryczną
-                formattedDate = $"Błąd: {offer.OfferDate.Value}";
-            }
-        }
+        var dataOferty = ClarionToDateTime(offer.OfferDate);
+        string? formattedDate = dataOferty?.ToString("dd/MM/yyyy");
+        if (offer.OfferDate.HasValue && string.IsNullOrEmpty(formattedDate))
+            formattedDate = $"Błąd: {offer.OfferDate.Value}";
         
         return new OfferDto
         {
@@ -296,6 +388,8 @@ public class OffersViewModel : ViewModelBase
             ForProforma = offer.ForProforma,
             ForOrder = offer.ForOrder,
             OfferDate = offer.OfferDate,
+            DataOferty = dataOferty,
+            NrOferty = offer.OfferNumber,
             FormattedOfferDate = formattedDate,
             OfferNumber = offer.OfferNumber,
             CustomerId = offer.CustomerId,
@@ -338,7 +432,9 @@ public class OffersViewModel : ViewModelBase
         // Wyszukiwanie po wszystkich kolumnach
         return (offer.Id.ToString().Contains(searchTextLower)) ||
                (offer.OfferNumber?.ToString().Contains(searchTextLower) ?? false) ||
+               (offer.NrOferty?.ToString().Contains(searchTextLower) ?? false) ||
                (offer.FormattedOfferDate?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
+               (offer.DataOferty?.ToString("yyyy-MM-dd").Contains(searchTextLower) ?? false) ||
                (offer.CustomerName?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
                (offer.Currency?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
                (offer.TotalBrutto?.ToString().Contains(searchTextLower) ?? false) ||
@@ -362,14 +458,14 @@ public class OffersViewModel : ViewModelBase
             NameEng = position.NameEng,
             Unit = position.Unit,
             UnitEng = position.UnitEng,
-            Quantity = position.Quantity,
-            Price = position.Price,
+            Ilosc = position.Ilosc,
+            CenaNetto = position.CenaNetto,
             Discount = position.Discount,
             PriceAfterDiscount = position.PriceAfterDiscount,
-            PriceAfterDiscountAndQuantity = position.PriceAfterDiscountAndQuantity,
+            NettoPoz = position.NettoPoz,
             VatRate = position.VatRate,
-            Vat = position.Vat,
-            PriceBrutto = position.PriceBrutto,
+            VatPoz = position.VatPoz,
+            BruttoPoz = position.BruttoPoz,
             OfferNotes = position.OfferNotes,
             InvoiceNotes = position.InvoiceNotes,
             Other1 = position.Other1,
@@ -397,10 +493,11 @@ public class OffersViewModel : ViewModelBase
 
             if (editWindow.ShowDialog() == true)
             {
-                // Odświeżamy listę pozycji, aby pokazać zaktualizowane dane
+                // Odświeżamy pozycje i sumę brutto oferty bez przeładowania całej listy
                 if (SelectedOffer != null)
                 {
-                    _ = LoadOfferPositionsAsync(SelectedOffer.Id);
+                    var id = SelectedOffer.Id;
+                    _ = RefreshPositionsAndSumBruttoAsync(id);
                 }
             }
         }
@@ -432,8 +529,8 @@ public class OffersViewModel : ViewModelBase
 
             if (editWindow.ShowDialog() == true)
             {
-                // Odświeżamy listę ofert, aby pokazać zaktualizowane dane
-                _ = LoadOffersAsync();
+                var id = SelectedOffer?.Id;
+                _ = ReloadOffersAndReselectAsync(id);
             }
         }
         catch (Exception ex)
@@ -601,7 +698,7 @@ public class OffersViewModel : ViewModelBase
                 await LoadOffersAsync();
                 SelectedOffer = Offers.FirstOrDefault(o => o.Id == offerId);
                 if (SelectedOffer != null)
-                    _ = LoadDocumentTreeAsync(SelectedOffer);
+                    await LoadDocumentTreeAsync(SelectedOffer, selectFirstDocumentNode: true);
 
                 var viewModel = new FakturaEditViewModel(invoiceId);
                 var window = new FakturaEditWindow(viewModel)
@@ -631,7 +728,7 @@ public class OffersViewModel : ViewModelBase
         if (SelectedOffer == null) return;
 
         var result = System.Windows.MessageBox.Show(
-            $"Czy na pewno chcesz usunąć ofertę #{SelectedOffer.OfferNumber} z dnia {SelectedOffer.FormattedOfferDate}?\n\n" +
+            $"Czy na pewno chcesz usunąć ofertę #{SelectedOffer.NrOferty} ({SelectedOffer.FullNo}) z dnia {SelectedOffer.FormattedOfferDate}?\n\n" +
             $"Klient: {SelectedOffer.CustomerName ?? "Brak"}\n\n" +
             $"UWAGA: Zostaną również usunięte wszystkie pozycje tej oferty!",
             "Potwierdzenie usunięcia",
@@ -703,14 +800,13 @@ public class OffersViewModel : ViewModelBase
             position.UpdatePricing(1, 0, 0, 0, 0);
             position.UpdateVatInfo("23", 0, 0);
             
-            // Dodajemy pozycję do bazy
+            // Dodajemy pozycję do bazy (serwis przelicza SumBrutto)
+            var offerId = SelectedOffer.Id;
             var id = await _offerService.AddPositionAsync(position);
-            
-            // Odświeżamy listę pozycji
-            await LoadOfferPositionsAsync(SelectedOffer.Id);
-            
+            await RefreshPositionsAndSumBruttoAsync(offerId);
+
             // Ustawiamy nowo utworzoną pozycję jako wybraną
-            var positionDto = OfferPositions.FirstOrDefault(p => p.Id == id);
+            var positionDto = OfferPositions.FirstOrDefault(p => p.Id == (long)id);
             if (positionDto != null)
             {
                 SelectedOfferPosition = positionDto;
@@ -741,8 +837,8 @@ public class OffersViewModel : ViewModelBase
         var result = System.Windows.MessageBox.Show(
             $"Czy na pewno chcesz usunąć pozycję?\n\n" +
             $"Nazwa: {SelectedOfferPosition.Name ?? "Brak"}\n" +
-            $"Ilość: {SelectedOfferPosition.Quantity}\n" +
-            $"Cena: {SelectedOfferPosition.Price}",
+            $"Ilość: {SelectedOfferPosition.Ilosc}\n" +
+            $"Cena netto: {SelectedOfferPosition.CenaNetto}",
             "Potwierdzenie usunięcia",
             System.Windows.MessageBoxButton.YesNo,
             System.Windows.MessageBoxImage.Warning);
@@ -751,11 +847,14 @@ public class OffersViewModel : ViewModelBase
 
         try
         {
-            await _offerService.DeletePositionAsync(SelectedOfferPosition.Id);
-            
-            // Usuwamy z listy
-            var positionToRemove = SelectedOfferPosition;
-            OfferPositions.Remove(positionToRemove);
+            var offerId = SelectedOffer?.Id;
+            await _offerService.DeletePositionAsync((int)SelectedOfferPosition.Id);
+
+            // Odświeżamy pozycje i sumę brutto bez przeładowania całej listy ofert
+            if (offerId.HasValue)
+            {
+                await RefreshPositionsAndSumBruttoAsync(offerId.Value);
+            }
             SelectedOfferPosition = null;
             
             System.Windows.MessageBox.Show(

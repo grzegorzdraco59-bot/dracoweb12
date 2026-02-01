@@ -80,7 +80,7 @@
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Ilość:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" 
+                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Ilosc, UpdateSourceTrigger=PropertyChanged}" 
                                  Margin="5" Padding="5"/>
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Jednostka:" Margin="0,5" VerticalAlignment="Center"/>
@@ -112,8 +112,8 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Cena:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Price, UpdateSourceTrigger=PropertyChanged}" 
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Cena netto:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding CenaNetto, UpdateSourceTrigger=PropertyChanged}" 
                                  Margin="5" Padding="5"/>
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Rabat (%):" Margin="0,5" VerticalAlignment="Center"/>
@@ -129,22 +129,22 @@
                                  Margin="5" Padding="5"/>
 
                         <TextBlock Grid.Row="4" Grid.Column="0" Text="VAT kwota:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Vat, Mode=OneWay}" 
+                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding VatPoz, Mode=OneWay}" 
                                  IsReadOnly="True" Margin="5" Padding="5" Background="#F0F0F0"/>
 
                         <TextBlock Grid.Row="5" Grid.Column="0" Text="Brutto:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding PriceBrutto, Mode=OneWay}" 
+                        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding BruttoPoz, Mode=OneWay}" 
                                  IsReadOnly="True" Margin="5" Padding="5" Background="#F0F0F0"/>
 
                         <TextBlock Grid.Row="6" Grid.Column="0" Text="Cena po rabacie:" Margin="0,5" VerticalAlignment="Center"/>
                         <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding PriceAfterDiscount, Mode=OneWay}" 
                                  IsReadOnly="True" Margin="5" Padding="5" Background="#F0F0F0"/>
 
-                        <TextBlock Grid.Row="7" Grid.Column="0" Text="Cena po rabacie × ilość:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding PriceAfterDiscountAndQuantity, Mode=OneWay}" 
+                        <TextBlock Grid.Row="7" Grid.Column="0" Text="Netto pozycji:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding NettoPoz, Mode=OneWay}" 
                                  IsReadOnly="True" Margin="5" Padding="5" Background="#F0F0F0"/>
 
-                        <TextBlock Grid.Row="8" Grid.Column="0" Text="Ilość × Cena:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="8" Grid.Column="0" Text="Ilość × Cena netto:" Margin="0,5" VerticalAlignment="Center"/>
                         <TextBox Grid.Row="8" Grid.Column="1" Text="{Binding QuantityTimesPrice, Mode=OneWay}" 
                                  IsReadOnly="True" Margin="5" Padding="5" Background="#F0F0F0"/>
                     </Grid>

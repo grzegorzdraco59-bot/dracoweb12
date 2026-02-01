@@ -7,6 +7,12 @@ namespace ERP.Application.Services;
 public interface IInvoiceTotalsService
 {
     /// <summary>
+    /// Przelicza netto_poz, vat_poz, brutto_poz dla wszystkich pozycji faktury (w DB),
+    /// następnie sum_netto, sum_vat, sum_brutto w nagłówku. Wywołać po dodaniu/edycji/usunięciu pozycji.
+    /// </summary>
+    Task RecalculateInvoicePositionsAndTotalsAsync(int invoiceId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Pobiera SUM(netto_poz), SUM(vat_poz), SUM(brutto_poz) z pozycjefaktury dla danej faktury
     /// i zapisuje do tabeli faktury (sum_netto, sum_vat, sum_brutto).
     /// Zapewnia spójność: suma pozycji = nagłówek.

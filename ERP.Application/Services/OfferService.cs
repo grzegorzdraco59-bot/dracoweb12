@@ -70,6 +70,7 @@ public class OfferService : IOfferService
     {
         await EnsureOfferDraftForPositionAsync(position.OfferId, position.CompanyId, cancellationToken).ConfigureAwait(false);
         var id = await _positionRepository.AddAsync(position, cancellationToken).ConfigureAwait(false);
+        await _offerTotalsService.RecalculateOfferLinesAsync(position.OfferId, cancellationToken).ConfigureAwait(false);
         await _offerTotalsService.RecalculateSumBruttoAsync(position.OfferId, cancellationToken).ConfigureAwait(false);
         return id;
     }
@@ -78,6 +79,7 @@ public class OfferService : IOfferService
     {
         await EnsureOfferDraftForPositionAsync(position.OfferId, position.CompanyId, cancellationToken).ConfigureAwait(false);
         await _positionRepository.UpdateAsync(position, cancellationToken).ConfigureAwait(false);
+        await _offerTotalsService.RecalculateOfferLinesAsync(position.OfferId, cancellationToken).ConfigureAwait(false);
         await _offerTotalsService.RecalculateSumBruttoAsync(position.OfferId, cancellationToken).ConfigureAwait(false);
     }
 
@@ -89,6 +91,7 @@ public class OfferService : IOfferService
         await EnsureOfferDraftForPositionAsync(position.OfferId, position.CompanyId, cancellationToken).ConfigureAwait(false);
         var offerId = position.OfferId;
         await _positionRepository.DeleteAsync(positionId, cancellationToken).ConfigureAwait(false);
+        await _offerTotalsService.RecalculateOfferLinesAsync(offerId, cancellationToken).ConfigureAwait(false);
         await _offerTotalsService.RecalculateSumBruttoAsync(offerId, cancellationToken).ConfigureAwait(false);
     }
 
