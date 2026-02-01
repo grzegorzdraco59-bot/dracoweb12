@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Windows.Data;
 using System.Windows.Input;
 using ERP.Application.DTOs;
+using ERP.Application.Repositories;
 using ERP.Application.Services;
 using ERP.Domain.Entities;
 using ERP.Domain.Enums;
@@ -23,6 +24,8 @@ public class OffersViewModel : ViewModelBase
 {
     private readonly IOfferService _offerService;
     private readonly IOrderMainService _orderMainService;
+    private readonly IOfferToFpfConversionService _offerToFpfService;
+    private readonly IInvoiceRepository _invoiceRepository;
     private readonly ProductRepository _productRepository;
     private readonly ICustomerRepository _customerRepository;
     private readonly IUserContext _userContext;
@@ -34,18 +37,23 @@ public class OffersViewModel : ViewModelBase
     public OffersViewModel(
         IOfferService offerService,
         IOrderMainService orderMainService,
+        IOfferToFpfConversionService offerToFpfService,
+        IInvoiceRepository invoiceRepository,
         ProductRepository productRepository, 
         ICustomerRepository customerRepository,
         IUserContext userContext)
     {
         _offerService = offerService ?? throw new ArgumentNullException(nameof(offerService));
         _orderMainService = orderMainService ?? throw new ArgumentNullException(nameof(orderMainService));
+        _offerToFpfService = offerToFpfService ?? throw new ArgumentNullException(nameof(offerToFpfService));
+        _invoiceRepository = invoiceRepository ?? throw new ArgumentNullException(nameof(invoiceRepository));
         _productRepository = productRepository ?? throw new ArgumentNullException(nameof(productRepository));
         _customerRepository = customerRepository ?? throw new ArgumentNullException(nameof(customerRepository));
         _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
         
         Offers = new ObservableCollection<OfferDto>();
         OfferPositions = new ObservableCollection<OfferPositionDto>();
+        DocumentTreeItems = new ObservableCollection<DocumentTreeNode>();
         
         _offersViewSource = new CollectionViewSource { Source = Offers };
         _offersViewSource.View.Filter = FilterOffers;
@@ -65,7 +73,7 @@ public class OffersViewModel : ViewModelBase
         PrintOfferEngCommand = new RelayCommand(() => System.Windows.MessageBox.Show("Print oferta ENG - w przygotowaniu", "Info", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information), () => SelectedOffer != null);
         SendEmailCommand = new RelayCommand(() => System.Windows.MessageBox.Show("Send email - w przygotowaniu", "Info", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information), () => SelectedOffer != null);
         CopyToNewOfferCommand = new RelayCommand(() => System.Windows.MessageBox.Show("Kopiuj do nowej oferty - w przygotowaniu", "Info", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information), () => SelectedOffer != null);
-        CopyToFpfCommand = new RelayCommand(() => System.Windows.MessageBox.Show("Kopiuj do FPF - w przygotowaniu", "Info", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information), () => SelectedOffer != null);
+        CopyToFpfCommand = new RelayCommand(async () => await CopyToFpfAsync(), () => SelectedOffer != null);
         CopyToFpfZalCommand = new RelayCommand(() => System.Windows.MessageBox.Show("Kopiuj do FPFzal. - w przygotowaniu", "Info", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information), () => SelectedOffer != null);
         CopyToOrderCommand = new RelayCommand(() => System.Windows.MessageBox.Show("Kopiuj do zlecenia - w przygotowaniu", "Info", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information), () => SelectedOffer != null);
         CopyToFvCommand = new RelayCommand(() => System.Windows.MessageBox.Show("Kopiuj do FV - w przygotowaniu", "Info", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information), () => SelectedOffer != null);
@@ -76,6 +84,8 @@ public class OffersViewModel : ViewModelBase
 
     public ObservableCollection<OfferDto> Offers { get; }
     public ObservableCollection<OfferPositionDto> OfferPositions { get; }
+    /// <summary>Drzewko dokumentów: korzeń = oferta (sum_brutto z oferty), dzieci = dokumenty (faktury.sum_brutto).</summary>
+    public ObservableCollection<DocumentTreeNode> DocumentTreeItems { get; }
     
     public ICollectionView FilteredOffers => _offersViewSource.View;
     
@@ -131,10 +141,12 @@ public class OffersViewModel : ViewModelBase
                 if (value != null)
                 {
                     _ = LoadOfferPositionsAsync(value.Id);
+                    _ = LoadDocumentTreeAsync(value);
                 }
                 else
                 {
                     OfferPositions.Clear();
+                    DocumentTreeItems.Clear();
                 }
             }
         }
@@ -222,6 +234,41 @@ public class OffersViewModel : ViewModelBase
         }
     }
 
+    /// <summary>Drzewko dokumentów: oferta (TotalBrutto) + dokumenty (faktury.sum_brutto). 1 zapytanie po nagłówki.</summary>
+    private async Task LoadDocumentTreeAsync(OfferDto offer)
+    {
+        DocumentTreeItems.Clear();
+        if (!_userContext.CompanyId.HasValue) return;
+        try
+        {
+            var root = new DocumentTreeNode
+            {
+                DisplayText = $"OFERTA {offer.OfferNumber} | {offer.FormattedOfferDate ?? ""} | {(offer.SumBrutto ?? offer.TotalBrutto ?? 0m):N2}"
+            };
+            var documents = await _invoiceRepository.GetDocumentsByOfferIdAsync(offer.Id, _userContext.CompanyId.Value);
+            foreach (var doc in documents)
+            {
+                var label = DocumentTreeNode.GetLabelForDocType(doc.DocType);
+                var docNo = doc.DocFullNo ?? "";
+                var data = doc.FormattedDataFaktury;
+                var brutto = (doc.SumBrutto ?? 0m).ToString("N2");
+                var displayText = $"{label} {docNo} | {data} | {brutto}";
+                if (string.Equals(doc.DocType, "FV", StringComparison.OrdinalIgnoreCase))
+                    displayText += $" | DO ZAPŁATY: {(doc.DoZaplatyBrutto ?? 0m):N2}";
+                root.Children.Add(new DocumentTreeNode
+                {
+                    DisplayText = displayText
+                });
+            }
+            DocumentTreeItems.Add(root);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Błąd podczas ładowania drzewka dokumentów: {ex.Message}",
+                "Błąd", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+        }
+    }
+
     private static OfferDto MapToDto(Offer offer)
     {
         // Konwersja daty Clarion (liczba dni od 28.12.1800) na format dd/MM/yyyy
@@ -265,6 +312,7 @@ public class OffersViewModel : ViewModelBase
             VatRate = offer.VatRate,
             TotalVat = offer.TotalVat,
             TotalBrutto = offer.TotalBrutto,
+            SumBrutto = offer.SumBrutto,
             OfferNotes = offer.OfferNotes,
             AdditionalData = offer.AdditionalData,
             Operator = offer.Operator,
@@ -528,6 +576,52 @@ public class OffersViewModel : ViewModelBase
         catch (Exception ex)
         {
             System.Windows.MessageBox.Show($"Błąd: {ex.Message}", "Utwórz zamówienie z oferty",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+    }
+
+    private async Task CopyToFpfAsync()
+    {
+        if (SelectedOffer == null || !_userContext.CompanyId.HasValue) return;
+
+        try
+        {
+            var (invoiceId, createdNew) = await _offerToFpfService.CopyOfferToFpfAsync(
+                SelectedOffer.Id, _userContext.CompanyId.Value);
+
+            if (createdNew)
+            {
+                System.Windows.MessageBox.Show(
+                    "Skopiowano do FPF",
+                    "Sukces",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+
+                var offerId = SelectedOffer!.Id;
+                await LoadOffersAsync();
+                SelectedOffer = Offers.FirstOrDefault(o => o.Id == offerId);
+                if (SelectedOffer != null)
+                    _ = LoadDocumentTreeAsync(SelectedOffer);
+
+                var viewModel = new FakturaEditViewModel(invoiceId);
+                var window = new FakturaEditWindow(viewModel)
+                {
+                    Owner = System.Windows.Application.Current.MainWindow
+                };
+                window.Show();
+            }
+            else
+            {
+                System.Windows.MessageBox.Show(
+                    "Oferta była już kopiowana",
+                    "Informacja",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Błąd: {ex.Message}", "Kopiuj do FPF",
                 System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
         }
     }

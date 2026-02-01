@@ -34,6 +34,7 @@ public class MainController : BaseController
         return id switch
         {
             1 => RedirectToAction("Index", "Offers"), // Oferty
+            5 => RedirectToAction("Index", "Invoices"), // Faktury
             8 => RedirectToAction("Index", "Suppliers"), // Dostawcy
             9 => RedirectToAction("Index", "Customers"), // Odbiorcy
             10 => RedirectToAction("Index", "Products"), // Towary

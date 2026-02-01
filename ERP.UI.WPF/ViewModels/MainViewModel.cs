@@ -50,6 +50,10 @@ public class MainViewModel : ViewModelBase
                     var offersViewModel = _serviceProvider.GetRequiredService<OffersViewModel>();
                     CurrentView = new OffersView { DataContext = offersViewModel };
                     break;
+                case 5: // Faktury
+                    var invoicesViewModel = _serviceProvider.GetRequiredService<InvoicesViewModel>();
+                    CurrentView = new FakturyView { DataContext = invoicesViewModel };
+                    break;
                 case 8: // Dostawcy
                     var suppliersViewModel = _serviceProvider.GetRequiredService<SuppliersViewModel>();
                     CurrentView = new SuppliersView { DataContext = suppliersViewModel };

@@ -26,6 +26,8 @@ public class OfferDto
     public decimal? VatRate { get; set; }
     public decimal? TotalVat { get; set; }
     public decimal? TotalBrutto { get; set; }
+    /// <summary>Suma brutto z pozycji (nagłówek). Preferowane w drzewku dokumentów.</summary>
+    public decimal? SumBrutto { get; set; }
     public string? OfferNotes { get; set; }
     public string? AdditionalData { get; set; }
     public string Operator { get; set; } = string.Empty;

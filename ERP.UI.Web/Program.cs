@@ -68,6 +68,8 @@ builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IOrderMainRepository, OrderMainRepository>();
 builder.Services.AddScoped<IOrderPositionMainRepository, OrderPositionMainRepository>();
+builder.Services.AddScoped<IInvoiceRepository, ERP.Infrastructure.Repositories.InvoiceRepository>();
+builder.Services.AddScoped<IInvoicePositionRepository, ERP.Infrastructure.Repositories.InvoicePositionRepository>();
 builder.Services.AddScoped<ProductRepository>();
 builder.Services.AddScoped<IOperatorTablePermissionRepository, OperatorTablePermissionRepository>();
 
@@ -85,6 +87,8 @@ builder.Services.AddScoped<ERP.Application.Services.IUserContext>(sp => (ERP.App
 
 // Unit of Work dla transakcji
 builder.Services.AddScoped<ERP.Infrastructure.Services.IUnitOfWork, ERP.Infrastructure.Services.UnitOfWork>();
+builder.Services.AddScoped<IDocumentNumberService, ERP.Infrastructure.Services.DocumentNumberService>();
+builder.Services.AddScoped<IInvoiceTotalsService, ERP.Infrastructure.Services.InvoiceTotalsService>();
 
 // Validators
 builder.Services.AddScoped<ERP.Application.Validation.CustomerValidator>();
@@ -202,6 +206,24 @@ builder.Services.AddAuthorization(options =>
     {
         policy.Requirements.Add(new CompanyAccessRequirement());
         policy.Requirements.Add(new TablePermissionRequirement("zamowienia", "DELETE"));
+    });
+
+    // Invoices (Faktury)
+    options.AddPolicy("Invoices:Read", policy =>
+    {
+        policy.Requirements.Add(new CompanyAccessRequirement());
+        policy.Requirements.Add(new TablePermissionRequirement("faktury", "SELECT"));
+    });
+    options.AddPolicy("Invoices:Write", policy =>
+    {
+        policy.Requirements.Add(new CompanyAccessRequirement());
+        policy.Requirements.Add(new TablePermissionRequirement("faktury", "INSERT"));
+        policy.Requirements.Add(new TablePermissionRequirement("faktury", "UPDATE"));
+    });
+    options.AddPolicy("Invoices:Delete", policy =>
+    {
+        policy.Requirements.Add(new CompanyAccessRequirement());
+        policy.Requirements.Add(new TablePermissionRequirement("faktury", "DELETE"));
     });
 
     // Admin - wymaga roli administratora (można rozszerzyć o konkretną rolę)

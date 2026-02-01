@@ -1,5 +1,0 @@
-C:\Users\48603\projektyC#\dracoweb12\obj\Debug\net8.0\MariaDbTest.csproj.AssemblyReference.cache
-C:\Users\48603\projektyC#\dracoweb12\obj\Debug\net8.0\MariaDbTest.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\48603\projektyC#\dracoweb12\obj\Debug\net8.0\MariaDbTest.AssemblyInfoInputs.cache
-C:\Users\48603\projektyC#\dracoweb12\obj\Debug\net8.0\MariaDbTest.AssemblyInfo.cs
-C:\Users\48603\projektyC#\dracoweb12\obj\Debug\net8.0\MariaDbTest.csproj.CoreCompileInputs.cache

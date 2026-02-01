@@ -26,6 +26,8 @@ public class Offer : BaseEntity
     public decimal? VatRate { get; private set; }
     public decimal? TotalVat { get; private set; }
     public decimal? TotalBrutto { get; private set; }
+    /// <summary>Suma brutto z pozycji (SUM(brutto_poz)). Tylko odczyt w UI.</summary>
+    public decimal? SumBrutto { get; private set; }
     public string? OfferNotes { get; private set; }
     public string? AdditionalData { get; private set; }
     public string Operator { get; private set; }
@@ -77,6 +79,12 @@ public class Offer : BaseEntity
         VatRate = vatRate;
         TotalVat = totalVat;
         TotalBrutto = totalBrutto;
+        UpdateTimestamp();
+    }
+
+    public void UpdateSumBrutto(decimal? sumBrutto)
+    {
+        SumBrutto = sumBrutto;
         UpdateTimestamp();
     }
 

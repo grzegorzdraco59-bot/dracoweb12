@@ -1,0 +1,26 @@
+<Window x:Class="ERP.UI.WPF.Views.FakturaEditWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding WindowTitle}" Height="400" Width="500"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Text="Edycja dokumentu – faktura / proforma" 
+                   FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+        <GroupBox Grid.Row="1" Header="Dokument" Padding="10">
+            <StackPanel>
+                <TextBlock Text="{Binding InvoiceIdText}" Margin="0,5"/>
+                <TextBlock Text="Pełna edycja nagłówka i pozycji – w przygotowaniu." 
+                           Margin="0,15,0,0" Foreground="Gray"/>
+            </StackPanel>
+        </GroupBox>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="Zamknij" Width="80" Height="28" Margin="0,0,5,0" Click="CloseButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

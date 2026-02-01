@@ -13,11 +13,13 @@ public class OfferService : IOfferService
 {
     private readonly IOfferRepository _offerRepository;
     private readonly IOfferPositionRepository _positionRepository;
+    private readonly IOfferTotalsService _offerTotalsService;
 
-    public OfferService(IOfferRepository offerRepository, IOfferPositionRepository positionRepository)
+    public OfferService(IOfferRepository offerRepository, IOfferPositionRepository positionRepository, IOfferTotalsService offerTotalsService)
     {
         _offerRepository = offerRepository ?? throw new ArgumentNullException(nameof(offerRepository));
         _positionRepository = positionRepository ?? throw new ArgumentNullException(nameof(positionRepository));
+        _offerTotalsService = offerTotalsService ?? throw new ArgumentNullException(nameof(offerTotalsService));
     }
 
     public Task<Offer?> GetByIdAsync(int id, int companyId, CancellationToken cancellationToken = default)
@@ -67,13 +69,16 @@ public class OfferService : IOfferService
     public async Task<int> AddPositionAsync(OfferPosition position, CancellationToken cancellationToken = default)
     {
         await EnsureOfferDraftForPositionAsync(position.OfferId, position.CompanyId, cancellationToken).ConfigureAwait(false);
-        return await _positionRepository.AddAsync(position, cancellationToken).ConfigureAwait(false);
+        var id = await _positionRepository.AddAsync(position, cancellationToken).ConfigureAwait(false);
+        await _offerTotalsService.RecalculateSumBruttoAsync(position.OfferId, cancellationToken).ConfigureAwait(false);
+        return id;
     }
 
     public async Task UpdatePositionAsync(OfferPosition position, CancellationToken cancellationToken = default)
     {
         await EnsureOfferDraftForPositionAsync(position.OfferId, position.CompanyId, cancellationToken).ConfigureAwait(false);
         await _positionRepository.UpdateAsync(position, cancellationToken).ConfigureAwait(false);
+        await _offerTotalsService.RecalculateSumBruttoAsync(position.OfferId, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task DeletePositionAsync(int positionId, CancellationToken cancellationToken = default)
@@ -82,7 +87,9 @@ public class OfferService : IOfferService
         if (position == null)
             return;
         await EnsureOfferDraftForPositionAsync(position.OfferId, position.CompanyId, cancellationToken).ConfigureAwait(false);
+        var offerId = position.OfferId;
         await _positionRepository.DeleteAsync(positionId, cancellationToken).ConfigureAwait(false);
+        await _offerTotalsService.RecalculateSumBruttoAsync(offerId, cancellationToken).ConfigureAwait(false);
     }
 
     private static void EnsureOfferEditable(Offer offer)

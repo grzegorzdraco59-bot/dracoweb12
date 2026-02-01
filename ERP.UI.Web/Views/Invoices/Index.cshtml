@@ -1,0 +1,340 @@
+@model IEnumerable<ERP.Application.DTOs.InvoiceDto>
+@{
+    ViewData["Title"] = "Faktury";
+}
+
+<div class="container-fluid p-0 d-flex flex-column invoices-fullscreen">
+    @if (ViewBag.Message != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show m-2" role="alert">@ViewBag.Message</div>
+    }
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show m-2" role="alert">@ViewBag.Error</div>
+    }
+    <!-- Nagłówek Faktury (jak Oferty) -->
+    <div class="p-3 border-bottom bg-light flex-shrink-0">
+        <h2 class="mb-0">Faktury</h2>
+    </div>
+
+    <!-- Pole wyszukiwania – identyczne jak w Oferty (natychmiastowe, client-side) -->
+    <div class="p-3 border-bottom flex-shrink-0">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <label for="searchText" class="form-label mb-0">Szukaj:</label>
+            <input type="text"
+                   class="form-control"
+                   id="searchText"
+                   placeholder="Wyszukaj po nr, skrócie, kontrahencie, dacie (natychmiastowe)"
+                   style="max-width: 300px;"
+                   autocomplete="off" />
+            <button type="button" class="btn btn-outline-secondary" id="clearSearchBtn" onclick="clearSearch()" style="display: none;">Wyczyść</button>
+            <div class="ms-3 d-flex gap-2 align-items-center">
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm">Odśwież</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Górna połowa: Browse Faktur (jak Oferty) -->
+    <div class="d-flex flex-column border-bottom invoices-panel">
+        <div class="flex-grow-1 p-3 overflow-auto invoices-scroll-area">
+            <h5 class="mb-2">Faktury</h5>
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive" style="max-height: 100%;">
+                    <table class="table table-striped table-hover table-bordered table-compact">
+                        <thead class="sticky-header table-header-orange">
+                            <tr>
+                                <th class="sortable" data-column="id" style="width: 1%; white-space: nowrap; cursor: pointer; user-select: none;">Id <span class="sort-indicator">↕</span></th>
+                                <th class="sortable" data-column="date" style="width: 1%; white-space: nowrap; cursor: pointer; user-select: none;">Data <span class="sort-indicator">↕</span></th>
+                                <th class="sortable" data-column="skrot" style="width: 1%; white-space: nowrap; cursor: pointer; user-select: none;">Skrót <span class="sort-indicator">↕</span></th>
+                                <th class="sortable" data-column="nr" style="width: 1%; white-space: nowrap; cursor: pointer; user-select: none;">Nr <span class="sort-indicator">↕</span></th>
+                                <th class="sortable" data-column="customer" style="max-width: 300px; width: 30%; white-space: nowrap; cursor: pointer; user-select: none;">Kontrahent <span class="sort-indicator">↕</span></th>
+                                <th class="sortable" data-column="waluta" style="width: 80px; white-space: nowrap; cursor: pointer; user-select: none;">Waluta <span class="sort-indicator">↕</span></th>
+                                <th class="sortable" data-column="brutto" style="width: 120px; white-space: nowrap; cursor: pointer; user-select: none;">Brutto <span class="sort-indicator">↕</span></th>
+                                <th style="width: 180px; white-space: nowrap;">Akcje</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invoices-tbody">
+                            @foreach (var inv in Model)
+                            {
+                                var invoiceData = $"{inv.Id}|{inv.FormattedDataFaktury ?? ""}|{inv.SkrotNazwaFaktury ?? ""}|{inv.NrFakturyText ?? ""}|{inv.OdbiorcaNazwa ?? ""}|{inv.Waluta ?? ""}|{inv.KwotaBrutto ?? 0}|{inv.Operator ?? ""}";
+                                <tr class="invoice-row" data-invoice-id="@inv.Id" data-invoice-data="@invoiceData"
+                                    data-invoice-id-value="@inv.Id"
+                                    data-invoice-date-value="@(inv.FormattedDataFaktury ?? "")"
+                                    data-invoice-skrot-value="@(inv.SkrotNazwaFaktury ?? "")"
+                                    data-invoice-nr-value="@(inv.NrFakturyText ?? inv.NrFaktury?.ToString() ?? "")"
+                                    data-invoice-customer-value="@(inv.OdbiorcaNazwa ?? "")"
+                                    data-invoice-waluta-value="@(inv.Waluta ?? "")"
+                                    data-invoice-brutto-value="@(inv.KwotaBrutto ?? 0)"
+                                    style="cursor: pointer;">
+                                    <td style="white-space: nowrap;">@inv.Id</td>
+                                    <td style="white-space: nowrap;">@(inv.FormattedDataFaktury ?? "-")</td>
+                                    <td style="white-space: nowrap;">@(inv.SkrotNazwaFaktury ?? "-")</td>
+                                    <td style="white-space: nowrap;">@(inv.NrFakturyText ?? inv.NrFaktury?.ToString() ?? "-")</td>
+                                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(inv.OdbiorcaNazwa ?? "-")</td>
+                                    <td>@(inv.Waluta ?? "-")</td>
+                                    <td class="text-end">@(inv.KwotaBrutto?.ToString("N2") ?? "-")</td>
+                                    <td class="text-nowrap">
+                                        <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="event.stopPropagation(); editInvoice(@inv.Id);" title="Edytuj">Edytuj</button>
+                                        <button type="button" class="btn btn-sm btn-outline-info me-1" onclick="event.stopPropagation(); viewInvoice(@inv.Id);" title="Podgląd">Podgląd</button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); deleteInvoiceRow(@inv.Id);" title="Usuń">Usuń</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <h5>Brak faktur</h5>
+                    <p>@(string.IsNullOrEmpty(ViewBag.SearchText) ? "Nie znaleziono żadnych faktur." : $"Nie znaleziono faktur pasujących do: \"{ViewBag.SearchText}\"")</p>
+                </div>
+            }
+        </div>
+
+        <!-- Toolbar pod tabelą (jak Oferty) -->
+        <div class="p-3 border-top bg-light flex-shrink-0">
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-primary btn-sm" onclick="addInvoice()">Dodaj fakturę</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="editInvoiceBtn" onclick="editSelectedInvoice()" disabled>Edytuj fakturę</button>
+                <button type="button" class="btn btn-danger btn-sm" id="deleteInvoiceBtn" onclick="deleteSelectedInvoice()" disabled>Usuń fakturę</button>
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm">Odśwież</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dolna połowa: Pozycje Faktury (jak Pozycje Oferty) -->
+    <div class="d-flex flex-column invoices-panel">
+        <div class="flex-grow-1 p-3 overflow-auto invoices-scroll-area">
+            <h5 class="mb-2">Pozycje Faktury</h5>
+            <div id="positions-container">
+                <div class="alert alert-secondary">
+                    <p class="mb-0">Wybierz fakturę z tabeli powyżej, aby zobaczyć jej pozycje.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .invoices-fullscreen {
+        height: calc(100vh - 215px);
+        height: calc(100dvh - 215px);
+        min-height: 300px;
+        overflow: hidden;
+    }
+    .invoices-panel {
+        flex: 1;
+        min-height: 0;
+    }
+    .invoices-scroll-area {
+        min-height: 0;
+    }
+    .table-header-orange.sticky-header,
+    .table-header-orange.sticky-header th {
+        background-color: #e67e22 !important;
+        color: #fff !important;
+        border-bottom-color: #d35400 !important;
+    }
+    .table-header-orange .sortable:hover {
+        background-color: #d35400 !important;
+    }
+    .table-compact {
+        font-size: 14px;
+    }
+    .table-compact th {
+        font-weight: 600;
+        white-space: nowrap;
+        padding: 0.25rem 0.5rem !important;
+        vertical-align: middle;
+    }
+    .table-compact td {
+        vertical-align: middle;
+        padding: 0.25rem 0.5rem !important;
+    }
+    .table-compact.table-hover tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+    .invoice-row.selected {
+        background-color: #007bff !important;
+        color: white !important;
+    }
+    .invoice-row.selected td {
+        color: white !important;
+        background-color: #007bff !important;
+    }
+    .sortable:hover {
+        background-color: #e9ecef;
+    }
+    .sort-indicator {
+        font-size: 10px;
+        margin-left: 5px;
+        opacity: 0.5;
+    }
+    .sticky-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: #f8f9fa !important;
+    }
+    .sticky-header th {
+        background-color: #f8f9fa !important;
+        border-bottom: 2px solid #dee2e6;
+    }
+</style>
+
+<script>
+    let selectedInvoiceId = null;
+    let allInvoiceRows = [];
+    let sortColumn = null;
+    let sortDirection = 'asc';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const positionsContainer = document.getElementById('positions-container');
+        const searchInput = document.getElementById('searchText');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+
+        allInvoiceRows = Array.from(document.querySelectorAll('.invoice-row'));
+
+        document.querySelectorAll('.sortable').forEach(header => {
+            header.addEventListener('click', function() {
+                const column = this.getAttribute('data-column');
+                document.querySelectorAll('.sortable').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+                if (sortColumn === column) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                else { sortColumn = column; sortDirection = 'asc'; }
+                this.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+                sortInvoices(column, sortDirection);
+            });
+        });
+
+        function sortInvoices(column, direction) {
+            const tbody = document.getElementById('invoices-tbody');
+            if (!tbody) return;
+            const rows = Array.from(allInvoiceRows);
+            rows.sort((a, b) => {
+                let aVal, bVal;
+                switch (column) {
+                    case 'id':
+                        aVal = parseInt(a.getAttribute('data-invoice-id-value') || '0');
+                        bVal = parseInt(b.getAttribute('data-invoice-id-value') || '0');
+                        return direction === 'asc' ? aVal - bVal : bVal - aVal;
+                    case 'date':
+                        aVal = (a.getAttribute('data-invoice-date-value') || '').toLowerCase();
+                        bVal = (b.getAttribute('data-invoice-date-value') || '').toLowerCase();
+                        return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                    case 'skrot':
+                    case 'nr':
+                    case 'customer':
+                    case 'waluta':
+                        aVal = (a.getAttribute('data-invoice-' + column + '-value') || '').toLowerCase();
+                        bVal = (b.getAttribute('data-invoice-' + column + '-value') || '').toLowerCase();
+                        return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                    case 'brutto':
+                        aVal = parseFloat(a.getAttribute('data-invoice-brutto-value') || '0');
+                        bVal = parseFloat(b.getAttribute('data-invoice-brutto-value') || '0');
+                        return direction === 'asc' ? aVal - bVal : bVal - aVal;
+                    default:
+                        return 0;
+                }
+            });
+            rows.forEach(row => tbody.removeChild(row));
+            rows.forEach(row => tbody.appendChild(row));
+            allInvoiceRows = rows;
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                filterInvoices(this.value);
+                if (clearSearchBtn) clearSearchBtn.style.display = this.value ? 'block' : 'none';
+            });
+        }
+        window.clearSearch = function() {
+            if (searchInput) searchInput.value = '';
+            filterInvoices('');
+            if (clearSearchBtn) clearSearchBtn.style.display = 'none';
+        };
+
+        function filterInvoices(searchText) {
+            const searchLower = searchText.toLowerCase().trim();
+            if (!searchLower) {
+                allInvoiceRows.forEach(row => { row.style.display = ''; });
+                return;
+            }
+            allInvoiceRows.forEach(row => {
+                const data = row.getAttribute('data-invoice-data') || '';
+                row.style.display = data.toLowerCase().includes(searchLower) ? '' : 'none';
+            });
+        }
+
+        const invoiceRows = document.querySelectorAll('.invoice-row');
+        invoiceRows.forEach(row => {
+            row.addEventListener('click', function() {
+                invoiceRows.forEach(r => r.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedInvoiceId = this.getAttribute('data-invoice-id');
+                document.getElementById('editInvoiceBtn').disabled = false;
+                document.getElementById('deleteInvoiceBtn').disabled = false;
+                loadInvoicePositions(selectedInvoiceId);
+            });
+        });
+
+        if (invoiceRows.length > 0) invoiceRows[0].click();
+
+        function loadInvoicePositions(invoiceId) {
+            if (!positionsContainer) return;
+            positionsContainer.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Ładowanie...</span></div></div>';
+            fetch('/Invoices/GetPositions?invoiceId=' + encodeURIComponent(invoiceId))
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        positionsContainer.innerHTML = '<div class="alert alert-danger">' + data.error + '</div>';
+                        return;
+                    }
+                    if (!data.length) {
+                        positionsContainer.innerHTML = '<div class="alert alert-info">Brak pozycji dla wybranej faktury.</div>';
+                        return;
+                    }
+                    let html = '<div class="table-responsive"><table class="table table-striped table-hover table-bordered table-compact"><thead class="sticky-header table-header-orange"><tr>';
+                    html += '<th>ID</th><th>Nazwa towaru</th><th>Ilość</th><th>Jedn.</th><th>Cena netto</th><th>Rabat %</th><th>Netto</th><th>VAT</th><th>Brutto</th><th>Stawka VAT</th></tr></thead><tbody>';
+                    data.forEach(function(p) {
+                        const netto = (p.nettoPoz != null) ? parseFloat(p.nettoPoz).toFixed(2) : '-';
+                        const vat = (p.vatPoz != null) ? parseFloat(p.vatPoz).toFixed(2) : '-';
+                        const brutto = (p.bruttoPoz != null) ? parseFloat(p.bruttoPoz).toFixed(2) : '-';
+                        html += '<tr><td>' + (p.id || '-') + '</td><td>' + (p.nazwaTowaru || '-') + '</td><td class="text-end">' + (p.ilosc != null ? parseFloat(p.ilosc).toFixed(2) : '-') + '</td><td>' + (p.jednostki || '-') + '</td><td class="text-end">' + (p.cenaNetto != null ? parseFloat(p.cenaNetto).toFixed(2) : '-') + '</td><td class="text-end">' + (p.rabat != null ? parseFloat(p.rabat).toFixed(2) : '-') + '</td><td class="text-end">' + netto + '</td><td class="text-end">' + vat + '</td><td class="text-end">' + brutto + '</td><td>' + (p.stawkaVat || '-') + '</td></tr>';
+                    });
+                    html += '</tbody></table></div>';
+                    positionsContainer.innerHTML = html;
+                })
+                .catch(err => {
+                    positionsContainer.innerHTML = '<div class="alert alert-danger">Błąd: ' + err.message + '</div>';
+                });
+        }
+    });
+
+    function addInvoice() {
+        alert('Dodaj fakturę – funkcjonalność w przygotowaniu.');
+    }
+    function editInvoice(id) {
+        alert('Edytuj fakturę ID: ' + id + ' – funkcjonalność w przygotowaniu.');
+    }
+    function viewInvoice(id) {
+        alert('Podgląd faktury ID: ' + id + ' – funkcjonalność w przygotowaniu.');
+    }
+    function editSelectedInvoice() {
+        if (selectedInvoiceId) editInvoice(selectedInvoiceId);
+    }
+    function deleteInvoiceRow(id) {
+        if (!confirm('Czy na pewno chcesz usunąć fakturę ID: ' + id + '?')) return;
+        alert('Usuń fakturę – funkcjonalność w przygotowaniu.');
+    }
+    function deleteSelectedInvoice() {
+        if (!selectedInvoiceId) {
+            alert('Wybierz fakturę do usunięcia.');
+            return;
+        }
+        if (!confirm('Czy na pewno chcesz usunąć fakturę ID: ' + selectedInvoiceId + '?')) return;
+        alert('Usuń fakturę – funkcjonalność w przygotowaniu.');
+    }
+</script>

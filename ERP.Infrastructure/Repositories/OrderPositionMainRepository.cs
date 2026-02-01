@@ -102,8 +102,8 @@ public class OrderPositionMainRepository : IOrderPositionMainRepository
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
             "SELECT p.id_zamowienia FROM pozycjezamowienia p " +
-            "INNER JOIN apozycjeoferty a ON a.ID_pozycja_oferty = p.id_pozycji_pozycji_oferty AND a.id_firmy = @CompanyId " +
-            "WHERE a.ID_oferta = @OfferId AND p.id_firmy = @CompanyId " +
+            "INNER JOIN ofertypozycje a ON a.ID_pozycja_oferty = p.id_pozycji_pozycji_oferty AND a.id_firmy = @CompanyId " +
+            "WHERE a.oferta_id = @OfferId AND p.id_firmy = @CompanyId " +
             "LIMIT 1",
             connection);
         command.Parameters.AddWithValue("@OfferId", offerId);

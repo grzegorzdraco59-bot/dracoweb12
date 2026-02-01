@@ -1,0 +1,27 @@
+---
+description: Pola wyliczone faktury – tylko odczyt w UI, nigdy edycja
+globs: ERP.UI.WPF/**/*, ERP.UI.Web/**/*, ERP.Application/DTOs/*Invoice*.cs
+alwaysApply: false
+---
+
+# ERP – pola wyliczone (bezpieczeństwo księgowe)
+
+## Pola TYLKO wyliczane – NIE umożliwiaj edycji w UI
+
+**Pozycja faktury (pozycjefaktury):**
+- `netto_poz` / `NettoPoz`
+- `vat_poz` / `VatPoz`
+- `brutto_poz` / `BruttoPoz`
+
+**Nagłówek faktury (faktury):**
+- `sum_netto` / `SumNetto`
+- `sum_vat` / `SumVat`
+- `sum_brutto` / `SumBrutto`
+
+## Zasady
+
+1. W formularzach edycji faktury/pozycji: te pola **tylko do odczytu** (TextBlock, kolumna IsReadOnly, brak input).
+2. Przy zapisie pozycji/nagłówka z UI: **nie przyjmować** wartości tych pól z klienta – zawsze wyliczać po stronie serwera (algorytm ETAP 2 + RecalculateTotals).
+3. Korekta (FVK): własne pozycje, sumy liczone identycznie (ten sam algorytm + RecalculateTotals).
+
+Szczegóły: `docs/ETAP5_POLA_WYLICZONE_BEZPIECZENSTWO.md`.

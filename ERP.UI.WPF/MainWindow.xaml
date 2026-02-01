@@ -21,7 +21,7 @@
                     <Button Content="2" Command="{Binding NavigateCommand}" CommandParameter="2" Padding="6,3" Margin="0,0,3,0" MinWidth="35" FontSize="11"/>
                     <Button Content="3" Command="{Binding NavigateCommand}" CommandParameter="3" Padding="6,3" Margin="0,0,3,0" MinWidth="35" FontSize="11"/>
                     <Button Content="4" Command="{Binding NavigateCommand}" CommandParameter="4" Padding="6,3" Margin="0,0,3,0" MinWidth="35" FontSize="11"/>
-                    <Button Content="5" Command="{Binding NavigateCommand}" CommandParameter="5" Padding="6,3" Margin="0,0,3,0" MinWidth="35" FontSize="11"/>
+                    <Button Content="5. Faktury" Command="{Binding NavigateCommand}" CommandParameter="5" Padding="6,3" Margin="0,0,3,0" MinWidth="85" FontSize="11"/>
                     <Button Content="6" Command="{Binding NavigateCommand}" CommandParameter="6" Padding="6,3" Margin="0,0,3,0" MinWidth="35" FontSize="11"/>
                     <Button Content="7" Command="{Binding NavigateCommand}" CommandParameter="7" Padding="6,3" Margin="0,0,3,0" MinWidth="35" FontSize="11"/>
                     <Button Content="8. Dostawcy" Command="{Binding NavigateCommand}" CommandParameter="8" Padding="6,3" Margin="0,0,3,0" MinWidth="75" FontSize="11"/>

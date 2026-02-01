@@ -1,0 +1,156 @@
+<UserControl x:Class="ERP.UI.WPF.Views.FakturyView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="1000">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>   <!-- 0: Nagłówek Faktury -->
+            <RowDefinition Height="Auto"/>   <!-- 1: Przyciski nad browseem faktur -->
+            <RowDefinition Height="Auto"/>   <!-- 2: Pole wyszukiwania -->
+            <RowDefinition Height="*"/>      <!-- 3: Browse Faktur -->
+            <RowDefinition Height="Auto"/>   <!-- 4: Przyciski edycji faktur -->
+            <RowDefinition Height="Auto"/>   <!-- 5: Nagłówek Pozycje Faktury -->
+            <RowDefinition Height="*"/>      <!-- 6: Browse Pozycji Faktury -->
+            <RowDefinition Height="Auto"/>   <!-- 7: Przyciski edycji pozycji -->
+        </Grid.RowDefinitions>
+
+        <!-- Nagłówek Faktury (jak Oferty) -->
+        <Label Grid.Row="0" Content="Faktury" FontSize="16" FontWeight="Bold" Margin="0,0,0,5"/>
+
+        <!-- Przyciski nad browseem faktur (jak Oferty – ten sam układ GroupBox + StackPanel) -->
+        <GroupBox Grid.Row="1" Header="Akcje na fakturze" Padding="10" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Dodaj fakturę"
+                        Command="{Binding AddInvoiceCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Edytuj fakturę"
+                        Command="{Binding EditInvoiceCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Usuń fakturę"
+                        Command="{Binding DeleteInvoiceCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Odśwież"
+                        Command="{Binding LoadInvoicesCommand}"
+                        Padding="10,5"/>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Pole wyszukiwania – identyczne jak w Oferty -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,5">
+            <Label Content="Szukaj:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     Width="300"
+                     Padding="5"
+                     VerticalAlignment="Center">
+                <TextBox.Style>
+                    <Style TargetType="TextBox">
+                        <Setter Property="Tag" Value="Wyszukaj po nr, skrócie, kontrahencie, dacie"/>
+                    </Style>
+                </TextBox.Style>
+            </TextBox>
+        </StackPanel>
+
+        <!-- Browse Faktur (górny) – kolumny: Id, Data, Skrót, Nr, Kontrahent, Waluta, Brutto, Akcje -->
+        <DataGrid Grid.Row="3"
+                  ItemsSource="{Binding FilteredInvoices}"
+                  SelectedItem="{Binding SelectedInvoice}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  GridLinesVisibility="All"
+                  HeadersVisibility="Column"
+                  Margin="0,0,0,10">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Id faktury" Binding="{Binding Id}" Width="80"/>
+                <DataGridTextColumn Header="Data" Binding="{Binding FormattedDataFaktury}" Width="100"/>
+                <DataGridTextColumn Header="Skrót" Binding="{Binding SkrotNazwaFaktury}" Width="60"/>
+                <DataGridTextColumn Header="Nr" Binding="{Binding NrFaktury}" Width="80"/>
+                <DataGridTextColumn Header="Kontrahent" Binding="{Binding OdbiorcaNazwa}" Width="*"/>
+                <DataGridTextColumn Header="Waluta" Binding="{Binding Waluta}" Width="60"/>
+                <DataGridTextColumn Header="Brutto" Binding="{Binding KwotaBrutto, StringFormat='{}{0:N2}'}" Width="100"/>
+                <DataGridTemplateColumn Header="Akcje" Width="180">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Edytuj"
+                                        Command="{Binding DataContext.EditInvoiceCommandParam, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        CommandParameter="{Binding}"
+                                        Padding="8,3"
+                                        Margin="0,0,3,0"/>
+                                <Button Content="Podgląd"
+                                        Command="{Binding DataContext.ViewInvoiceCommandParam, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        CommandParameter="{Binding}"
+                                        Padding="8,3"
+                                        Margin="0,0,3,0"/>
+                                <Button Content="Usuń"
+                                        Command="{Binding DataContext.DeleteInvoiceCommandParam, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        CommandParameter="{Binding}"
+                                        Padding="8,3"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Przyciski edycji faktur (jak Oferty) -->
+        <GroupBox Grid.Row="4" Header="Akcje" Padding="10" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Dodaj fakturę"
+                        Command="{Binding AddInvoiceCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Edytuj fakturę"
+                        Command="{Binding EditInvoiceCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Usuń fakturę"
+                        Command="{Binding DeleteInvoiceCommand}"
+                        Padding="10,5"
+                        Margin="0,0,5,0"/>
+                <Button Content="Odśwież"
+                        Command="{Binding LoadInvoicesCommand}"
+                        Padding="10,5"/>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Nagłówek Pozycje Faktury (jak Oferty) -->
+        <Label Grid.Row="5" Content="Pozycje Faktury" FontSize="16" FontWeight="Bold" Margin="0,10,0,5"/>
+
+        <!-- Browse Pozycji Faktury (dolny) – tylko odczyt; Netto/Vat/Brutto wyliczane, nie edytowalne -->
+        <DataGrid Grid.Row="6"
+                  ItemsSource="{Binding Positions}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  GridLinesVisibility="All"
+                  HeadersVisibility="Column"
+                  Margin="0,0,0,10">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60"/>
+                <DataGridTextColumn Header="Nazwa towaru" Binding="{Binding NazwaTowaru}" Width="*"/>
+                <DataGridTextColumn Header="Ilość" Binding="{Binding Ilosc, StringFormat='{}{0:N2}'}" Width="80"/>
+                <DataGridTextColumn Header="Jedn." Binding="{Binding Jednostki}" Width="60"/>
+                <DataGridTextColumn Header="Cena netto" Binding="{Binding CenaNetto, StringFormat='{}{0:N2}'}" Width="90"/>
+                <DataGridTextColumn Header="Rabat %" Binding="{Binding Rabat, StringFormat='{}{0:N2}'}" Width="70"/>
+                <DataGridTextColumn Header="Netto" Binding="{Binding NettoPoz, StringFormat='{}{0:N2}'}" Width="90" IsReadOnly="True"/>
+                <DataGridTextColumn Header="VAT" Binding="{Binding VatPoz, StringFormat='{}{0:N2}'}" Width="80" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Brutto" Binding="{Binding BruttoPoz, StringFormat='{}{0:N2}'}" Width="90" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Stawka VAT" Binding="{Binding StawkaVat}" Width="70"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Przyciski edycji pozycji (jak Oferty – ten sam układ, placeholder) -->
+        <GroupBox Grid.Row="7" Header="Akcje - Pozycje" Padding="10">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Dodaj pozycję" Padding="10,5" Margin="0,0,5,0" IsEnabled="False"/>
+                <Button Content="Edytuj pozycję" Padding="10,5" Margin="0,0,5,0" IsEnabled="False"/>
+                <Button Content="Usuń pozycję" Padding="10,5" IsEnabled="False"/>
+            </StackPanel>
+        </GroupBox>
+    </Grid>
+</UserControl>

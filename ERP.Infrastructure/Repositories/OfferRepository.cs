@@ -23,12 +23,12 @@ public class OfferRepository : IOfferRepository
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT ID_oferta, id_firmy, do_proformy, do_zlecenia, Data_oferty, Nr_oferty, " +
+            "SELECT id, id_firmy, do_proformy, do_zlecenia, Data_oferty, Nr_oferty, " +
             "odbiorca_ID_odbiorcy, odbiorca_nazwa, odbiorca_ulica, odbiorca_kod_poczt, odbiorca_miasto, " +
             "odbiorca_panstwo, odbiorca_nip, odbiorca_mail, Waluta, Cena_calkowita, stawka_vat, " +
-            "total_vat, total_brutto, uwagi_do_oferty, dane_dodatkowe, operator, uwagi_targi, " +
+            "total_vat, total_brutto, sum_brutto, uwagi_do_oferty, dane_dodatkowe, operator, uwagi_targi, " +
             "do_faktury, historia, status " +
-            "FROM aoferty WHERE ID_oferta = @Id AND id_firmy = @CompanyId",
+            "FROM oferty WHERE id = @Id AND id_firmy = @CompanyId",
             connection);
         command.Parameters.AddWithValue("@Id", id);
         command.Parameters.AddWithValue("@CompanyId", companyId);
@@ -52,12 +52,12 @@ public class OfferRepository : IOfferRepository
         var offers = new List<Offer>();
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT ID_oferta, id_firmy, do_proformy, do_zlecenia, Data_oferty, Nr_oferty, " +
+            "SELECT id, id_firmy, do_proformy, do_zlecenia, Data_oferty, Nr_oferty, " +
             "odbiorca_ID_odbiorcy, odbiorca_nazwa, odbiorca_ulica, odbiorca_kod_poczt, odbiorca_miasto, " +
             "odbiorca_panstwo, odbiorca_nip, odbiorca_mail, Waluta, Cena_calkowita, stawka_vat, " +
-            "total_vat, total_brutto, uwagi_do_oferty, dane_dodatkowe, operator, uwagi_targi, " +
+            "total_vat, total_brutto, sum_brutto, uwagi_do_oferty, dane_dodatkowe, operator, uwagi_targi, " +
             "do_faktury, historia, status " +
-            "FROM aoferty WHERE id_firmy = @CompanyId ORDER BY Data_oferty DESC, Nr_oferty DESC",
+            "FROM oferty WHERE id_firmy = @CompanyId ORDER BY Data_oferty DESC, Nr_oferty DESC",
             connection);
         command.Parameters.AddWithValue("@CompanyId", companyId);
 
@@ -74,15 +74,15 @@ public class OfferRepository : IOfferRepository
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "INSERT INTO aoferty (id_firmy, do_proformy, do_zlecenia, Data_oferty, Nr_oferty, " +
+            "INSERT INTO oferty (id_firmy, do_proformy, do_zlecenia, Data_oferty, Nr_oferty, " +
             "odbiorca_ID_odbiorcy, odbiorca_nazwa, odbiorca_ulica, odbiorca_kod_poczt, odbiorca_miasto, " +
             "odbiorca_panstwo, odbiorca_nip, odbiorca_mail, Waluta, Cena_calkowita, stawka_vat, " +
-            "total_vat, total_brutto, uwagi_do_oferty, dane_dodatkowe, operator, uwagi_targi, " +
+            "total_vat, total_brutto, sum_brutto, uwagi_do_oferty, dane_dodatkowe, operator, uwagi_targi, " +
             "do_faktury, historia, status) " +
             "VALUES (@CompanyId, @ForProforma, @ForOrder, @OfferDate, @OfferNumber, @CustomerId, " +
             "@CustomerName, @CustomerStreet, @CustomerPostalCode, @CustomerCity, @CustomerCountry, " +
             "@CustomerNip, @CustomerEmail, @Currency, @TotalPrice, @VatRate, @TotalVat, @TotalBrutto, " +
-            "@OfferNotes, @AdditionalData, @Operator, @TradeNotes, @ForInvoice, @History, @Status); " +
+            "@SumBrutto, @OfferNotes, @AdditionalData, @Operator, @TradeNotes, @ForInvoice, @History, @Status); " +
             "SELECT LAST_INSERT_ID();",
             connection);
         
@@ -96,16 +96,16 @@ public class OfferRepository : IOfferRepository
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "UPDATE aoferty SET " +
+            "UPDATE oferty SET " +
             "do_proformy = @ForProforma, do_zlecenia = @ForOrder, Data_oferty = @OfferDate, " +
             "Nr_oferty = @OfferNumber, odbiorca_ID_odbiorcy = @CustomerId, odbiorca_nazwa = @CustomerName, " +
             "odbiorca_ulica = @CustomerStreet, odbiorca_kod_poczt = @CustomerPostalCode, " +
             "odbiorca_miasto = @CustomerCity, odbiorca_panstwo = @CustomerCountry, odbiorca_nip = @CustomerNip, " +
             "odbiorca_mail = @CustomerEmail, Waluta = @Currency, Cena_calkowita = @TotalPrice, " +
-            "stawka_vat = @VatRate, total_vat = @TotalVat, total_brutto = @TotalBrutto, " +
+            "stawka_vat = @VatRate, total_vat = @TotalVat, total_brutto = @TotalBrutto, sum_brutto = @SumBrutto, " +
             "uwagi_do_oferty = @OfferNotes, dane_dodatkowe = @AdditionalData, operator = @Operator, " +
             "uwagi_targi = @TradeNotes, do_faktury = @ForInvoice, historia = @History, status = @Status " +
-            "WHERE ID_oferta = @Id AND id_firmy = @CompanyId",
+            "WHERE id = @Id AND id_firmy = @CompanyId",
             connection);
         
         command.Parameters.AddWithValue("@Id", offer.Id);
@@ -118,7 +118,7 @@ public class OfferRepository : IOfferRepository
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "DELETE FROM aoferty WHERE ID_oferta = @Id AND id_firmy = @CompanyId",
+            "DELETE FROM oferty WHERE id = @Id AND id_firmy = @CompanyId",
             connection);
         command.Parameters.AddWithValue("@Id", id);
         command.Parameters.AddWithValue("@CompanyId", companyId);
@@ -129,7 +129,7 @@ public class OfferRepository : IOfferRepository
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "UPDATE aoferty SET status = @Status WHERE ID_oferta = @Id AND id_firmy = @CompanyId",
+            "UPDATE oferty SET status = @Status WHERE id = @Id AND id_firmy = @CompanyId",
             connection);
         command.Parameters.AddWithValue("@Id", id);
         command.Parameters.AddWithValue("@CompanyId", companyId);
@@ -141,7 +141,7 @@ public class OfferRepository : IOfferRepository
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT COUNT(1) FROM aoferty WHERE ID_oferta = @Id AND id_firmy = @CompanyId",
+            "SELECT COUNT(1) FROM oferty WHERE id = @Id AND id_firmy = @CompanyId",
             connection);
         command.Parameters.AddWithValue("@Id", id);
         command.Parameters.AddWithValue("@CompanyId", companyId);
@@ -154,7 +154,7 @@ public class OfferRepository : IOfferRepository
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
             "SELECT COALESCE(MAX(Nr_oferty), 0) + 1 " +
-            "FROM aoferty " +
+            "FROM oferty " +
             "WHERE id_firmy = @CompanyId AND Data_oferty = @OfferDate",
             connection);
         command.Parameters.AddWithValue("@CompanyId", companyId);
@@ -169,7 +169,7 @@ public class OfferRepository : IOfferRepository
 
     private static Offer MapToOffer(MySqlDataReader reader)
     {
-        int id = reader.GetInt32(reader.GetOrdinal("ID_oferta"));
+        int id = reader.GetInt32(reader.GetOrdinal("id"));
         int companyId = reader.GetInt32(reader.GetOrdinal("id_firmy"));
         string @operator = reader.GetString(reader.GetOrdinal("operator"));
         
@@ -202,6 +202,7 @@ public class OfferRepository : IOfferRepository
             GetNullableDecimal(reader, "total_vat"),
             GetNullableDecimal(reader, "total_brutto")
         );
+        offer.UpdateSumBrutto(GetNullableDecimal(reader, "sum_brutto"));
         
         offer.UpdateFlags(
             GetNullableBool(reader, "do_proformy"),
@@ -267,6 +268,7 @@ public class OfferRepository : IOfferRepository
         command.Parameters.AddWithValue("@VatRate", offer.VatRate ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@TotalVat", offer.TotalVat ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@TotalBrutto", offer.TotalBrutto ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@SumBrutto", offer.SumBrutto ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@OfferNotes", offer.OfferNotes ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@AdditionalData", offer.AdditionalData ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@Operator", offer.Operator);

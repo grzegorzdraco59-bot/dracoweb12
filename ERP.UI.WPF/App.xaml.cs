@@ -238,6 +238,7 @@ public partial class App : System.Windows.Application
             ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is missing in appsettings.json.");
         services.AddSingleton<DatabaseContext>(_ => new DatabaseContext(connectionString));
         services.AddTransient<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IDocumentNumberService, DocumentNumberService>();
         
         // Rejestracja repozytoriów
         services.AddScoped<ICustomerRepository, CustomerRepository>();
@@ -253,6 +254,8 @@ public partial class App : System.Windows.Application
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<ERP.Application.Repositories.IOrderMainRepository, OrderMainRepository>();
         services.AddScoped<ERP.Application.Repositories.IOrderPositionMainRepository, OrderPositionMainRepository>();
+        services.AddScoped<ERP.Application.Repositories.IInvoiceRepository, InvoiceRepository>();
+        services.AddScoped<ERP.Application.Repositories.IInvoicePositionRepository, InvoicePositionRepository>();
         services.AddScoped<ProductRepository>();
         services.AddScoped<WarehouseRepository>();
         
@@ -263,6 +266,9 @@ public partial class App : System.Windows.Application
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IOfferService, OfferService>();
         services.AddScoped<IOrderFromOfferConversionService, OrderFromOfferConversionService>();
+        services.AddScoped<IInvoiceTotalsService, InvoiceTotalsService>();
+        services.AddScoped<IOfferTotalsService, OfferTotalsService>();
+        services.AddScoped<IOfferToFpfConversionService, OfferToFpfConversionService>();
         services.AddScoped<IOrderMainService, OrderMainService>();
 
         // Automatyczna rejestracja walidatorów z ERP.Application.Validation (AddScoped, same typy)
@@ -279,6 +285,7 @@ public partial class App : System.Windows.Application
         services.AddTransient<CustomersViewModel>();
         services.AddTransient<SuppliersViewModel>();
         services.AddTransient<OffersViewModel>();
+        services.AddTransient<InvoicesViewModel>();
         services.AddTransient<ProductsViewModel>();
         services.AddTransient<OrdersViewModel>();
         services.AddTransient<OrdersMainViewModel>();
