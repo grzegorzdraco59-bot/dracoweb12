@@ -22,7 +22,7 @@ SELECT * FROM operatorfirma;
 SELECT id_operatora, imie_nazwisko FROM operator;
 
 -- 5. Sprawdzenie czy istnieją firmy w tabeli firmy
-SELECT ID_FIRMY, NAZWA FROM firmy;
+SELECT id, NAZWA FROM firmy;
 
 -- 6. Sprawdzenie relacji użytkownik-firma
 SELECT 
@@ -34,4 +34,4 @@ SELECT
     of.rola
 FROM operatorfirma of
 LEFT JOIN operator o ON of.id_operatora = o.id_operatora
-LEFT JOIN firmy f ON of.id_firmy = f.ID_FIRMY;
+LEFT JOIN firmy f ON of.id_firmy = f.id;

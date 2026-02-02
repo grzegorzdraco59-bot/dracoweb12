@@ -56,6 +56,26 @@ public class OfferTotalsService : IOfferTotalsService
     }
 
     /// <inheritdoc />
+    public async Task RecalcOfferTotalsAsync(int offerId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _context.CreateConnectionAsync();
+        var cmd = new MySqlCommand(
+            "UPDATE oferty o " +
+            "LEFT JOIN (" +
+            "  SELECT oferta_id, " +
+            "    COALESCE(SUM(netto_poz), 0) AS s_netto, " +
+            "    COALESCE(SUM(vat_poz), 0) AS s_vat, " +
+            "    COALESCE(SUM(brutto_poz), 0) AS s_brutto " +
+            "  FROM ofertypozycje WHERE oferta_id = @OfferId GROUP BY oferta_id" +
+            ") x ON x.oferta_id = o.id " +
+            "SET o.sum_netto = COALESCE(x.s_netto, 0), o.sum_vat = COALESCE(x.s_vat, 0), o.sum_brutto = COALESCE(x.s_brutto, 0) " +
+            "WHERE o.id = @OfferId",
+            connection);
+        cmd.Parameters.AddWithValue("@OfferId", offerId);
+        await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task<decimal> GetSumBruttoAsync(int offerId, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();

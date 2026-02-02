@@ -21,9 +21,10 @@ public class CompanyRepository : ICompanyRepository
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT ID_FIRMY, NAZWA, NAGLOWEK1, NAGLOWEK2, ULICA_NR, KOD_POCZTOWY, MIASTO, PANSTWO, " +
-            "NIP, REGON, krs, TEL1, MAIL, Numeracja_FV_r_m, Numeracja_FPF_r_m " +
-            "FROM firmy WHERE ID_FIRMY = @Id",
+            "SELECT id, NAZWA, NAGLOWEK1, NAGLOWEK2, ULICA_NR, KOD_POCZTOWY, MIASTO, PANSTWO, " +
+            "NIP, REGON, krs, TEL1, MAIL, Numeracja_FV_r_m, Numeracja_FPF_r_m, " +
+            "smtp_host, smtp_port, smtp_user, smtp_pass, smtp_ssl, smtp_from_email, smtp_from_name " +
+            "FROM firmy WHERE id = @Id",
             connection);
         command.Parameters.AddWithValue("@Id", id);
 
@@ -41,8 +42,9 @@ public class CompanyRepository : ICompanyRepository
         var companies = new List<Company>();
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT ID_FIRMY, NAZWA, NAGLOWEK1, NAGLOWEK2, ULICA_NR, KOD_POCZTOWY, MIASTO, PANSTWO, " +
-            "NIP, REGON, krs, TEL1, MAIL, Numeracja_FV_r_m, Numeracja_FPF_r_m " +
+            "SELECT id, NAZWA, NAGLOWEK1, NAGLOWEK2, ULICA_NR, KOD_POCZTOWY, MIASTO, PANSTWO, " +
+            "NIP, REGON, krs, TEL1, MAIL, Numeracja_FV_r_m, Numeracja_FPF_r_m, " +
+            "smtp_host, smtp_port, smtp_user, smtp_pass, smtp_ssl, smtp_from_email, smtp_from_name " +
             "FROM firmy ORDER BY NAZWA",
             connection);
 
@@ -60,10 +62,11 @@ public class CompanyRepository : ICompanyRepository
         var companies = new List<Company>();
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT DISTINCT f.ID_FIRMY, f.NAZWA, f.NAGLOWEK1, f.NAGLOWEK2, f.ULICA_NR, f.KOD_POCZTOWY, " +
-            "f.MIASTO, f.PANSTWO, f.NIP, f.REGON, f.krs, f.TEL1, f.MAIL, f.Numeracja_FV_r_m, f.Numeracja_FPF_r_m " +
+            "SELECT DISTINCT f.id, f.NAZWA, f.NAGLOWEK1, f.NAGLOWEK2, f.ULICA_NR, f.KOD_POCZTOWY, " +
+            "f.MIASTO, f.PANSTWO, f.NIP, f.REGON, f.krs, f.TEL1, f.MAIL, f.Numeracja_FV_r_m, f.Numeracja_FPF_r_m, " +
+            "f.smtp_host, f.smtp_port, f.smtp_user, f.smtp_pass, f.smtp_ssl, f.smtp_from_email, f.smtp_from_name " +
             "FROM firmy f " +
-            "INNER JOIN operatorfirma of ON f.ID_FIRMY = of.id_firmy " +
+            "INNER JOIN operatorfirma of ON f.id = of.id_firmy " +
             "WHERE of.id_operatora = @UserId " +
             "ORDER BY f.NAZWA",
             connection);
@@ -102,7 +105,7 @@ public class CompanyRepository : ICompanyRepository
             "ULICA_NR = @Street, KOD_POCZTOWY = @PostalCode, MIASTO = @City, PANSTWO = @Country, " +
             "NIP = @Nip, REGON = @Regon, krs = @Krs, TEL1 = @Phone1, MAIL = @Email, " +
             "Numeracja_FV_r_m = @InvoiceNumberingPerMonth, Numeracja_FPF_r_m = @ProformaInvoiceNumberingPerMonth " +
-            "WHERE ID_FIRMY = @Id",
+            "WHERE id = @Id",
             connection);
 
         command.Parameters.AddWithValue("@Id", company.Id);
@@ -114,7 +117,7 @@ public class CompanyRepository : ICompanyRepository
     public async Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand("SELECT COUNT(1) FROM firmy WHERE ID_FIRMY = @Id", connection);
+        var command = new MySqlCommand("SELECT COUNT(1) FROM firmy WHERE id = @Id", connection);
         command.Parameters.AddWithValue("@Id", id);
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return Convert.ToInt32(result) > 0;
@@ -122,7 +125,7 @@ public class CompanyRepository : ICompanyRepository
 
     private static Company MapToCompany(MySqlDataReader reader)
     {
-        var id = reader.GetInt32(reader.GetOrdinal("ID_FIRMY"));
+        var id = reader.GetInt32(reader.GetOrdinal("id"));
         var name = reader.IsDBNull(reader.GetOrdinal("NAZWA")) ? string.Empty : reader.GetString(reader.GetOrdinal("NAZWA"));
         
         var company = new Company(name);
@@ -153,7 +156,67 @@ public class CompanyRepository : ICompanyRepository
         company.SetInvoiceNumberingPerMonth(invoiceNumberingPerMonth);
         company.SetProformaInvoiceNumberingPerMonth(proformaInvoiceNumberingPerMonth);
 
+        var smtpHost = GetNullableString(reader, "smtp_host");
+        var smtpPort = GetNullableInt(reader, "smtp_port");
+        var smtpUser = GetNullableString(reader, "smtp_user");
+        var smtpPass = GetNullableString(reader, "smtp_pass");
+        var smtpSsl = GetNullableBool(reader, "smtp_ssl");
+        var smtpFromEmail = GetNullableString(reader, "smtp_from_email");
+        var smtpFromName = GetNullableString(reader, "smtp_from_name");
+        company.SetSmtpSettings(smtpHost, smtpPort, smtpUser, smtpPass, smtpSsl, smtpFromEmail, smtpFromName);
+
         return company;
+    }
+
+    private static string? GetNullableString(MySqlDataReader reader, string columnName)
+    {
+        try
+        {
+            var ordinal = reader.GetOrdinal(columnName);
+            return reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
+        catch (IndexOutOfRangeException)
+        {
+            return null;
+        }
+    }
+
+    private static int? GetNullableInt(MySqlDataReader reader, string columnName)
+    {
+        try
+        {
+            var ordinal = reader.GetOrdinal(columnName);
+            return reader.IsDBNull(ordinal) ? null : reader.GetInt32(ordinal);
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
+        catch (IndexOutOfRangeException)
+        {
+            return null;
+        }
+    }
+
+    private static bool? GetNullableBool(MySqlDataReader reader, string columnName)
+    {
+        try
+        {
+            var ordinal = reader.GetOrdinal(columnName);
+            return reader.IsDBNull(ordinal) ? null : reader.GetBoolean(ordinal);
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
+        catch (IndexOutOfRangeException)
+        {
+            return null;
+        }
     }
 
     private static void AddCompanyParameters(MySqlCommand command, Company company)

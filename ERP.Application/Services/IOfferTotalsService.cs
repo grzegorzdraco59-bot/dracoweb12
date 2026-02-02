@@ -18,6 +18,12 @@ public interface IOfferTotalsService
     Task<decimal> RecalculateSumBruttoAsync(int offerId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Przelicza nagłówek oferty: SUM(netto_poz), SUM(vat_poz), SUM(brutto_poz) z ofertypozycje
+    /// i zapisuje do oferty.sum_netto, oferty.sum_vat, oferty.sum_brutto. Wywołać po zmianie pozycji oraz przed generowaniem PDF.
+    /// </summary>
+    Task RecalcOfferTotalsAsync(int offerId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Odczytuje sum_brutto oferty z bazy (do odświeżenia UI bez przeładowania listy).
     /// </summary>
     Task<decimal> GetSumBruttoAsync(int offerId, CancellationToken cancellationToken = default);

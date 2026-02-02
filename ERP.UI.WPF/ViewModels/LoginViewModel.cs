@@ -24,9 +24,17 @@ public class LoginViewModel : ViewModelBase
 
     public LoginViewModel(IAuthenticationService authenticationService)
     {
-        _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
-        LoginCommand = new RelayCommand(async () => await LoginAsync(), () => CanLogin());
-        CancelCommand = new RelayCommand(() => Cancel());
+        try
+        {
+            _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
+            LoginCommand = new RelayCommand(async () => await LoginAsync(), () => CanLogin());
+            CancelCommand = new RelayCommand(() => Cancel());
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(ex.ToString(), "LoginViewModel – błąd inicjalizacji", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            throw;
+        }
     }
 
     public string Login

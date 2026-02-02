@@ -26,7 +26,7 @@ public class OfferRepository : IOfferRepository
             "SELECT id, id_firmy, do_proformy, do_zlecenia, Data_oferty, Nr_oferty, " +
             "odbiorca_ID_odbiorcy, odbiorca_nazwa, odbiorca_ulica, odbiorca_kod_poczt, odbiorca_miasto, " +
             "odbiorca_panstwo, odbiorca_nip, odbiorca_mail, Waluta, Cena_calkowita, stawka_vat, " +
-            "total_vat, total_brutto, sum_brutto, uwagi_do_oferty, dane_dodatkowe, operator, uwagi_targi, " +
+            "total_vat, total_brutto, sum_netto, sum_vat, sum_brutto, uwagi_do_oferty, dane_dodatkowe, operator, uwagi_targi, " +
             "do_faktury, historia, status " +
             "FROM oferty WHERE id = @Id AND id_firmy = @CompanyId",
             connection);
@@ -55,7 +55,7 @@ public class OfferRepository : IOfferRepository
             "SELECT id, id_firmy, do_proformy, do_zlecenia, Data_oferty, Nr_oferty, " +
             "odbiorca_ID_odbiorcy, odbiorca_nazwa, odbiorca_ulica, odbiorca_kod_poczt, odbiorca_miasto, " +
             "odbiorca_panstwo, odbiorca_nip, odbiorca_mail, Waluta, Cena_calkowita, stawka_vat, " +
-            "total_vat, total_brutto, sum_brutto, uwagi_do_oferty, dane_dodatkowe, operator, uwagi_targi, " +
+            "total_vat, total_brutto, sum_netto, sum_vat, sum_brutto, uwagi_do_oferty, dane_dodatkowe, operator, uwagi_targi, " +
             "do_faktury, historia, status " +
             "FROM oferty WHERE id_firmy = @CompanyId ORDER BY Data_oferty DESC, Nr_oferty DESC",
             connection);
@@ -196,10 +196,12 @@ public class OfferRepository : IOfferRepository
             GetNullableString(reader, "odbiorca_mail")
         );
         
+        var sumNetto = GetNullableDecimal(reader, "sum_netto");
+        var sumVat = GetNullableDecimal(reader, "sum_vat");
         offer.UpdatePricing(
-            GetNullableDecimal(reader, "Cena_calkowita"),
+            sumNetto ?? GetNullableDecimal(reader, "Cena_calkowita"),
             GetNullableDecimal(reader, "stawka_vat"),
-            GetNullableDecimal(reader, "total_vat"),
+            sumVat ?? GetNullableDecimal(reader, "total_vat"),
             GetNullableDecimal(reader, "total_brutto")
         );
         offer.UpdateSumBrutto(GetNullableDecimal(reader, "sum_brutto"));

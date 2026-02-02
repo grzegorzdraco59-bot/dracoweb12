@@ -21,6 +21,14 @@ public class Company : BaseEntity
     public bool InvoiceNumberingPerMonth { get; private set; }
     public bool ProformaInvoiceNumberingPerMonth { get; private set; }
 
+    public string? SmtpHost { get; private set; }
+    public int? SmtpPort { get; private set; }
+    public string? SmtpUser { get; private set; }
+    public string? SmtpPass { get; private set; }
+    public bool? SmtpSsl { get; private set; }
+    public string? SmtpFromEmail { get; private set; }
+    public string? SmtpFromName { get; private set; }
+
     // Konstruktor prywatny dla EF Core
     private Company()
     {
@@ -80,6 +88,18 @@ public class Company : BaseEntity
     public void SetProformaInvoiceNumberingPerMonth(bool value)
     {
         ProformaInvoiceNumberingPerMonth = value;
+        UpdateTimestamp();
+    }
+
+    public void SetSmtpSettings(string? smtpHost, int? smtpPort, string? smtpUser, string? smtpPass, bool? smtpSsl, string? smtpFromEmail, string? smtpFromName)
+    {
+        SmtpHost = smtpHost;
+        SmtpPort = smtpPort;
+        SmtpUser = smtpUser;
+        SmtpPass = smtpPass;
+        SmtpSsl = smtpSsl;
+        SmtpFromEmail = smtpFromEmail;
+        SmtpFromName = smtpFromName;
         UpdateTimestamp();
     }
 }

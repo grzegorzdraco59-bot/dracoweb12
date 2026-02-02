@@ -1,9 +1,13 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Windows.Data;
 using System.Windows.Input;
+using Microsoft.Win32;
 using ERP.Application.DTOs;
+using ERP.Application.Helpers;
 using ERP.Application.Repositories;
 using ERP.Application.Services;
 using ERP.Domain.Entities;
@@ -25,8 +29,11 @@ public class OffersViewModel : ViewModelBase
     private readonly IOfferService _offerService;
     private readonly IOrderMainService _orderMainService;
     private readonly IOfferToFpfConversionService _offerToFpfService;
+    private readonly IOfferPdfService _offerPdfService;
+    private readonly ICompanyRepository _companyRepository;
     private readonly IInvoiceRepository _invoiceRepository;
     private readonly IOfferTotalsService _offerTotalsService;
+    private readonly IEmailService _emailService;
     private readonly ProductRepository _productRepository;
     private readonly ICustomerRepository _customerRepository;
     private readonly IUserContext _userContext;
@@ -39,8 +46,11 @@ public class OffersViewModel : ViewModelBase
         IOfferService offerService,
         IOrderMainService orderMainService,
         IOfferToFpfConversionService offerToFpfService,
+        IOfferPdfService offerPdfService,
+        ICompanyRepository companyRepository,
         IInvoiceRepository invoiceRepository,
         IOfferTotalsService offerTotalsService,
+        IEmailService emailService,
         ProductRepository productRepository, 
         ICustomerRepository customerRepository,
         IUserContext userContext)
@@ -48,8 +58,11 @@ public class OffersViewModel : ViewModelBase
         _offerService = offerService ?? throw new ArgumentNullException(nameof(offerService));
         _orderMainService = orderMainService ?? throw new ArgumentNullException(nameof(orderMainService));
         _offerToFpfService = offerToFpfService ?? throw new ArgumentNullException(nameof(offerToFpfService));
+        _offerPdfService = offerPdfService ?? throw new ArgumentNullException(nameof(offerPdfService));
+        _companyRepository = companyRepository ?? throw new ArgumentNullException(nameof(companyRepository));
         _invoiceRepository = invoiceRepository ?? throw new ArgumentNullException(nameof(invoiceRepository));
         _offerTotalsService = offerTotalsService ?? throw new ArgumentNullException(nameof(offerTotalsService));
+        _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
         _productRepository = productRepository ?? throw new ArgumentNullException(nameof(productRepository));
         _customerRepository = customerRepository ?? throw new ArgumentNullException(nameof(customerRepository));
         _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
@@ -71,10 +84,10 @@ public class OffersViewModel : ViewModelBase
         EditPositionCommand = new RelayCommand(() => EditPosition(), () => SelectedOfferPosition != null);
         DeletePositionCommand = new RelayCommand(async () => await DeletePositionAsync(), () => SelectedOfferPosition != null);
         
-        // Przyciski nad browseem ofert
-        PrintOfferPlCommand = new RelayCommand(() => System.Windows.MessageBox.Show("Print oferta PL - w przygotowaniu", "Info", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information), () => SelectedOffer != null);
-        PrintOfferEngCommand = new RelayCommand(() => System.Windows.MessageBox.Show("Print oferta ENG - w przygotowaniu", "Info", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information), () => SelectedOffer != null);
-        SendEmailCommand = new RelayCommand(() => System.Windows.MessageBox.Show("Send email - w przygotowaniu", "Info", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information), () => SelectedOffer != null);
+        // Drukuj PDF – tylko gdy zaznaczona oferta i Id > 0
+        PrintOfferPdfCommand = new RelayCommand(async () => await ExportOfferToPdfAsync(), () => SelectedOffer != null && SelectedOffer.Id > 0);
+        // Oferta mail – enabled gdy oferta ma Id i odbiorca_mail (CustomerEmail) nie jest pusty
+        SendEmailCommand = new RelayCommand(async () => await SendOfferEmailAsync(), () => SelectedOffer != null && SelectedOffer.Id > 0 && !string.IsNullOrWhiteSpace(SelectedOffer.CustomerEmail));
         CopyToNewOfferCommand = new RelayCommand(() => System.Windows.MessageBox.Show("Kopiuj do nowej oferty - w przygotowaniu", "Info", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information), () => SelectedOffer != null);
         CopyToFpfCommand = new RelayCommand(async () => await CopyToFpfAsync(), () => SelectedOffer != null);
         CopyToFpfZalCommand = new RelayCommand(() => System.Windows.MessageBox.Show("Kopiuj do FPFzal. - w przygotowaniu", "Info", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information), () => SelectedOffer != null);
@@ -129,12 +142,11 @@ public class OffersViewModel : ViewModelBase
                     createOrderCmd.RaiseCanExecuteChanged();
                 if (AddPositionCommand is RelayCommand addPosCmd)
                     addPosCmd.RaiseCanExecuteChanged();
-                if (PrintOfferPlCommand is RelayCommand printPlCmd)
-                    printPlCmd.RaiseCanExecuteChanged();
-                if (PrintOfferEngCommand is RelayCommand printEngCmd)
-                    printEngCmd.RaiseCanExecuteChanged();
+                if (PrintOfferPdfCommand is RelayCommand printPdfCmd)
+                    printPdfCmd.RaiseCanExecuteChanged();
                 if (SendEmailCommand is RelayCommand sendEmailCmd)
                     sendEmailCmd.RaiseCanExecuteChanged();
+                System.Windows.Input.CommandManager.InvalidateRequerySuggested();
                 if (CopyToNewOfferCommand is RelayCommand copyNewCmd)
                     copyNewCmd.RaiseCanExecuteChanged();
                 if (CopyToFpfCommand is RelayCommand copyFpfCmd)
@@ -185,8 +197,7 @@ public class OffersViewModel : ViewModelBase
     public ICommand AddPositionCommand { get; }
     public ICommand EditPositionCommand { get; }
     public ICommand DeletePositionCommand { get; }
-    public ICommand PrintOfferPlCommand { get; }
-    public ICommand PrintOfferEngCommand { get; }
+    public ICommand PrintOfferPdfCommand { get; }
     public ICommand SendEmailCommand { get; }
     public ICommand CopyToNewOfferCommand { get; }
     public ICommand CopyToFpfCommand { get; }
@@ -229,64 +240,32 @@ public class OffersViewModel : ViewModelBase
         SelectedOffer = offerId.HasValue ? Offers.FirstOrDefault(o => o.Id == offerId.Value) : null;
     }
 
-    /// <summary>Odświeża pozycje oferty i sumę brutto w UI bez przeładowania całej listy ofert.</summary>
+    /// <summary>Odświeża pozycje oferty i DTO oferty (sum_netto, sum_vat, sum_brutto z nagłówka) w UI bez przeładowania całej listy.</summary>
     private async Task RefreshPositionsAndSumBruttoAsync(int offerId)
     {
         await LoadOfferPositionsAsync(offerId);
-        var newSum = await _offerTotalsService.GetSumBruttoAsync(offerId);
-        var idx = -1;
-        for (var i = 0; i < Offers.Count; i++)
+        if (!_userContext.CompanyId.HasValue) return;
+        try
         {
-            if (Offers[i].Id == offerId) { idx = i; break; }
+            var offer = await _offerService.GetByIdAsync(offerId, _userContext.CompanyId.Value);
+            if (offer == null) return;
+            var offerDto = MapToDto(offer);
+            var idx = -1;
+            for (var i = 0; i < Offers.Count; i++)
+            {
+                if (Offers[i].Id == offerId) { idx = i; break; }
+            }
+            if (idx >= 0)
+            {
+                Offers[idx] = offerDto;
+                if (SelectedOffer?.Id == offerId)
+                    SelectedOffer = offerDto;
+            }
         }
-        if (idx >= 0)
+        catch (Exception ex)
         {
-            var current = Offers[idx];
-            var updated = CloneOfferWithSumBrutto(current, newSum);
-            Offers[idx] = updated;
-            if (SelectedOffer?.Id == offerId)
-                SelectedOffer = updated;
+            System.Windows.MessageBox.Show(ex.ToString(), "Błąd odświeżania oferty", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
         }
-    }
-
-    private static OfferDto CloneOfferWithSumBrutto(OfferDto source, decimal sumBrutto)
-    {
-        return new OfferDto
-        {
-            Id = source.Id,
-            CompanyId = source.CompanyId,
-            ForProforma = source.ForProforma,
-            ForOrder = source.ForOrder,
-            OfferDate = source.OfferDate,
-            DataOferty = source.DataOferty,
-            NrOferty = source.NrOferty,
-            FormattedOfferDate = source.FormattedOfferDate,
-            OfferNumber = source.OfferNumber,
-            CustomerId = source.CustomerId,
-            CustomerName = source.CustomerName,
-            CustomerStreet = source.CustomerStreet,
-            CustomerPostalCode = source.CustomerPostalCode,
-            CustomerCity = source.CustomerCity,
-            CustomerCountry = source.CustomerCountry,
-            CustomerNip = source.CustomerNip,
-            CustomerEmail = source.CustomerEmail,
-            RecipientName = source.RecipientName,
-            Currency = source.Currency,
-            TotalPrice = source.TotalPrice,
-            VatRate = source.VatRate,
-            TotalVat = source.TotalVat,
-            TotalBrutto = source.TotalBrutto,
-            SumBrutto = sumBrutto,
-            OfferNotes = source.OfferNotes,
-            AdditionalData = source.AdditionalData,
-            Operator = source.Operator,
-            TradeNotes = source.TradeNotes,
-            ForInvoice = source.ForInvoice,
-            History = source.History,
-            Status = source.Status,
-            CreatedAt = source.CreatedAt,
-            UpdatedAt = source.UpdatedAt
-        };
     }
 
     private async Task LoadOfferPositionsAsync(int offerId)
@@ -374,6 +353,229 @@ public class OffersViewModel : ViewModelBase
         catch { return null; }
     }
 
+    /// <summary>Data oferty do numeru/pliku – DataOferty lub konwersja z Clarion (OfferDate).</summary>
+    private static DateTime GetOfferDateForNumber(OfferDto offer)
+    {
+        if (offer.DataOferty.HasValue) return offer.DataOferty.Value;
+        if (offer.OfferDate.HasValue && offer.OfferDate.Value > 0)
+            return new DateTime(1800, 12, 28).AddDays(offer.OfferDate.Value);
+        return DateTime.Today;
+    }
+
+    /// <summary>Folder na PDF-y ofert – zawsze C:\wydruki\oferty.</summary>
+    private const string PdfOutputFolder = "C:\\wydruki\\oferty";
+
+    private static string EnsurePdfFolder()
+    {
+        try { Directory.CreateDirectory(PdfOutputFolder); } catch { /* ignoruj */ }
+        return PdfOutputFolder;
+    }
+
+    private static string GetUniqueFilePath(string desiredPath)
+    {
+        if (!File.Exists(desiredPath)) return desiredPath;
+        var dir = Path.GetDirectoryName(desiredPath) ?? "";
+        var nameWithoutExt = Path.GetFileNameWithoutExtension(desiredPath);
+        var ext = Path.GetExtension(desiredPath);
+        for (var i = 2; i < 1000; i++)
+        {
+            var candidate = Path.Combine(dir, $"{nameWithoutExt} ({i}){ext}");
+            if (!File.Exists(candidate)) return candidate;
+        }
+        return Path.Combine(dir, $"{nameWithoutExt}_{DateTime.Now:yyyyMMddHHmmss}{ext}");
+    }
+
+    /// <summary>Eksport oferty do PDF – zapis zawsze do C:\wydruki\oferty (bez dialogu), nazwa OF_yyyy-MM-dd-nr.pdf, opcja otwarcia.</summary>
+    private async Task ExportOfferToPdfAsync()
+    {
+        if (SelectedOffer == null || SelectedOffer.Id <= 0 || !_userContext.CompanyId.HasValue)
+            return;
+        var companyId = _userContext.CompanyId.Value;
+        var offerId = SelectedOffer.Id;
+        try
+        {
+            await _offerTotalsService.RecalcOfferTotalsAsync(offerId);
+            var offer = await _offerService.GetByIdAsync(offerId, companyId);
+            if (offer == null)
+            {
+                System.Windows.MessageBox.Show("Nie znaleziono oferty.", "Błąd", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+            var positions = (await _offerService.GetPositionsByOfferIdAsync(offerId)).ToList();
+            var offerDto = MapToDto(offer);
+            var positionsDto = positions.Select(MapToDto).ToList();
+
+            CompanyDto? companyDto = null;
+            var company = await _companyRepository.GetByIdAsync(offerDto.CompanyId);
+            if (company != null)
+            {
+                companyDto = new CompanyDto
+                {
+                    Id = company.Id,
+                    Name = company.Name,
+                    Street = company.Street,
+                    PostalCode = company.PostalCode,
+                    City = company.City,
+                    Country = company.Country,
+                    Nip = company.Nip,
+                    Phone1 = company.Phone1,
+                    Email = company.Email
+                };
+            }
+
+            var dataOferty = GetOfferDateForNumber(offerDto);
+            var nrOferty = offerDto.NrOferty ?? 0;
+            var defaultFileName = OfferNumberHelper.BuildOfferFileName(dataOferty, nrOferty);
+            var folder = EnsurePdfFolder();
+            var finalPath = GetUniqueFilePath(Path.Combine(folder, defaultFileName));
+
+            var tmpPath = finalPath + ".tmp";
+            await using (var fs = new FileStream(tmpPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                await _offerPdfService.GeneratePdfAsync(offerDto, positionsDto, fs, companyDto);
+            }
+            File.Move(tmpPath, finalPath, overwrite: false);
+
+            var result = System.Windows.MessageBox.Show(
+                $"Zapisano ofertę PDF do: {finalPath}\n\nOtworzyć teraz?",
+                "Zapisano",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Information);
+            if (result == System.Windows.MessageBoxResult.Yes)
+            {
+                Process.Start(new ProcessStartInfo(finalPath) { UseShellExecute = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(ex.ToString(), "Błąd zapisu PDF", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+    }
+
+    /// <summary>Otwiera okno "Wyślij ofertę", generuje PDF do byte[], wysyła e-mail SMTP z tabeli firmy (firmy.id), opcjonalnie ustawia status na wyslane.</summary>
+    private async Task SendOfferEmailAsync()
+    {
+        if (SelectedOffer == null || SelectedOffer.Id <= 0)
+            return;
+        if (!_userContext.CompanyId.HasValue)
+        {
+            System.Windows.MessageBox.Show("Brak wybranej firmy.", "Oferta mail", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+        // Walidacja odbiorcy: oferty.odbiorca_mail
+        var customerEmail = (SelectedOffer.CustomerEmail ?? "").Trim();
+        if (string.IsNullOrEmpty(customerEmail))
+        {
+            System.Windows.MessageBox.Show("Brak odbiorca_mail w ofercie", "Oferta mail", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+        var companyId = _userContext.CompanyId.Value;
+        System.Windows.MessageBox.Show($"MAIL: companyId={companyId}", "Oferta mail", System.Windows.MessageBoxButton.OK);
+
+        // SMTP z DB: SELECT ... FROM firmy WHERE id = @companyId (CompanyRepository.GetByIdAsync)
+        var company = await _companyRepository.GetByIdAsync(companyId);
+        if (company == null)
+        {
+            System.Windows.MessageBox.Show("Nie znaleziono firmy.", "Oferta mail", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+        var host = (company.SmtpHost ?? "").Trim();
+        var user = (company.SmtpUser ?? "").Trim();
+        var fromEmail = (company.SmtpFromEmail ?? "").Trim();
+        var port = company.SmtpPort ?? 25;
+        var ssl = company.SmtpSsl ?? false;
+        var pass = company.SmtpPass ?? "";
+
+        System.Windows.MessageBox.Show($"MAIL SMTP: host=[{host}] port={port} ssl={ssl} from=[{fromEmail}]", "Oferta mail", System.Windows.MessageBoxButton.OK);
+
+        if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(user) || string.IsNullOrEmpty(pass) || string.IsNullOrEmpty(fromEmail))
+        {
+            System.Windows.MessageBox.Show("Brak konfiguracji SMTP dla tej firmy (uzupełnij w tabeli firmy)", "Oferta mail", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        var defaultSubject = "Oferta " + SelectedOffer.FullNo;
+        var defaultBody = "Dzień dobry,\n\nW załączeniu przesyłamy ofertę.\n\nPozdrawiamy";
+        var vm = new SendOfferEmailViewModel(customerEmail, defaultSubject, defaultBody);
+
+        var window = new SendOfferEmailWindow(vm)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+        if (window.ShowDialog() != true)
+            return;
+
+        var to = (vm.To ?? "").Trim();
+        var cc = string.IsNullOrWhiteSpace(vm.DwUdw) ? null : vm.DwUdw.Trim();
+        var subject = (vm.Subject ?? "").Trim();
+        var body = (vm.Body ?? "").Trim();
+        var changeStatus = vm.ChangeStatusAfterSend;
+
+        var offerId = SelectedOffer.Id;
+
+        try
+        {
+            await _offerTotalsService.RecalcOfferTotalsAsync(offerId);
+            var offer = await _offerService.GetByIdAsync(offerId, companyId);
+            if (offer == null)
+            {
+                System.Windows.MessageBox.Show("Nie znaleziono oferty.", "Błąd", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+            var positions = (await _offerService.GetPositionsByOfferIdAsync(offerId)).ToList();
+            var offerDto = MapToDto(offer);
+            var positionsDto = positions.Select(MapToDto).ToList();
+
+            CompanyDto? companyDto = new CompanyDto
+            {
+                Id = company.Id,
+                Name = company.Name,
+                Street = company.Street,
+                PostalCode = company.PostalCode,
+                City = company.City,
+                Country = company.Country,
+                Nip = company.Nip,
+                Phone1 = company.Phone1,
+                Email = company.Email
+            };
+
+            byte[] pdfBytes;
+            await using (var ms = new MemoryStream())
+            {
+                await _offerPdfService.GeneratePdfAsync(offerDto, positionsDto, ms, companyDto);
+                pdfBytes = ms.ToArray();
+            }
+
+            var dataOferty = GetOfferDateForNumber(offerDto);
+            var nrOferty = offerDto.NrOferty ?? 0;
+            var attachmentFileName = OfferNumberHelper.BuildOfferFileName(dataOferty, nrOferty);
+
+            var smtpDto = new SmtpSettingsDto
+            {
+                Host = host,
+                Port = port,
+                User = user,
+                Pass = pass,
+                Ssl = ssl,
+                FromEmail = fromEmail,
+                FromName = company.SmtpFromName
+            };
+            await _emailService.SendWithSmtpSettingsAsync(smtpDto, to, cc, subject, body, pdfBytes, attachmentFileName);
+            if (changeStatus)
+            {
+                await _offerService.SetStatusAsync(offerId, companyId, OfferStatus.Sent);
+                await ReloadOffersAndReselectAsync(offerId);
+            }
+            System.Windows.MessageBox.Show(changeStatus ? "Wysłano ofertę. Status: wyslane" : "Wysłano ofertę.", "Oferta mail", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(ex.ToString(), "Błąd wysyłki", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            return;
+        }
+    }
+
+    /// <summary>Mapowanie Offer → OfferDto (odbiorca_mail w DB = CustomerEmail w DTO).</summary>
     private static OfferDto MapToDto(Offer offer)
     {
         var dataOferty = ClarionToDateTime(offer.OfferDate);

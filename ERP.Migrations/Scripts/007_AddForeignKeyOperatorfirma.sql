@@ -1,6 +1,6 @@
 -- Skrypt do dodania kluczy obcych dla operatorfirma
 -- operatorfirma.id_operatora -> operator.id_operatora
--- operatorfirma.id_firmy -> firmy.ID_FIRMY
+-- operatorfirma.id_firmy -> firmy.id
 
 -- Sprawdzenie czy foreign key operatorfirma -> operator już istnieje
 SET @foreign_key_operator_exists = (
@@ -40,7 +40,7 @@ DEALLOCATE PREPARE stmt_operator;
 SET @sql_firma = IF(@foreign_key_firma_exists = 0,
     'ALTER TABLE operatorfirma 
      ADD CONSTRAINT fk_operatorfirma_firmy 
-     FOREIGN KEY (id_firmy) REFERENCES firmy(ID_FIRMY) 
+     FOREIGN KEY (id_firmy) REFERENCES firmy(id) 
      ON DELETE CASCADE 
      ON UPDATE CASCADE',
     'SELECT "Foreign key fk_operatorfirma_firmy już istnieje" AS message'

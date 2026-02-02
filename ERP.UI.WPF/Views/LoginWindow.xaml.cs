@@ -15,31 +15,60 @@ public partial class LoginWindow : Window
     /// <summary>Konstruktor używany przy StartupUri – ViewModel z App (DI).</summary>
     public LoginWindow()
     {
-        InitializeComponent();
-        _viewModel = (System.Windows.Application.Current as App)?.GetLoginViewModel();
-        if (_viewModel == null)
+        try
         {
-            MessageBox.Show("Błąd: Nie można utworzyć ViewModelu logowania.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
-            Close();
-            return;
+            InitializeComponent();
+            _viewModel = (System.Windows.Application.Current as App)?.GetLoginViewModel();
+            if (_viewModel == null)
+            {
+                MessageBox.Show("Błąd: Nie można utworzyć ViewModelu logowania.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+                return;
+            }
+            DataContext = _viewModel;
+            _viewModel.LoginSuccessful += OnLoginSuccessful;
+            _viewModel.LoginCancelled += OnLoginCancelled;
+            PasswordBox.PasswordChanged += PasswordBox_PasswordChanged;
+            Loaded += LoginWindow_Loaded;
         }
-        DataContext = _viewModel;
-        _viewModel.LoginSuccessful += OnLoginSuccessful;
-        _viewModel.LoginCancelled += OnLoginCancelled;
-        PasswordBox.PasswordChanged += PasswordBox_PasswordChanged;
-        Loaded += (s, e) => LoginTextBox.Focus();
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.ToString(), "LoginWindow – błąd inicjalizacji", MessageBoxButton.OK, MessageBoxImage.Error);
+            throw;
+        }
     }
 
     /// <summary>Konstruktor używany gdy okno jest tworzone z kodu (np. ShowDialog).</summary>
     public LoginWindow(LoginViewModel viewModel)
     {
-        InitializeComponent();
-        _viewModel = viewModel;
-        DataContext = _viewModel;
-        _viewModel.LoginSuccessful += OnLoginSuccessful;
-        _viewModel.LoginCancelled += OnLoginCancelled;
-        PasswordBox.PasswordChanged += PasswordBox_PasswordChanged;
-        Loaded += (s, e) => LoginTextBox.Focus();
+        try
+        {
+            InitializeComponent();
+            _viewModel = viewModel;
+            DataContext = _viewModel;
+            _viewModel.LoginSuccessful += OnLoginSuccessful;
+            _viewModel.LoginCancelled += OnLoginCancelled;
+            PasswordBox.PasswordChanged += PasswordBox_PasswordChanged;
+            Loaded += LoginWindow_Loaded;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.ToString(), "LoginWindow – błąd inicjalizacji", MessageBoxButton.OK, MessageBoxImage.Error);
+            throw;
+        }
+    }
+
+    private void LoginWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            LoginTextBox.Focus();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.ToString(), "LoginWindow Loaded", MessageBoxButton.OK, MessageBoxImage.Error);
+            try { File.AppendAllText("logs/startup.log", $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}]\r\n{ex}\r\n\r\n"); } catch { }
+        }
     }
 
     private void OnLoginSuccessful(object? sender, (Application.DTOs.UserDto User, IEnumerable<Application.DTOs.CompanyDto> Companies) e)

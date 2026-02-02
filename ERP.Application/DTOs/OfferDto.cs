@@ -1,3 +1,5 @@
+using ERP.Application.Helpers;
+
 namespace ERP.Application.DTOs;
 
 /// <summary>
@@ -19,8 +21,16 @@ public class OfferDto
     public string FormattedOfferDateYyyyMmDd =>
         DataOferty.HasValue ? DataOferty.Value.ToString("yyyy-MM-dd") : (OfferDate.HasValue && OfferDate.Value > 0 ? new DateTime(1800, 12, 28).AddDays(OfferDate.Value).ToString("yyyy-MM-dd") : "");
     public int? OfferNumber { get; set; }
-    /// <summary>Pełny numer prezentacyjny OF/yyyy/MM/dd-NrOferty (tylko do wyświetlania, bez DB).</summary>
-    public string FullNo => (DataOferty.HasValue && NrOferty.HasValue) ? $"OF/{DataOferty:yyyy/MM/dd}-{NrOferty}" : (NrOferty?.ToString() ?? "");
+    /// <summary>Pełny numer prezentacyjny OF/yyyy/MM/dd-NrOferty – budowany deterministycznie z data_oferty + nr_oferty (helper).</summary>
+    public string FullNo => GetOfferNoFromDateAndNumber();
+
+    private string GetOfferNoFromDateAndNumber()
+    {
+        var dt = DataOferty ?? (OfferDate.HasValue && OfferDate.Value > 0 ? new DateTime(1800, 12, 28).AddDays(OfferDate.Value) : (DateTime?)null);
+        if (dt.HasValue && NrOferty.HasValue)
+            return OfferNumberHelper.BuildOfferNo(dt.Value, NrOferty.Value);
+        return NrOferty?.ToString() ?? "";
+    }
     public int? CustomerId { get; set; }
     public string? CustomerName { get; set; }
     public string? CustomerStreet { get; set; }

@@ -32,18 +32,16 @@ public partial class App : System.Windows.Application
     {
         // Rejestracja najwcześniej – łapie wyjątki przed OnStartup (np. w InitializeComponent)
         AppDomain.CurrentDomain.UnhandledException += AppDomain_UnhandledException;
-
         WriteStartupLog("App() entered");
-        try { MessageBox.Show("START: App() entered", "Diagnostyka"); }
-        catch (Exception ex) { WriteStartupLog($"MessageBox w App(): {ex}"); }
     }
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
+        Directory.CreateDirectory("logs");
         WriteStartupLog("OnStartup entered");
-        try { MessageBox.Show("START: OnStartup entered", "Diagnostyka"); }
+        try { MessageBox.Show("OnStartup reached", "Diagnostyka"); }
         catch (Exception ex) { WriteStartupLog($"MessageBox w OnStartup: {ex}"); }
 
         // ShutdownMode z App.xaml: OnMainWindowClose – aplikacja kończy się gdy zamknięte zostanie MainWindow
@@ -73,7 +71,7 @@ public partial class App : System.Windows.Application
         catch (Exception ex)
         {
             LogExceptionToFile(StartupLogPath, ex);
-            MessageBox.Show(ex.ToString(), "Błąd uruchamiania", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(ex.ToString(), "STARTUP ERROR", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();
         }
     }
@@ -94,10 +92,11 @@ public partial class App : System.Windows.Application
     {
         try
         {
+            Directory.CreateDirectory("logs");
             var dir = Path.GetDirectoryName(relativePath);
             if (!string.IsNullOrEmpty(dir))
                 Directory.CreateDirectory(dir);
-            var text = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}]\r\n{ex}\r\n";
+            var text = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}]\r\n{ex.ToString()}\r\n";
             if (ex.InnerException != null)
                 text += $"Inner: {ex.InnerException}\r\n";
             File.AppendAllText(relativePath, text);
@@ -109,13 +108,13 @@ public partial class App : System.Windows.Application
     {
         var ex = (Exception)e.ExceptionObject;
         LogExceptionToFile(StartupLogPath, ex);
-        MessageBox.Show(ex.ToString(), "Nieobsłużony wyjątek (AppDomain)", MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageBox.Show(ex.ToString(), "STARTUP ERROR", MessageBoxButton.OK, MessageBoxImage.Error);
     }
 
     private void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
     {
         LogExceptionToFile(StartupLogPath, e.Exception);
-        MessageBox.Show(e.Exception.ToString(), "Krytyczny błąd (Dispatcher)", MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageBox.Show(e.Exception.ToString(), "STARTUP ERROR", MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
         Shutdown();
     }
@@ -351,6 +350,8 @@ public partial class App : System.Windows.Application
         services.AddScoped<IInvoiceTotalsService, InvoiceTotalsService>();
         services.AddScoped<IOfferTotalsService, OfferTotalsService>();
         services.AddScoped<IOfferToFpfConversionService, OfferToFpfConversionService>();
+        services.AddScoped<IOfferPdfService, OfferPdfService>();
+        services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IOrderMainService, OrderMainService>();
 
         // Automatyczna rejestracja walidatorów z ERP.Application.Validation (AddScoped, same typy)
