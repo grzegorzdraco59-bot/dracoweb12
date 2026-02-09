@@ -22,12 +22,12 @@ public class InvoicePositionRepository : IInvoicePositionRepository
         var list = new List<InvoicePositionDto>();
         await using var connection = await _context.CreateConnectionAsync();
         var cmd = new MySqlCommand(
-            "SELECT p.id_pozycji_faktury AS IdPozycjiFaktury, p.faktura_id AS FakturaId, " +
+            "SELECT p.id, COALESCE(p.faktura_id, p.id_faktury) AS FakturaId, " +
             "p.Nazwa_towaru, p.Nazwa_towaru_eng, p.jednostki, p.ilosc, p.cena_netto, p.rabat, p.stawka_vat, p.netto_poz, p.vat_poz, p.brutto_poz " +
-            "FROM pozycjefaktury p WHERE p.faktura_id = @InvoiceId ORDER BY p.id_pozycji_faktury",
+            "FROM pozycjefaktury p WHERE COALESCE(p.faktura_id, p.id_faktury) = @InvoiceId ORDER BY p.id",
             connection);
         cmd.Parameters.AddWithValue("@InvoiceId", invoiceId);
-        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await cmd.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             list.Add(MapToDto(reader));
@@ -39,7 +39,7 @@ public class InvoicePositionRepository : IInvoicePositionRepository
     {
         return new InvoicePositionDto
         {
-            IdPozycjiFaktury = GetInt(reader, "IdPozycjiFaktury"),
+            Id = GetLong(reader, "id"),
             FakturaId = GetLong(reader, "FakturaId"),
             NazwaTowaru = GetNullableString(reader, "Nazwa_towaru") ?? "",
             NazwaTowaruEng = GetNullableString(reader, "Nazwa_towaru_eng"),

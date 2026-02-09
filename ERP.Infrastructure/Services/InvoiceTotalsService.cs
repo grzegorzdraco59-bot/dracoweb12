@@ -112,7 +112,7 @@ SET
 WHERE COALESCE(p.faktura_id, p.id_faktury) = @InvoiceId";
         var cmd = new MySqlCommand(updatePositionsSql, conn, transaction);
         cmd.Parameters.AddWithValue("@InvoiceId", invoiceId);
-        await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await cmd.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -126,7 +126,7 @@ WHERE COALESCE(p.faktura_id, p.id_faktury) = @InvoiceId";
             "FROM pozycjefaktury WHERE COALESCE(faktura_id, id_faktury) = @InvoiceId",
             conn, transaction);
         selectCmd.Parameters.AddWithValue("@InvoiceId", invoiceId);
-        await using var reader = await selectCmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        await using var reader = await selectCmd.ExecuteReaderWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
         if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             return;
         var sumNetto = reader.GetDecimal(0);
@@ -135,13 +135,13 @@ WHERE COALESCE(p.faktura_id, p.id_faktury) = @InvoiceId";
         await reader.CloseAsync().ConfigureAwait(false);
 
         var updateCmd = new MySqlCommand(
-            "UPDATE faktury SET sum_netto = @SumNetto, sum_vat = @SumVat, sum_brutto = @SumBrutto WHERE id = @InvoiceId",
+            "UPDATE faktury SET sum_netto = @SumNetto, sum_vat = @SumVat, sum_brutto = @SumBrutto WHERE id_faktury = @InvoiceId",
             conn, transaction);
         updateCmd.Parameters.AddWithValue("@InvoiceId", invoiceId);
         updateCmd.Parameters.AddWithValue("@SumNetto", sumNetto);
         updateCmd.Parameters.AddWithValue("@SumVat", sumVat);
         updateCmd.Parameters.AddWithValue("@SumBrutto", sumBrutto);
-        await updateCmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await updateCmd.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -154,10 +154,10 @@ WHERE COALESCE(p.faktura_id, p.id_faktury) = @InvoiceId";
         int companyId = 0;
         decimal sumBrutto = 0;
         var headCmd = new MySqlCommand(
-            "SELECT root_doc_id, id_firmy, COALESCE(sum_brutto, 0) AS s_brutto FROM faktury WHERE id = @InvoiceId",
+            "SELECT root_doc_id, id_firmy, COALESCE(sum_brutto, 0) AS s_brutto FROM faktury WHERE id_faktury = @InvoiceId",
             conn, transaction);
         headCmd.Parameters.AddWithValue("@InvoiceId", fvId);
-        await using (var headReader = await headCmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
+        await using (var headReader = await headCmd.ExecuteReaderWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false))
         {
             if (!await headReader.ReadAsync(cancellationToken).ConfigureAwait(false))
                 return;
@@ -177,12 +177,12 @@ WHERE COALESCE(p.faktura_id, p.id_faktury) = @InvoiceId";
             // 2) Suma brutto zaliczek FVZ w tej samej sprawie (bez tej faktury)
             var sumCmd = new MySqlCommand(
                 "SELECT COALESCE(SUM(sum_brutto), 0) FROM faktury " +
-                "WHERE id_firmy = @CompanyId AND root_doc_id = @RootId AND doc_type = 'FVZ' AND id <> @InvoiceId",
+                "WHERE id_firmy = @CompanyId AND root_doc_id = @RootId AND doc_type = 'FVZ' AND id_faktury <> @InvoiceId",
                 conn, transaction);
             sumCmd.Parameters.AddWithValue("@CompanyId", companyId);
             sumCmd.Parameters.AddWithValue("@RootId", rootDocId.Value);
             sumCmd.Parameters.AddWithValue("@InvoiceId", fvId);
-            var sumObj = await sumCmd.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+            var sumObj = await sumCmd.ExecuteScalarWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
             sumZaliczekBrutto = sumObj is null || sumObj == DBNull.Value ? 0 : Convert.ToDecimal(sumObj);
         }
 
@@ -190,11 +190,11 @@ WHERE COALESCE(p.faktura_id, p.id_faktury) = @InvoiceId";
         var doZaplatyBrutto = Math.Max(0, Math.Round(sumBrutto - sumZaliczekBrutto, 2));
 
         var updateCmd = new MySqlCommand(
-            "UPDATE faktury SET sum_zaliczek_brutto = @SumZaliczek, do_zaplaty_brutto = @DoZaplaty WHERE id = @InvoiceId",
+            "UPDATE faktury SET sum_zaliczek_brutto = @SumZaliczek, do_zaplaty_brutto = @DoZaplaty WHERE id_faktury = @InvoiceId",
             conn, transaction);
         updateCmd.Parameters.AddWithValue("@InvoiceId", fvId);
         updateCmd.Parameters.AddWithValue("@SumZaliczek", sumZaliczekBrutto);
         updateCmd.Parameters.AddWithValue("@DoZaplaty", doZaplatyBrutto);
-        await updateCmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await updateCmd.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
     }
 }

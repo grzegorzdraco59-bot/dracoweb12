@@ -25,12 +25,12 @@ public class UserCompanyRepository : IUserCompanyRepository
         await using (connection)
         {
             var command = new MySqlCommand(
-                "SELECT id, id_operatora, id_firmy, rola FROM operatorfirma WHERE id = @Id",
+                "SELECT id, id_operatora, id_firmy, rola FROM `operatorfirma` WHERE id = @Id",
                 connection);
             command.Connection = connection;
             command.Parameters.AddWithValue("@Id", id);
 
-            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
             if (await reader.ReadAsync(cancellationToken))
             {
                 return MapToUserCompany(reader);
@@ -48,14 +48,14 @@ public class UserCompanyRepository : IUserCompanyRepository
         await using (connection)
         {
             var command = new MySqlCommand(
-                "SELECT id, id_operatora, id_firmy, rola FROM operatorfirma " +
-                "WHERE id_operatora = @UserId AND id_firmy = @CompanyId LIMIT 1",
+                "SELECT id, id_operatora, id_firmy, rola FROM `operatorfirma` " +
+                "WHERE id_operatora = @UserId AND id_firmy = @CompanyId",
                 connection);
             command.Connection = connection;
             command.Parameters.AddWithValue("@UserId", userId);
             command.Parameters.AddWithValue("@CompanyId", companyId);
 
-            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
             if (await reader.ReadAsync(cancellationToken))
             {
                 return MapToUserCompany(reader);
@@ -74,13 +74,13 @@ public class UserCompanyRepository : IUserCompanyRepository
         await using (connection)
         {
             var command = new MySqlCommand(
-                "SELECT id, id_operatora, id_firmy, rola FROM operatorfirma " +
+                "SELECT id, id_operatora, id_firmy, rola FROM `operatorfirma` " +
                 "WHERE id_operatora = @UserId",
                 connection);
             command.Connection = connection;
             command.Parameters.AddWithValue("@UserId", userId);
 
-            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
                 userCompanies.Add(MapToUserCompany(reader));
@@ -99,13 +99,13 @@ public class UserCompanyRepository : IUserCompanyRepository
         await using (connection)
         {
             var command = new MySqlCommand(
-                "SELECT id, id_operatora, id_firmy, rola FROM operatorfirma " +
+                "SELECT id, id_operatora, id_firmy, rola FROM `operatorfirma` " +
                 "WHERE id_firmy = @CompanyId",
                 connection);
             command.Connection = connection;
             command.Parameters.AddWithValue("@CompanyId", companyId);
 
-            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
                 userCompanies.Add(MapToUserCompany(reader));
@@ -123,7 +123,7 @@ public class UserCompanyRepository : IUserCompanyRepository
         await using (connection)
         {
             var command = new MySqlCommand(
-                "INSERT INTO operatorfirma (id_operatora, id_firmy, rola) " +
+                "INSERT INTO `operatorfirma` (id_operatora, id_firmy, rola) " +
                 "VALUES (@UserId, @CompanyId, @RoleId); " +
                 "SELECT LAST_INSERT_ID();",
                 connection);
@@ -133,8 +133,8 @@ public class UserCompanyRepository : IUserCompanyRepository
             command.Parameters.AddWithValue("@CompanyId", userCompany.CompanyId);
             command.Parameters.AddWithValue("@RoleId", userCompany.RoleId ?? (object)DBNull.Value);
 
-            var result = await command.ExecuteScalarAsync(cancellationToken);
-            return Convert.ToInt32(result);
+            var newId = await command.ExecuteInsertAndGetIdAsync(cancellationToken);
+            return (int)newId;
         }
     }
 
@@ -146,7 +146,7 @@ public class UserCompanyRepository : IUserCompanyRepository
         await using (connection)
         {
             var command = new MySqlCommand(
-                "UPDATE operatorfirma SET id_operatora = @UserId, id_firmy = @CompanyId, rola = @RoleId " +
+                "UPDATE `operatorfirma` SET id_operatora = @UserId, id_firmy = @CompanyId, rola = @RoleId " +
                 "WHERE id = @Id",
                 connection);
             command.Connection = connection;
@@ -156,7 +156,7 @@ public class UserCompanyRepository : IUserCompanyRepository
             command.Parameters.AddWithValue("@CompanyId", userCompany.CompanyId);
             command.Parameters.AddWithValue("@RoleId", userCompany.RoleId ?? (object)DBNull.Value);
 
-            await command.ExecuteNonQueryAsync(cancellationToken);
+            await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
         }
     }
 
@@ -168,12 +168,12 @@ public class UserCompanyRepository : IUserCompanyRepository
         await using (connection)
         {
             var command = new MySqlCommand(
-                "DELETE FROM operatorfirma WHERE id_operatora = @UserId AND id_firmy = @CompanyId",
+                "DELETE FROM `operatorfirma` WHERE id_operatora = @UserId AND id_firmy = @CompanyId",
                 connection);
             command.Connection = connection;
             command.Parameters.AddWithValue("@UserId", userId);
             command.Parameters.AddWithValue("@CompanyId", companyId);
-            await command.ExecuteNonQueryAsync(cancellationToken);
+            await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
         }
     }
 
@@ -185,11 +185,11 @@ public class UserCompanyRepository : IUserCompanyRepository
         await using (connection)
         {
             var command = new MySqlCommand(
-                "DELETE FROM operatorfirma WHERE id = @Id",
+                "DELETE FROM `operatorfirma` WHERE id = @Id",
                 connection);
             command.Connection = connection;
             command.Parameters.AddWithValue("@Id", id);
-            await command.ExecuteNonQueryAsync(cancellationToken);
+            await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
         }
     }
 

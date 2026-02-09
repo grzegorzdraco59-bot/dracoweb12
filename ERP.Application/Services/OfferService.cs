@@ -28,6 +28,11 @@ public class OfferService : IOfferService
     public Task<IEnumerable<Offer>> GetByCompanyIdAsync(int companyId, CancellationToken cancellationToken = default)
         => _offerRepository.GetByCompanyIdAsync(companyId, cancellationToken);
 
+    public Task<IEnumerable<Offer>> SearchByCompanyIdAsync(int companyId, string? searchText, int limit = 200, CancellationToken cancellationToken = default)
+    {
+        return _offerRepository.SearchByCompanyIdAsync(companyId, searchText, limit, cancellationToken);
+    }
+
     public Task<int?> GetNextOfferNumberForDateAsync(int offerDate, int companyId, CancellationToken cancellationToken = default)
         => _offerRepository.GetNextOfferNumberForDateAsync(offerDate, companyId, cancellationToken);
 
@@ -55,10 +60,15 @@ public class OfferService : IOfferService
         var offer = await _offerRepository.GetByIdAsync(offerId, companyId, cancellationToken).ConfigureAwait(false);
         if (offer == null)
             throw new InvalidOperationException($"Oferta o ID {offerId} nie została znaleziona.");
+        if (offer.Status == newStatus)
+            return;
         if (!OfferStatusMapping.IsTransitionAllowed(offer.Status, newStatus))
             throw new BusinessRuleException($"Przejście z {offer.Status} do {newStatus} nie jest dozwolone.");
         await _offerRepository.SetStatusAsync(offerId, companyId, newStatus, cancellationToken).ConfigureAwait(false);
     }
+
+    public Task SetFlagsAsync(int offerId, int companyId, bool? forProforma, bool? forOrder, bool forInvoice, CancellationToken cancellationToken = default)
+        => _offerRepository.SetFlagsAsync(offerId, companyId, forProforma, forOrder, forInvoice, cancellationToken);
 
     public Task<IEnumerable<OfferPosition>> GetPositionsByOfferIdAsync(int offerId, CancellationToken cancellationToken = default)
         => _positionRepository.GetByOfferIdAsync(offerId, cancellationToken);

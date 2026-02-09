@@ -138,13 +138,13 @@ public class UserLoginEditViewModel : ViewModelBase
                     await _unitOfWork.ExecuteInTransactionAsync(async (transaction) =>
                     {
                         var conn = transaction.Connection!;
-                        using (var cmdDel = new MySqlCommand("DELETE FROM operator_login WHERE id = @Id", conn, transaction))
+                        using (var cmdDel = new MySqlCommand("DELETE FROM `operator_login` WHERE id = @Id", conn, transaction))
                         {
                             cmdDel.Parameters.AddWithValue("@Id", _originalDto.Id);
                             await cmdDel.ExecuteNonQueryAsync();
                         }
                         using (var cmdIns = new MySqlCommand(
-                            "INSERT INTO operator_login (id_operatora, login, haslohash) VALUES (@UserId, @Login, @PasswordHash)",
+                            "INSERT INTO `operator_login` (id_operatora, login, haslohash) VALUES (@UserId, @Login, @PasswordHash)",
                             conn, transaction))
                         {
                             cmdIns.Parameters.AddWithValue("@UserId", UserId);

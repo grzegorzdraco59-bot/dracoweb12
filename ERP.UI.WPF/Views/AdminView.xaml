@@ -27,10 +27,9 @@
         <!-- Browse Operatory -->
         <DataGrid Grid.Row="1" 
                   ItemsSource="{Binding Operators}"
-                  SelectedItem="{Binding SelectedOperator}"
+                  SelectedItem="{Binding SelectedOperator, Mode=TwoWay}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
-                  GridLinesVisibility="All"
                   HeadersVisibility="Column"
                   Margin="0,0,0,10">
             <DataGrid.Columns>
@@ -68,10 +67,9 @@
         <!-- Browse OperatorFirma -->
         <DataGrid Grid.Row="4" 
                   ItemsSource="{Binding UserCompanies}"
-                  SelectedItem="{Binding SelectedUserCompany}"
+                  SelectedItem="{Binding SelectedUserCompany, Mode=TwoWay}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
-                  GridLinesVisibility="All"
                   HeadersVisibility="Column"
                   Margin="0,0,0,10">
             <DataGrid.Columns>
@@ -109,10 +107,9 @@
         <!-- Browse OperatorLogin -->
         <DataGrid Grid.Row="7" 
                   ItemsSource="{Binding UserLogins}"
-                  SelectedItem="{Binding SelectedUserLogin}"
+                  SelectedItem="{Binding SelectedUserLogin, Mode=TwoWay}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
-                  GridLinesVisibility="All"
                   HeadersVisibility="Column"
                   Margin="0,0,0,10">
             <DataGrid.Columns>
@@ -150,10 +147,9 @@
         <!-- Browse Uprawnienia -->
         <DataGrid Grid.Row="10" 
                   ItemsSource="{Binding Permissions}"
-                  SelectedItem="{Binding SelectedPermission}"
+                  SelectedItem="{Binding SelectedPermission, Mode=TwoWay}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
-                  GridLinesVisibility="All"
                   HeadersVisibility="Column"
                   Margin="0,0,0,10">
             <DataGrid.Columns>

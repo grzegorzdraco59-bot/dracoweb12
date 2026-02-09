@@ -9,6 +9,7 @@ namespace ERP.Domain.Repositories;
 public interface ICustomerRepository
 {
     Task<Customer?> GetByIdAsync(int id, int companyId, CancellationToken cancellationToken = default);
+    Task<Customer?> GetByKontrahentIdAsync(int kontrahentId, int companyId, CancellationToken cancellationToken = default);
     Task<IEnumerable<Customer>> GetByCompanyIdAsync(int companyId, CancellationToken cancellationToken = default);
     Task<IEnumerable<Customer>> GetActiveByCompanyIdAsync(int companyId, CancellationToken cancellationToken = default);
     Task<Customer?> GetByNameAsync(string name, int companyId, CancellationToken cancellationToken = default);

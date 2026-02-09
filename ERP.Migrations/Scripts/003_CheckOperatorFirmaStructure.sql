@@ -19,7 +19,7 @@ WHERE TABLE_SCHEMA = DATABASE()
 SELECT * FROM operatorfirma;
 
 -- 4. Sprawdzenie czy istnieją użytkownicy w tabeli operator
-SELECT id_operatora, imie_nazwisko FROM operator;
+SELECT id, imie_nazwisko FROM operator;
 
 -- 5. Sprawdzenie czy istnieją firmy w tabeli firmy
 SELECT id, NAZWA FROM firmy;
@@ -33,5 +33,5 @@ SELECT
     f.NAZWA as firma_nazwa,
     of.rola
 FROM operatorfirma of
-LEFT JOIN operator o ON of.id_operatora = o.id_operatora
+LEFT JOIN operator o ON of.id_operatora = o.id
 LEFT JOIN firmy f ON of.id_firmy = f.id;

@@ -54,13 +54,12 @@ public class MainViewModel : ViewModelBase
                     var invoicesViewModel = _serviceProvider.GetRequiredService<InvoicesViewModel>();
                     CurrentView = new FakturyView { DataContext = invoicesViewModel };
                     break;
-                case 8: // Dostawcy
-                    var suppliersViewModel = _serviceProvider.GetRequiredService<SuppliersViewModel>();
-                    CurrentView = new SuppliersView { DataContext = suppliersViewModel };
-                    break;
-                case 9: // Odbiorcy
-                    var customersViewModel = _serviceProvider.GetRequiredService<CustomersViewModel>();
-                    CurrentView = new CustomersView { DataContext = customersViewModel };
+                case 8: // Kontrahenci - odpięte z UI
+                    return;
+                case 9: // Kontrahenci
+                    var kontrahenciViewModel = _serviceProvider.GetRequiredService<KontrahenciViewModel>();
+                    kontrahenciViewModel.CloseRequested += (_, _) => CurrentView = null;
+                    CurrentView = new KontrahenciView { DataContext = kontrahenciViewModel };
                     break;
                 case 10: // Towary
                     var productsViewModel = _serviceProvider.GetRequiredService<ProductsViewModel>();
@@ -70,10 +69,8 @@ public class MainViewModel : ViewModelBase
                     var ordersMainViewModel = _serviceProvider.GetRequiredService<OrdersMainViewModel>();
                     CurrentView = new OrdersMainView { DataContext = ordersMainViewModel };
                     break;
-                case 12: // OperatorFirma (nowy moduł)
-                    var operatorCompanyListViewModel = _serviceProvider.GetRequiredService<OperatorCompanyListViewModel>();
-                    CurrentView = new OperatorCompanyListView { DataContext = operatorCompanyListViewModel };
-                    break;
+                case 12: // OperatorFirma - odpięte z UI
+                    return;
                 case 13: // Zamówienia hala
                     var ordersViewModel = _serviceProvider.GetRequiredService<OrdersViewModel>();
                     CurrentView = new OrdersView { DataContext = ordersViewModel };

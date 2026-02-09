@@ -37,6 +37,8 @@ public class OfferDto
     public string? CustomerPostalCode { get; set; }
     public string? CustomerCity { get; set; }
     public string? CustomerCountry { get; set; }
+    /// <summary>Adres łączony (ulica, kod, miasto) do wyświetlania w browse.</summary>
+    public string? Adres => string.Join(", ", new[] { CustomerStreet, CustomerPostalCode, CustomerCity }.Where(s => !string.IsNullOrWhiteSpace(s)));
     public string? CustomerNip { get; set; }
     public string? CustomerEmail { get; set; }
     public string? RecipientName { get; set; }

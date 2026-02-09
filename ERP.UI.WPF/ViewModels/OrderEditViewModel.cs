@@ -64,6 +64,7 @@ public class OrderEditViewModel : ViewModelBase
         SaveCommand = new RelayCommand(async () => await SaveAsync(), () => CanSave());
         CancelCommand = new RelayCommand(() => OnCancelled());
         SelectProductCommand = new RelayCommand(async () => await SelectProductAsync());
+        PickKontrahentCommand = new RelayCommand(PickKontrahent);
         
         // Ładujemy listę produktów asynchronicznie
         _ = LoadProductsAsync();
@@ -340,6 +341,7 @@ public class OrderEditViewModel : ViewModelBase
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
     public ICommand SelectProductCommand { get; }
+    public ICommand PickKontrahentCommand { get; }
 
     private bool CanSave()
     {
@@ -405,7 +407,7 @@ public class OrderEditViewModel : ViewModelBase
                 await LoadProductsAsync();
             }
 
-            var productSelectionWindow = new ProductSelectionWindow(_allProducts)
+            var productSelectionWindow = new ProductSelectionWindow(_allProducts, _productRepository, CompanyId)
             {
                 Owner = System.Windows.Application.Current.MainWindow
             };
@@ -452,6 +454,25 @@ public class OrderEditViewModel : ViewModelBase
                 "Błąd",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Error);
+        }
+    }
+
+    private void PickKontrahent()
+    {
+        if (System.Windows.Application.Current is not App app)
+            return;
+        var viewModel = app.GetService<KontrahenciViewModel>();
+        var window = new KontrahenciPickerWindow(viewModel)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+        if (window.ShowDialog() == true && window.SelectedKontrahent != null)
+        {
+            var selected = window.SelectedKontrahent;
+            SupplierId = selected.Id;
+            SupplierName = selected.Nazwa;
+            SupplierEmail = selected.Email;
+            SupplierCurrency = selected.Waluta;
         }
     }
 

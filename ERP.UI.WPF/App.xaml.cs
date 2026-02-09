@@ -11,6 +11,7 @@ using ERP.Domain.Repositories;
 using ERP.Infrastructure.Data;
 using ERP.Infrastructure.Repositories;
 using ERP.Infrastructure.Services;
+using IConnectionStringProvider = ERP.Infrastructure.Services.IConnectionStringProvider;
 using ERP.UI.WPF.ViewModels;
 using ERP.UI.WPF.Views;
 using ERP.UI.WPF.Services;
@@ -27,6 +28,7 @@ public partial class App : System.Windows.Application
 {
     private const string StartupLogPath = "logs/startup.log";
     private ServiceProvider? _serviceProvider;
+    private bool _mainOpened; // Guard: Main otwierany tylko raz (ostatnia linia obrony przy double event)
 
     public App()
     {
@@ -41,9 +43,6 @@ public partial class App : System.Windows.Application
 
         Directory.CreateDirectory("logs");
         WriteStartupLog("OnStartup entered");
-        try { MessageBox.Show("OnStartup reached", "Diagnostyka"); }
-        catch (Exception ex) { WriteStartupLog($"MessageBox w OnStartup: {ex}"); }
-
         // ShutdownMode z App.xaml: OnMainWindowClose – aplikacja kończy się gdy zamknięte zostanie MainWindow
 
         // AppDomain.UnhandledException już zarejestrowany w App()
@@ -56,6 +55,8 @@ public partial class App : System.Windows.Application
             ConfigureServices(services);
             _serviceProvider = services.BuildServiceProvider();
             WriteStartupLog("ServiceProvider OK");
+            DatabaseContext.OnFirstConnectionDiagnostic = msg =>
+                Dispatcher.Invoke(() => MessageBox.Show(msg, "Diagnostyka DB (realne połączenie)", MessageBoxButton.OK, MessageBoxImage.Information));
 
             var loginViewModel = _serviceProvider.GetRequiredService<LoginViewModel>();
             loginViewModel.LoginSuccessful += OnLoginSuccessfulFromStartup;
@@ -125,17 +126,26 @@ public partial class App : System.Windows.Application
     /// <summary>MainWindow wymaga MainViewModel jako DataContext (np. po otwarciu z LoginWindow).</summary>
     public MainViewModel GetMainViewModel() => _serviceProvider!.GetRequiredService<MainViewModel>();
 
-    private void OnLoginSuccessfulFromStartup(object? sender, (UserDto User, IEnumerable<CompanyDto> Companies) data)
+    /// <summary>UserContext do guardów (np. MainWindow).</summary>
+    public IUserContext GetUserContext() => _serviceProvider!.GetRequiredService<IUserContext>();
+
+    /// <summary>Ogólny dostęp do serwisów z kontenera DI.</summary>
+    public T GetService<T>() where T : notnull => _serviceProvider!.GetRequiredService<T>();
+
+    private async void OnLoginSuccessfulFromStartup(object? sender, (UserDto User, IEnumerable<CompanyDto> Companies) data)
     {
         var loggedInUser = data.User;
-        var userCompanies = data.Companies;
+        var userCompanies = (data.Companies ?? Enumerable.Empty<CompanyDto>()).ToList();
+        var loginWindow = Current.MainWindow as LoginWindow;
+
         if (loggedInUser == null)
         {
             MessageBox.Show("Błąd: Brak danych użytkownika.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();
             return;
         }
-        if (userCompanies == null || !userCompanies.Any())
+        var authService = _serviceProvider!.GetRequiredService<IAuthenticationService>();
+        if (!await authService.HasCompaniesForUserAsync(loggedInUser.Id))
         {
             MessageBox.Show(
                 $"Użytkownik '{loggedInUser.FullName}' (ID: {loggedInUser.Id}) nie ma przypisanych żadnych firm.\n\n" +
@@ -146,7 +156,21 @@ public partial class App : System.Windows.Application
             Shutdown();
             return;
         }
-        ShowCompanySelectionWindow(loggedInUser, userCompanies);
+
+        var userContext = _serviceProvider!.GetRequiredService<IUserContext>();
+
+        if (userCompanies.Count == 1)
+        {
+            // 1 firma: ustaw sesję i od razu otwórz Main (bez wyboru firmy)
+            var company = userCompanies[0];
+            userContext.SetSession(loggedInUser.Id, company.Id, company.RoleId, loggedInUser.FullName ?? "");
+            OpenMainWindowAndCloseLogin(loginWindow);
+        }
+        else
+        {
+            // >1 firm: otwórz TYLKO SelectCompany, NIE otwieraj Main
+            ShowCompanySelectionWindow(loggedInUser, userCompanies, loginWindow);
+        }
     }
 
     private void ShowLoginWindow()
@@ -175,7 +199,9 @@ public partial class App : System.Windows.Application
                     return;
                 }
 
-                if (userCompanies == null || !userCompanies.Any())
+                // Walidacja: SELECT COUNT(*) FROM operatorfirma WHERE id_operatora = @UserId. Komunikat tylko gdy COUNT = 0.
+                var authService = _serviceProvider!.GetRequiredService<IAuthenticationService>();
+                if (!authService.HasCompaniesForUserAsync(loggedInUser.Id).GetAwaiter().GetResult())
                 {
                     MessageBox.Show(
                         $"Użytkownik '{loggedInUser.FullName}' (ID: {loggedInUser.Id}) nie ma przypisanych żadnych firm.\n\n" +
@@ -187,8 +213,19 @@ public partial class App : System.Windows.Application
                     return;
                 }
 
-                // Po zalogowaniu pokazujemy okno wyboru firmy
-                ShowCompanySelectionWindow(loggedInUser, userCompanies);
+                // Po zalogowaniu: 1 firma → Main, >1 → SelectCompany (loginWindow już zamknięty po ShowDialog)
+                var companiesList = (userCompanies ?? Enumerable.Empty<CompanyDto>()).ToList();
+                var uctx = _serviceProvider!.GetRequiredService<IUserContext>();
+                if (companiesList.Count == 1)
+                {
+                    var c = companiesList[0];
+                    uctx.SetSession(loggedInUser.Id, c.Id, c.RoleId, loggedInUser.FullName ?? "");
+                    OpenMainWindowAndCloseLogin(null);
+                }
+                else
+                {
+                    ShowCompanySelectionWindow(loggedInUser, companiesList, null);
+                }
             }
             else
             {
@@ -204,99 +241,111 @@ public partial class App : System.Windows.Application
         }
     }
 
-    private void ShowCompanySelectionWindow(UserDto loggedInUser, IEnumerable<CompanyDto> userCompanies)
+    /// <summary>Otwiera Main (jedna instancja) i zamyka LoginWindow (lub placeholder).</summary>
+    private void OpenMainWindowAndCloseLogin(Window? loginWindow)
+    {
+        if (_mainOpened)
+            return;
+        _mainOpened = true;
+        try
+        {
+            void DoOpenMain()
+            {
+                var userContext = _serviceProvider!.GetRequiredService<IUserContext>();
+                if (!userContext.IsLoggedIn || !userContext.CompanyId.HasValue)
+                {
+                    MessageBox.Show("Błąd: Brak wybranej firmy. Nie można otworzyć głównego okna.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Shutdown();
+                    return;
+                }
+
+                var mainWindow = new MainWindow();
+                var mainViewModel = _serviceProvider!.GetRequiredService<MainViewModel>();
+                mainWindow.DataContext = mainViewModel;
+                MainWindow = mainWindow;
+
+                mainWindow.Closed += (_, _) =>
+                {
+                    if (MainWindow == mainWindow) Shutdown();
+                };
+
+                mainWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                mainWindow.ShowInTaskbar = true;
+                mainWindow.WindowState = WindowState.Normal;
+                mainWindow.Show();
+
+                // Bezpieczne zamknięcie: tylko gdy nie null (loginWindow może być null gdy wywołanie z AfterCompanySelection)
+                if (loginWindow != null)
+                {
+                    try { loginWindow.Close(); } catch { /* okno mogło być już zamknięte */ }
+                }
+            }
+
+            var dispatcher = Current?.Dispatcher ?? System.Windows.Threading.Dispatcher.CurrentDispatcher;
+            if (dispatcher.CheckAccess())
+                DoOpenMain();
+            else
+                dispatcher.Invoke(DoOpenMain);
+        }
+        catch (Exception ex)
+        {
+            LogExceptionToFile(StartupLogPath, ex);
+            MessageBox.Show($"Błąd podczas otwierania głównego okna: {ex.Message}", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown();
+        }
+    }
+
+    private void ShowCompanySelectionWindow(UserDto loggedInUser, IEnumerable<CompanyDto> userCompanies, Window? loginWindow)
     {
         try
         {
             var userContext = _serviceProvider!.GetRequiredService<IUserContext>();
             var companySelectionViewModel = new CompanySelectionViewModel(
-                userCompanies, 
-                loggedInUser.Id, 
-                loggedInUser.FullName,
+                userCompanies,
+                loggedInUser.Id,
+                loggedInUser.FullName ?? "",
                 userContext);
             var companySelectionWindow = new CompanySelectionWindow(companySelectionViewModel);
-            
-            // Upewniamy się, że okno jest widoczne
+
             companySelectionWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
             companySelectionWindow.ShowInTaskbar = true;
             companySelectionWindow.WindowState = WindowState.Normal;
-            
-            // Używamy ShowDialog() - to zablokuje wykonanie do czasu zamknięcia okna
+
+            // Placeholder: nigdy nie ustawiamy CompanySelection jako MainWindow – gdy się zamknie, wywołałoby Shutdown.
+            // Używamy niewidocznego placeholder, żeby po zamknięciu Login nie wywołać Shutdown.
+            var placeholder = new Window
+            {
+                ShowInTaskbar = false,
+                Width = 1,
+                Height = 1,
+                WindowState = WindowState.Minimized,
+                Visibility = Visibility.Collapsed
+            };
+            MainWindow = placeholder;
+            if (loginWindow != null) { try { loginWindow.Close(); } catch { } }
+
             var dialogResult = companySelectionWindow.ShowDialog();
-            
+
             if (dialogResult == true)
             {
-                // Sprawdzamy, czy sesja została poprawnie ustawiona
                 if (!userContext.IsLoggedIn)
                 {
-                    MessageBox.Show(
-                        "Błąd: Sesja nie została poprawnie ustawiona. Spróbuj ponownie.",
-                        "Błąd sesji",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
+                    MessageBox.Show("Błąd: Sesja nie została poprawnie ustawiona.", "Błąd sesji", MessageBoxButton.OK, MessageBoxImage.Error);
                     Shutdown();
                     return;
                 }
 
-                try
-                {
-                    // Po wyborze firmy pokazujemy główne okno
-                    var mainWindow = new MainWindow();
-                    
-                    // Tworzymy MainViewModel przed ustawieniem DataContext
-                    var mainViewModel = _serviceProvider!.GetRequiredService<MainViewModel>();
-                    mainWindow.DataContext = mainViewModel;
-                    
-                    MainWindow = mainWindow; // Ustawiamy jako główne okno aplikacji
-                    
-                    // Dodajemy obsługę zamknięcia okna, aby uniknąć powrotu do logowania
-                    mainWindow.Closed += (s, e) =>
-                    {
-                        // Jeśli główne okno zostanie zamknięte, zamykamy aplikację
-                        if (MainWindow == mainWindow)
-                        {
-                            Shutdown();
-                        }
-                    };
-                    
-                    // Upewniamy się, że okno jest widoczne przed pokazaniem
-                    mainWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-                    mainWindow.ShowInTaskbar = true;
-                    mainWindow.WindowState = WindowState.Normal;
-                    
-                    mainWindow.Show();
-                    
-                    // Sprawdzamy, czy okno jest nadal otwarte po pokazaniu
-                    if (!mainWindow.IsLoaded)
-                    {
-                        MessageBox.Show(
-                            "Błąd: Główne okno nie zostało poprawnie załadowane.",
-                            "Błąd",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
-                        Shutdown();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(
-                        $"Błąd podczas otwierania głównego okna: {ex.Message}\n\n{ex.StackTrace}",
-                        "Błąd",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
-                    Shutdown();
-                }
+                OpenMainWindowAndCloseLogin(placeholder); // Zamknięcie placeholder przy otwarciu Main
             }
             else
             {
-                // Użytkownik anulował wybór firmy - zamykamy aplikację
                 Shutdown();
             }
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Błąd podczas otwierania okna wyboru firmy: {ex.Message}\n\n{ex.StackTrace}", 
-                "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
+            LogExceptionToFile(StartupLogPath, ex);
+            MessageBox.Show($"Błąd podczas otwierania okna wyboru firmy: {ex.Message}", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();
         }
     }
@@ -307,25 +356,30 @@ public partial class App : System.Windows.Application
         var config = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json", optional: false)
+            .AddJsonFile("appsettings.Development.json", optional: true)
             .Build();
         services.AddSingleton<IConfiguration>(config);
 
         // Rejestracja UserContext - scoped service dla całej sesji aplikacji
         services.AddSingleton<IUserContext, UserContext>();
         services.AddSingleton<ERP.Application.Services.IUserContext>(sp => (ERP.Application.Services.IUserContext)sp.GetRequiredService<IUserContext>());
+        services.AddTransient<ERP.UI.WPF.Services.ITowarPicker, ERP.UI.WPF.Services.TowarPicker>();
 
-        // Rejestracja warstwy infrastruktury – DatabaseContext wymaga connection string z konfiguracji
-        var connectionString = config.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is missing in appsettings.json.");
-        services.AddSingleton<DatabaseContext>(_ => new DatabaseContext(connectionString));
+        // ConnectionStringProvider – wybór bazy: LOCBD | DRACO_OFFICE_WIFI | DRACO_REMOTE
+        services.AddSingleton<IConnectionStringProvider, ConnectionStringProvider>();
+        services.AddSingleton<DatabaseContext>(sp => new DatabaseContext(sp.GetRequiredService<IConnectionStringProvider>()));
         services.AddTransient<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IDocumentNumberService, DocumentNumberService>();
+        services.AddScoped<IIdGenerator, IdGeneratorService>();
         
         // Rejestracja repozytoriów
         services.AddScoped<ICustomerRepository, CustomerRepository>();
+        services.AddScoped<ISupplierRepository, SupplierRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUserLoginRepository, UserLoginRepository>();
         services.AddScoped<ICompanyRepository, CompanyRepository>();
+        services.AddScoped<ERP.Application.Repositories.ICompanyQueryRepository, CompanyRepository>();
+        services.AddScoped<ERP.Application.Repositories.IKontrahenciQueryRepository, KontrahenciQueryRepository>();
         services.AddScoped<IUserCompanyRepository, UserCompanyRepository>();
         services.AddScoped<OperatorCompanyRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
@@ -334,6 +388,8 @@ public partial class App : System.Windows.Application
         services.AddScoped<IOperatorTablePermissionRepository, OperatorTablePermissionRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<ERP.Application.Repositories.IOrderMainRepository, OrderMainRepository>();
+        services.AddScoped<ERP.Application.Repositories.IOrderRowRepository, OrderRowRepository>();
+        services.AddScoped<ERP.Application.Repositories.IOrderPositionRepository, OrderPositionRowRepository>();
         services.AddScoped<ERP.Application.Repositories.IOrderPositionMainRepository, OrderPositionMainRepository>();
         services.AddScoped<ERP.Application.Repositories.IInvoiceRepository, InvoiceRepository>();
         services.AddScoped<ERP.Application.Repositories.IInvoicePositionRepository, InvoicePositionRepository>();
@@ -342,6 +398,7 @@ public partial class App : System.Windows.Application
         
         // Rejestracja serwisów aplikacyjnych
         services.AddScoped<ICustomerService, CustomerService>();
+        services.AddScoped<ISupplierService, SupplierService>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<IOperatorPermissionService, OperatorPermissionService>();
         services.AddScoped<IOrderService, OrderService>();
@@ -350,9 +407,12 @@ public partial class App : System.Windows.Application
         services.AddScoped<IInvoiceTotalsService, InvoiceTotalsService>();
         services.AddScoped<IOfferTotalsService, OfferTotalsService>();
         services.AddScoped<IOfferToFpfConversionService, OfferToFpfConversionService>();
+        services.AddScoped<IOfferToZlecenieConversionService, OfferToZlecenieConversionService>();
+        services.AddScoped<IInvoiceCopyService, InvoiceCopyService>();
         services.AddScoped<IOfferPdfService, OfferPdfService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IOrderMainService, OrderMainService>();
+        services.AddScoped<IKontrahenciCommandRepository, KontrahenciCommandRepository>();
 
         // Automatyczna rejestracja walidatorów z ERP.Application.Validation (AddScoped, same typy)
         var applicationAssembly = typeof(ERP.Application.Services.CustomerService).Assembly;
@@ -366,6 +426,7 @@ public partial class App : System.Windows.Application
         services.AddTransient<MainViewModel>();
         services.AddTransient<LoginViewModel>();
         services.AddTransient<CustomersViewModel>();
+        services.AddTransient<KontrahenciViewModel>();
         services.AddTransient<SuppliersViewModel>();
         services.AddTransient<OffersViewModel>();
         services.AddTransient<InvoicesViewModel>();

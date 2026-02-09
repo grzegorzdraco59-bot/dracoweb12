@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -19,5 +19,18 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        Loaded += MainWindow_Loaded;
+    }
+
+    private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        var app = System.Windows.Application.Current as App;
+        var userContext = app?.GetUserContext();
+        if (userContext == null || !userContext.IsLoggedIn || !userContext.CompanyId.HasValue)
+        {
+            MessageBox.Show("Brak wybranej firmy. Zaloguj się ponownie i wybierz firmę.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Warning);
+            Close();
+            return;
+        }
     }
 }

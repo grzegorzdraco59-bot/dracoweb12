@@ -1,4 +1,4 @@
-﻿// Program.cs jest używany do testów - zobacz TestDatabaseConnection.cs
+// Program.cs jest używany do testów - zobacz TestDatabaseConnection.cs
 
 var connectionString = "Server=localhost;Port=3306;Database=locbd;User Id=root;Password=dracogk0909;SslMode=None;";
 
@@ -9,10 +9,10 @@ try
     Console.WriteLine("Połączenie OK!\n");
 
     // Pobierz strukturę tabeli
-    var command = new MySqlCommand("DESCRIBE Odbiorcy", connection);
+    var command = new MySqlCommand("DESCRIBE kontrahenci", connection);
     using var reader = await command.ExecuteReaderAsync();
     
-    Console.WriteLine("Struktura tabeli Odbiorcy:");
+    Console.WriteLine("Struktura tabeli kontrahenci:");
     Console.WriteLine("=".PadRight(80, '='));
     Console.WriteLine($"{"Kolumna",-25} {"Typ",-25} {"Null",-8} {"Klucz",-8} {"Domyślna",-15}");
     Console.WriteLine("-".PadRight(80, '-'));
@@ -32,7 +32,7 @@ try
     
     // Pobierz przykładowe dane (jeśli istnieją)
     await reader.CloseAsync();
-    var sampleCommand = new MySqlCommand("SELECT * FROM Odbiorcy LIMIT 1", connection);
+    var sampleCommand = new MySqlCommand("SELECT * FROM kontrahenci LIMIT 1", connection);
     using var sampleReader = await sampleCommand.ExecuteReaderAsync();
     
     if (await sampleReader.ReadAsync())

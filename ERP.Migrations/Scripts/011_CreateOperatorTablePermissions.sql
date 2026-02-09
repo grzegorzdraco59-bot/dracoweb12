@@ -119,7 +119,7 @@ DELIMITER ;
 -- Krok 6: Widok do łatwego przeglądania uprawnień wszystkich operatorów
 CREATE OR REPLACE VIEW v_operator_permissions_summary AS
 SELECT 
-    o.id_operatora,
+    o.id AS id_operatora,
     o.imie_nazwisko,
     otp.table_name,
     otp.can_select,
@@ -128,7 +128,7 @@ SELECT
     otp.can_delete,
     otp.UpdatedAt
 FROM operator o
-LEFT JOIN operator_table_permissions otp ON o.id_operatora = otp.id_operatora
+LEFT JOIN operator_table_permissions otp ON o.id = otp.id_operatora
 ORDER BY o.imie_nazwisko, otp.table_name;
 
 -- Przykładowe użycie:

@@ -3,36 +3,82 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:behaviors="clr-namespace:ERP.UI.WPF.Behaviors"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="1000">
     <Grid Margin="10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>   <!-- 0: Nagłówek Kontrahenci -->
+            <RowDefinition Height="Auto"/>   <!-- 1: Pole wyszukiwania -->
+            <RowDefinition Height="*"/>      <!-- 2: Browse Kontrahenci -->
+            <RowDefinition Height="Auto"/>   <!-- 3: Panel akcji -->
         </Grid.RowDefinitions>
 
-        <!-- Lista klientów -->
-        <DataGrid Grid.Row="0" 
-                  ItemsSource="{Binding Customers}"
-                  SelectedItem="{Binding SelectedCustomer}"
+        <!-- Nagłówek Kontrahenci -->
+        <Label Grid.Row="0" Content="Kontrahenci" FontSize="16" FontWeight="Bold" Margin="0,0,0,5" HorizontalAlignment="Left"/>
+
+        <!-- Pole wyszukiwania -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
+            <Label Content="Szukaj:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                     Width="300" 
+                     Padding="5"
+                     VerticalAlignment="Center">
+                <TextBox.Style>
+                    <Style TargetType="TextBox">
+                        <Setter Property="Tag" Value="Wyszukaj po wszystkich kolumnach"/>
+                    </Style>
+                </TextBox.Style>
+            </TextBox>
+        </StackPanel>
+
+        <!-- Lista klientów: ActiveRow = klik w wiersz, checkbox = SelectedItems (operacje masowe) -->
+        <DataGrid Grid.Row="2" 
+                  ItemsSource="{Binding FilteredCustomers}"
+                  SelectedItem="{Binding ActiveRow, Mode=TwoWay}"
+                  behaviors:CheckBoxPreventRowSelectionBehavior.Enabled="True"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
-                  GridLinesVisibility="All"
                   HeadersVisibility="Column"
+                  ColumnHeaderStyle="{StaticResource FakturyOrangeColumnHeaderStyle}"
+                  AlternationCount="2"
                   Margin="0,0,0,10">
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow" BasedOn="{StaticResource DataGridRowSelectionStyle}">
+                    <Setter Property="Background" Value="White"/>
+                    <Style.Triggers>
+                        <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                            <Setter Property="Background" Value="#F2F2F2"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.RowStyle>
             <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
-                <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="*"/>
-                <DataGridTextColumn Header="Email" Binding="{Binding Email1}" Width="200"/>
-                <DataGridTextColumn Header="Telefon" Binding="{Binding Phone1}" Width="150"/>
-                <DataGridTextColumn Header="Miasto" Binding="{Binding City}" Width="150"/>
-                <DataGridTextColumn Header="NIP" Binding="{Binding Nip}" Width="120"/>
-                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100"/>
+                <DataGridTemplateColumn Header="" Width="40">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" 
+                                      Focusable="False"
+                                      HorizontalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="ID" Binding="{Binding Item.Id}" Width="50"/>
+                <DataGridTextColumn Header="Nazwa" Binding="{Binding Item.Name}" Width="*"/>
+                <DataGridTextColumn Header="Waluta" Binding="{Binding Item.Currency}" Width="60"/>
+                <DataGridTextColumn Header="Ulica nr" Binding="{Binding Item.Street}" Width="180"/>
+                <DataGridTextColumn Header="Kod pocztowy" Binding="{Binding Item.PostalCode}" Width="90"/>
+                <DataGridTextColumn Header="Miasto" Binding="{Binding Item.City}" Width="150"/>
+                <DataGridTextColumn Header="Państwo" Binding="{Binding Item.Country}" Width="100"/>
+                <DataGridTextColumn Header="Email" Binding="{Binding Item.Email1}" Width="200"/>
+                <DataGridTextColumn Header="Telefon" Binding="{Binding Item.Phone1}" Width="150"/>
+                <DataGridTextColumn Header="NIP" Binding="{Binding Item.Nip}" Width="120"/>
+                <DataGridTextColumn Header="Status" Binding="{Binding Item.Status}" Width="100"/>
             </DataGrid.Columns>
         </DataGrid>
 
-        <!-- Panel dodawania nowego odbiorcy -->
-        <GroupBox Grid.Row="1" Header="Dodaj nowego odbiorcę" Padding="10">
+        <!-- Panel akcji -->
+        <GroupBox Grid.Row="3" Header="Akcje - Kontrahenci" Padding="10">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -50,7 +96,7 @@
                          Padding="5">
                     <TextBox.Style>
                         <Style TargetType="TextBox">
-                            <Setter Property="Tag" Value="Nazwa odbiorcy"/>
+                            <Setter Property="Tag" Value="Nazwa kontrahenta"/>
                         </Style>
                     </TextBox.Style>
                 </TextBox>
@@ -78,20 +124,24 @@
                 </TextBox>
 
                 <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="5,0,0,0">
-                    <Button Content="Dodaj" 
+                    <Button Content="Dodaj kontrahenta" 
                             Command="{Binding AddCustomerCommand}"
                             Padding="10,5"
                             Margin="0,0,5,0"/>
-                    <Button Content="Edytuj" 
+                    <Button Content="Edytuj kontrahenta" 
                             Command="{Binding EditCustomerCommand}"
+                            Padding="10,5"
+                            Margin="0,0,5,0"/>
+                    <Button Content="Usuń kontrahenta" 
+                            Command="{Binding DeleteCustomerCommand}"
+                            Padding="10,5"
+                            Margin="0,0,5,0"/>
+                    <Button Content="Usuń zaznaczone" 
+                            Command="{Binding DeleteSelectedCommand}"
                             Padding="10,5"
                             Margin="0,0,5,0"/>
                     <Button Content="Odśwież" 
                             Command="{Binding LoadCustomersCommand}"
-                            Padding="10,5"
-                            Margin="0,0,5,0"/>
-                    <Button Content="Usuń" 
-                            Command="{Binding DeleteCustomerCommand}"
                             Padding="10,5"/>
                 </StackPanel>
             </Grid>

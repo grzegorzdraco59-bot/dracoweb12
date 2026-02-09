@@ -8,6 +8,7 @@ namespace ERP.Domain.Repositories;
 public interface ISupplierRepository
 {
     Task<Supplier?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<Supplier?> GetByKontrahentIdAsync(int kontrahentId, int companyId, CancellationToken cancellationToken = default);
     Task<IEnumerable<Supplier>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<Supplier?> GetByNameAsync(string name, CancellationToken cancellationToken = default);
     Task<int> AddAsync(Supplier supplier, CancellationToken cancellationToken = default);

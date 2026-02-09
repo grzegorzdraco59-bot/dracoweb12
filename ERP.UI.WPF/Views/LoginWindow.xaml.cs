@@ -71,35 +71,13 @@ public partial class LoginWindow : Window
         }
     }
 
+    /// <summary>
+    /// Flow jest obsługiwany przez App.OnLoginSuccessfulFromStartup.
+    /// LoginWindow nie otwiera Main – tylko zamyka się po tym, gdy App ustawi MainWindow na Main lub CompanySelection.
+    /// </summary>
     private void OnLoginSuccessful(object? sender, (Application.DTOs.UserDto User, IEnumerable<Application.DTOs.CompanyDto> Companies) e)
     {
-        try
-        {
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
-            {
-                var main = new MainWindow();
-                var app = System.Windows.Application.Current as App;
-                if (app != null)
-                {
-                    main.DataContext = app.GetMainViewModel();
-                }
-                System.Windows.Application.Current.MainWindow = main;
-                main.Show();
-                Close();
-            });
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show(ex.ToString(), "Błąd przy otwieraniu MainWindow", MessageBoxButton.OK, MessageBoxImage.Error);
-            try
-            {
-                var dir = Path.GetDirectoryName("logs/startup.log");
-                if (!string.IsNullOrEmpty(dir))
-                    Directory.CreateDirectory(dir);
-                File.AppendAllText("logs/startup.log", $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}]\r\n{ex}\r\n\r\n");
-            }
-            catch { /* ignoruj błędy zapisu logu */ }
-        }
+        // Nic nie robimy – App.xaml.cs obsługuje cały flow (Main / SelectCompany)
     }
 
     private void OnLoginCancelled(object? sender, EventArgs e)

@@ -1,4 +1,5 @@
 using ERP.Application.Services;
+using ERP.Infrastructure.Data;
 using MySqlConnector;
 
 namespace ERP.Infrastructure.Services;
@@ -39,10 +40,10 @@ public class DocumentNumberService : IDocumentNumberService
         insertCmd.Parameters.AddWithValue("@docType", docType);
         insertCmd.Parameters.AddWithValue("@year", year);
         insertCmd.Parameters.AddWithValue("@month", month);
-        await insertCmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await insertCmd.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
 
         var selectCmd = new MySqlCommand("SELECT LAST_INSERT_ID() AS next_no;", conn, mysqlTransaction);
-        var result = await selectCmd.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+        var result = await selectCmd.ExecuteScalarWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
         var nextNo = result == null || result == DBNull.Value ? 1 : Convert.ToInt32(result);
         return nextNo;
     }

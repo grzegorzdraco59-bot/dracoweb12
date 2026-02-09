@@ -37,6 +37,12 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 
+# Lokalny wybór bazy (database_settings.json – nie commituj)
+database_settings.json
+
+# Hasła lokalne (appsettings.Development.json – nigdy nie commituj)
+**/appsettings.Development.json
+
 # Logs, temp, cache
 *.log
 [Tt]emp/

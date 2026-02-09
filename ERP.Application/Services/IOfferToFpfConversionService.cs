@@ -21,4 +21,14 @@ public interface IOfferToFpfConversionService
     /// Zwraca ID proformy FPF dla oferty: istniejącej lub nowo utworzonej. Wersja bez userId (dla kompatybilności).
     /// </summary>
     Task<(int InvoiceId, bool CreatedNew)> CopyOfferToFpfAsync(int offerId, int companyId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Zwraca ID faktury zaliczkowej (FVZ) dla oferty: istniejącej lub nowo utworzonej. Idempotencja po id_oferty + doc_type='FVZ'.
+    /// </summary>
+    Task<(int InvoiceId, bool CreatedNew)> CopyOfferToFvzAsync(int offerId, int companyId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Zwraca ID faktury VAT (FV) dla oferty: istniejącej lub nowo utworzonej. Idempotencja po id_oferty + doc_type='FV'.
+    /// </summary>
+    Task<(int InvoiceId, bool CreatedNew)> CopyOfferToFvAsync(int offerId, int companyId, CancellationToken cancellationToken = default);
 }

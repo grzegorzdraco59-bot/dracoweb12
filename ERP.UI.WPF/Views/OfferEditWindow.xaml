@@ -3,10 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="clr-namespace:ERP.UI.WPF.Views"
         mc:Ignorable="d"
         Title="Edycja oferty" Height="900" Width="900"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="CanResize">
+        ResizeMode="CanResize"
+        FocusManager.FocusedElement="{Binding ElementName=OfferNumberBox}">
     <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -34,37 +36,38 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Nr oferty:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding OfferNumber, UpdateSourceTrigger=PropertyChanged}" 
+                        <TextBox x:Name="OfferNumberBox" Grid.Row="0" Grid.Column="1" Text="{Binding OfferNumber, UpdateSourceTrigger=PropertyChanged}" 
                                  Margin="5" Padding="5"/>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Data (dd/MM/yyyy):" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FormattedOfferDate, UpdateSourceTrigger=PropertyChanged}" 
+                        <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,8,0,0">
+                            <CheckBox Content="do FPF" IsChecked="{Binding ForProforma, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,16,0" VerticalAlignment="Center"/>
+                            <CheckBox Content="do zlecenia" IsChecked="{Binding ForOrder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,16,0" VerticalAlignment="Center"/>
+                            <CheckBox Content="do FV" IsChecked="{Binding ForInvoice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,16,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Status:" Margin="16,0,6,0" VerticalAlignment="Center"/>
+                            <ComboBox ItemsSource="{Binding OfferStatuses}" SelectedItem="{Binding Status, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                      MinWidth="120" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Data (dd/MM/yyyy):" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding FormattedOfferDate, UpdateSourceTrigger=PropertyChanged}" 
                                  Margin="5" Padding="5"/>
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="ID Klienta:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding CustomerId, UpdateSourceTrigger=PropertyChanged}" 
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="ID Klienta:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding CustomerId, UpdateSourceTrigger=PropertyChanged}" 
                                  Margin="5" Padding="5"/>
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Waluta:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Currency, UpdateSourceTrigger=PropertyChanged}" 
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Waluta:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Currency, UpdateSourceTrigger=PropertyChanged}" 
                                  Margin="5" Padding="5"/>
 
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Operator:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Operator, UpdateSourceTrigger=PropertyChanged}" 
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Operator:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Operator, UpdateSourceTrigger=PropertyChanged}" 
                                  Margin="5" Padding="5"/>
                     </Grid>
-                </GroupBox>
-
-                <!-- Flagi -->
-                <GroupBox Header="Flagi" Margin="0,0,0,10" Padding="10">
-                    <StackPanel Orientation="Horizontal">
-                        <CheckBox Content="Do proformy" IsChecked="{Binding ForProforma}" Margin="10,5"/>
-                        <CheckBox Content="Do zlecenia" IsChecked="{Binding ForOrder}" Margin="10,5"/>
-                        <CheckBox Content="Do faktury" IsChecked="{Binding ForInvoice}" Margin="10,5"/>
-                    </StackPanel>
                 </GroupBox>
 
                 <!-- Dane klienta -->
@@ -84,17 +87,20 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Odbiorca nazwa:" Margin="0,5" VerticalAlignment="Center"/>
-                        <Grid Grid.Row="0" Grid.Column="1" Margin="5">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Kontrahent nazwa:" Margin="0,5" VerticalAlignment="Center"/>
+                        <Grid Grid.Row="0" Grid.Column="1">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" Text="{Binding RecipientName, UpdateSourceTrigger=PropertyChanged}" 
-                                     Padding="5" Margin="0,0,5,0"/>
-                            <Button Grid.Column="1" Content="Wybierz" 
-                                    Command="{Binding SelectRecipientCommand}"
-                                    Padding="10,5" MinWidth="80"/>
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding SelectedKontrahentNazwa, UpdateSourceTrigger=PropertyChanged}"
+                                     IsReadOnly="True"
+                                     Margin="5" Padding="5"/>
+                            <Button Grid.Column="1"
+                                    Content="Wybierz..."
+                                    Command="{Binding PickKontrahentCommand}"
+                                    Margin="5" Padding="10,4"/>
                         </Grid>
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Ulica i nr:" Margin="0,5" VerticalAlignment="Center"/>

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows.Input;
 using ERP.Application.DTOs;
 using ERP.Application.Services;
@@ -96,6 +97,13 @@ public class OrdersViewModel : ViewModelBase
             {
                 Orders.Add(order);
             }
+
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var first = Orders.FirstOrDefault();
+                if (first != null)
+                    SelectedOrder = first;
+            });
         }
         catch (Exception ex)
         {
@@ -293,9 +301,9 @@ public class OrdersViewModel : ViewModelBase
     {
         try
         {
-            // TODO: Implementuj zaznaczanie wszystkich zamówień od dostawcy
+            // TODO: Implementuj zaznaczanie wszystkich zamówień od kontrahenta
             System.Windows.MessageBox.Show(
-                "Funkcjonalność zaznaczania wszystkich zamówień od dostawcy - w przygotowaniu",
+                "Funkcjonalność zaznaczania wszystkich zamówień od kontrahenta - w przygotowaniu",
                 "Info",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Information);

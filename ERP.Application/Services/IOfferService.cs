@@ -11,11 +11,15 @@ public interface IOfferService
 {
     Task<Offer?> GetByIdAsync(int id, int companyId, CancellationToken cancellationToken = default);
     Task<IEnumerable<Offer>> GetByCompanyIdAsync(int companyId, CancellationToken cancellationToken = default);
+
+    /// <summary>FULLTEXT search – używa gdy SearchText nie jest pusty.</summary>
+    Task<IEnumerable<Offer>> SearchByCompanyIdAsync(int companyId, string? searchText, int limit = 200, CancellationToken cancellationToken = default);
     Task<int?> GetNextOfferNumberForDateAsync(int offerDate, int companyId, CancellationToken cancellationToken = default);
     Task<int> AddAsync(Offer offer, CancellationToken cancellationToken = default);
     Task UpdateAsync(Offer offer, CancellationToken cancellationToken = default);
     Task DeleteAsync(int id, int companyId, CancellationToken cancellationToken = default);
     Task SetStatusAsync(int offerId, int companyId, OfferStatus newStatus, CancellationToken cancellationToken = default);
+    Task SetFlagsAsync(int offerId, int companyId, bool? forProforma, bool? forOrder, bool forInvoice, CancellationToken cancellationToken = default);
 
     Task<IEnumerable<OfferPosition>> GetPositionsByOfferIdAsync(int offerId, CancellationToken cancellationToken = default);
     Task<OfferPosition?> GetPositionByIdAsync(int positionId, CancellationToken cancellationToken = default);

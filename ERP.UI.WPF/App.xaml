@@ -4,6 +4,30 @@
              xmlns:local="clr-namespace:ERP.UI.WPF"
              ShutdownMode="OnMainWindowClose">
     <Application.Resources>
-         
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Styles/ErpGridStyles.xaml"/>
+                <ResourceDictionary Source="Styles/GlobalTableStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        <Style TargetType="DataGridRow" BasedOn="{StaticResource DataGridRowSelectionStyle}"/>
+        <Style x:Key="ListBoxItemSelectionStyle" TargetType="ListBoxItem">
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#0078D7"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style TargetType="ListBoxItem" BasedOn="{StaticResource ListBoxItemSelectionStyle}"/>
+        <Style x:Key="ListViewItemSelectionStyle" TargetType="ListViewItem">
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#0078D7"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style TargetType="ListViewItem" BasedOn="{StaticResource ListViewItemSelectionStyle}"/>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

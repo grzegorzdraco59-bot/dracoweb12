@@ -14,6 +14,15 @@ public class OrderPositionMainDto
     public string? ProductNameDraco { get; set; }
     public string? Product { get; set; }
     public string? ProductNameEng { get; set; }
+
+    /// <summary>Alias dla listy – preferowana nazwa towaru (Draco → Product → ENG).</summary>
+    public string? ProductName => ProductNameDraco ?? Product ?? ProductNameEng;
+    /// <summary>Alias dla listy – ilość zamawiana.</summary>
+    public decimal? Quantity => OrderQuantity;
+    /// <summary>Alias dla listy – cena zamawiana.</summary>
+    public decimal? Price => OrderPrice;
+    /// <summary>Alias dla listy – jednostka zamawiana.</summary>
+    public string? Unit => OrderUnit;
     public string? OrderUnit { get; set; }
     public decimal? OrderQuantity { get; set; }
     public decimal? DeliveredQuantity { get; set; }

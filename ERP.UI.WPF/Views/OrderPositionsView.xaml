@@ -37,7 +37,6 @@
                   SelectedItem="{Binding SelectedPosition}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
-                  GridLinesVisibility="All"
                   HeadersVisibility="Column"
                   Margin="0,0,0,10">
             <DataGrid.Columns>
@@ -55,7 +54,7 @@
                 <DataGridTextColumn Header="Jedn. Zak." Binding="{Binding PurchaseUnit}" Width="80"/>
                 <DataGridTextColumn Header="Ilość Zak." Binding="{Binding PurchaseQuantity, StringFormat='{}{0:N2}'}" Width="100"/>
                 <DataGridTextColumn Header="Cena Zak." Binding="{Binding PurchasePrice, StringFormat='{}{0:N2}'}" Width="100"/>
-                <DataGridTextColumn Header="Dostawca" Binding="{Binding Supplier}" Width="150"/>
+                <DataGridTextColumn Header="Kontrahent" Binding="{Binding Supplier}" Width="150"/>
                 <DataGridTextColumn Header="Uwagi" Binding="{Binding Notes}" Width="*"/>
             </DataGrid.Columns>
         </DataGrid>

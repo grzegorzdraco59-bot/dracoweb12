@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Threading;
 using Microsoft.Win32;
 using ERP.Application.DTOs;
 using ERP.Application.Helpers;
@@ -12,8 +13,8 @@ using ERP.Application.Repositories;
 using ERP.Application.Services;
 using ERP.Domain.Entities;
 using ERP.Domain.Enums;
-using IUserContext = ERP.UI.WPF.Services.IUserContext;
 using ERP.Domain.Repositories;
+using IUserContext = ERP.UI.WPF.Services.IUserContext;
 using ERP.Infrastructure.Repositories;
 using ERP.Infrastructure.Services;
 using ERP.UI.WPF.Views;
@@ -29,42 +30,47 @@ public class OffersViewModel : ViewModelBase
     private readonly IOfferService _offerService;
     private readonly IOrderMainService _orderMainService;
     private readonly IOfferToFpfConversionService _offerToFpfService;
+    private readonly IOfferToZlecenieConversionService _offerToZlecenieService;
     private readonly IOfferPdfService _offerPdfService;
     private readonly ICompanyRepository _companyRepository;
     private readonly IInvoiceRepository _invoiceRepository;
     private readonly IOfferTotalsService _offerTotalsService;
     private readonly IEmailService _emailService;
     private readonly ProductRepository _productRepository;
-    private readonly ICustomerRepository _customerRepository;
+    private readonly IKontrahenciQueryRepository _kontrahenciRepository;
     private readonly IUserContext _userContext;
     private OfferDto? _selectedOffer;
     private OfferPositionDto? _selectedOfferPosition;
     private string _searchText = string.Empty;
     private CollectionViewSource _offersViewSource;
+    private DispatcherTimer? _searchDebounceTimer;
+    private const int SearchDebounceMs = 300;
     
     public OffersViewModel(
         IOfferService offerService,
         IOrderMainService orderMainService,
         IOfferToFpfConversionService offerToFpfService,
+        IOfferToZlecenieConversionService offerToZlecenieService,
         IOfferPdfService offerPdfService,
         ICompanyRepository companyRepository,
         IInvoiceRepository invoiceRepository,
         IOfferTotalsService offerTotalsService,
         IEmailService emailService,
         ProductRepository productRepository, 
-        ICustomerRepository customerRepository,
+        IKontrahenciQueryRepository kontrahenciRepository,
         IUserContext userContext)
     {
         _offerService = offerService ?? throw new ArgumentNullException(nameof(offerService));
         _orderMainService = orderMainService ?? throw new ArgumentNullException(nameof(orderMainService));
         _offerToFpfService = offerToFpfService ?? throw new ArgumentNullException(nameof(offerToFpfService));
+        _offerToZlecenieService = offerToZlecenieService ?? throw new ArgumentNullException(nameof(offerToZlecenieService));
         _offerPdfService = offerPdfService ?? throw new ArgumentNullException(nameof(offerPdfService));
         _companyRepository = companyRepository ?? throw new ArgumentNullException(nameof(companyRepository));
         _invoiceRepository = invoiceRepository ?? throw new ArgumentNullException(nameof(invoiceRepository));
         _offerTotalsService = offerTotalsService ?? throw new ArgumentNullException(nameof(offerTotalsService));
         _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
         _productRepository = productRepository ?? throw new ArgumentNullException(nameof(productRepository));
-        _customerRepository = customerRepository ?? throw new ArgumentNullException(nameof(customerRepository));
+        _kontrahenciRepository = kontrahenciRepository ?? throw new ArgumentNullException(nameof(kontrahenciRepository));
         _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
         
         Offers = new ObservableCollection<OfferDto>();
@@ -89,14 +95,20 @@ public class OffersViewModel : ViewModelBase
         // Oferta mail – enabled gdy oferta ma Id i odbiorca_mail (CustomerEmail) nie jest pusty
         SendEmailCommand = new RelayCommand(async () => await SendOfferEmailAsync(), () => SelectedOffer != null && SelectedOffer.Id > 0 && !string.IsNullOrWhiteSpace(SelectedOffer.CustomerEmail));
         CopyToNewOfferCommand = new RelayCommand(() => System.Windows.MessageBox.Show("Kopiuj do nowej oferty - w przygotowaniu", "Info", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information), () => SelectedOffer != null);
-        CopyToFpfCommand = new RelayCommand(async () => await CopyToFpfAsync(), () => SelectedOffer != null);
+        CopyToFpfCommand = new RelayCommand(async () => await CopyToFpfAsync(), () => SelectedOffer != null && SelectedOffer.Id > 0);
+        CopyToFvzCommand = new RelayCommand(async () => await CopyToFvzAsync(), () => SelectedOffer != null && SelectedOffer.Id > 0);
+        MarkAsDoZleceniaCommand = new RelayCommand(async () => await MarkAsDoZleceniaAsync(), () => SelectedOffer != null);
         CopyToFpfZalCommand = new RelayCommand(() => System.Windows.MessageBox.Show("Kopiuj do FPFzal. - w przygotowaniu", "Info", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information), () => SelectedOffer != null);
-        CopyToOrderCommand = new RelayCommand(() => System.Windows.MessageBox.Show("Kopiuj do zlecenia - w przygotowaniu", "Info", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information), () => SelectedOffer != null);
-        CopyToFvCommand = new RelayCommand(() => System.Windows.MessageBox.Show("Kopiuj do FV - w przygotowaniu", "Info", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information), () => SelectedOffer != null);
+        CopyToOrderCommand = new RelayCommand(async () => await CopyToOrderAsync(), () => SelectedOffer != null && SelectedOffer.Id > 0);
+        CopyToFvCommand = new RelayCommand(async () => await CopyToFvAsync(), () => SelectedOffer != null && SelectedOffer.Id > 0);
+        SaveOfferFlagsCommand = new RelayCommand(async () => await SaveOfferFlagsAsync(), () => SelectedOffer != null && SelectedOffer.Id > 0);
         
         // Automatyczne ładowanie przy starcie
         _ = LoadOffersAsync();
     }
+
+    /// <summary>Lista statusów oferty dla ComboBox (Draft, Sent, Accepted, Rejected, Cancelled).</summary>
+    public string[] OfferStatuses { get; } = Enum.GetNames(typeof(OfferStatus));
 
     public ObservableCollection<OfferDto> Offers { get; }
     public ObservableCollection<OfferPositionDto> OfferPositions { get; }
@@ -105,8 +117,25 @@ public class OffersViewModel : ViewModelBase
     
     public ICollectionView FilteredOffers => _offersViewSource.View;
 
+    /// <summary>Alias dla SelectedOffer – kontekst szczegółów/edycji, binding do SelectedItem DataGrid.</summary>
+    public OfferDto? ActiveItem
+    {
+        get => SelectedOffer;
+        set
+        {
+            if (SelectedOffer != value)
+            {
+                SelectedOffer = value;
+                OnPropertyChanged(nameof(ActiveItem));
+            }
+        }
+    }
+
     /// <summary>True gdy wybrano ofertę – panele po prawej są aktywne.</summary>
     public bool HasSelectedOffer => SelectedOffer != null;
+
+    /// <summary>True gdy wybrano pozycję oferty – pole uwag jest aktywne.</summary>
+    public bool HasSelectedOfferPosition => SelectedOfferPosition != null;
 
     public string SearchText
     {
@@ -117,9 +146,25 @@ public class OffersViewModel : ViewModelBase
             {
                 _searchText = value;
                 OnPropertyChanged();
-                FilteredOffers.Refresh();
+                ScheduleSearchDebounce();
             }
         }
+    }
+
+    private void ScheduleSearchDebounce()
+    {
+        _searchDebounceTimer?.Stop();
+        _searchDebounceTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(SearchDebounceMs)
+        };
+        _searchDebounceTimer.Tick += (_, _) =>
+        {
+            _searchDebounceTimer.Stop();
+            _searchDebounceTimer = null;
+            _ = LoadOffersAsync();
+        };
+        _searchDebounceTimer.Start();
     }
 
     public OfferDto? SelectedOffer
@@ -132,6 +177,7 @@ public class OffersViewModel : ViewModelBase
                 _selectedOffer = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(HasSelectedOffer));
+                OnPropertyChanged(nameof(ActiveItem));
                 if (EditOfferCommand is RelayCommand editCmd)
                     editCmd.RaiseCanExecuteChanged();
                 if (DeleteOfferCommand is RelayCommand deleteCmd)
@@ -151,12 +197,18 @@ public class OffersViewModel : ViewModelBase
                     copyNewCmd.RaiseCanExecuteChanged();
                 if (CopyToFpfCommand is RelayCommand copyFpfCmd)
                     copyFpfCmd.RaiseCanExecuteChanged();
+                if (CopyToFvzCommand is RelayCommand copyFvzCmd)
+                    copyFvzCmd.RaiseCanExecuteChanged();
+                if (MarkAsDoZleceniaCommand is RelayCommand markDoZleceniaCmd)
+                    markDoZleceniaCmd.RaiseCanExecuteChanged();
                 if (CopyToFpfZalCommand is RelayCommand copyFpfZalCmd)
                     copyFpfZalCmd.RaiseCanExecuteChanged();
                 if (CopyToOrderCommand is RelayCommand copyOrderCmd)
                     copyOrderCmd.RaiseCanExecuteChanged();
                 if (CopyToFvCommand is RelayCommand copyFvCmd)
                     copyFvCmd.RaiseCanExecuteChanged();
+                if (SaveOfferFlagsCommand is RelayCommand saveFlagsCmd)
+                    saveFlagsCmd.RaiseCanExecuteChanged();
                 if (value != null)
                 {
                     _ = LoadOfferPositionsAsync(value.Id);
@@ -180,6 +232,7 @@ public class OffersViewModel : ViewModelBase
             {
                 _selectedOfferPosition = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(HasSelectedOfferPosition));
                 if (EditPositionCommand is RelayCommand editCmd)
                     editCmd.RaiseCanExecuteChanged();
                 if (DeletePositionCommand is RelayCommand deleteCmd)
@@ -201,12 +254,18 @@ public class OffersViewModel : ViewModelBase
     public ICommand SendEmailCommand { get; }
     public ICommand CopyToNewOfferCommand { get; }
     public ICommand CopyToFpfCommand { get; }
+    public ICommand CopyToFvzCommand { get; }
+    public ICommand MarkAsDoZleceniaCommand { get; }
     public ICommand CopyToFpfZalCommand { get; }
     public ICommand CopyToOrderCommand { get; }
     public ICommand CopyToFvCommand { get; }
+    public ICommand SaveOfferFlagsCommand { get; }
 
     private async Task LoadOffersAsync()
     {
+        _searchDebounceTimer?.Stop();
+        _searchDebounceTimer = null;
+
         try
         {
             if (!_userContext.CompanyId.HasValue)
@@ -219,11 +278,40 @@ public class OffersViewModel : ViewModelBase
                 return;
             }
 
-            var offers = await _offerService.GetByCompanyIdAsync(_userContext.CompanyId.Value);
+            // Zachowaj ID zaznaczonej oferty PRZED Clear – odtworzymy selekcję po ID (stabilne podświetlenie)
+            var selectedId = SelectedOffer?.Id;
+
+            IEnumerable<Offer> offers;
+            if (string.IsNullOrWhiteSpace(SearchText))
+                offers = await _offerService.GetByCompanyIdAsync(_userContext.CompanyId.Value);
+            else
+                offers = await _offerService.SearchByCompanyIdAsync(_userContext.CompanyId.Value, SearchText, limit: 200);
+
             Offers.Clear();
             foreach (var offer in offers)
             {
                 Offers.Add(MapToDto(offer));
+            }
+
+            // Odtwórz selekcję po ID – NIE resetuj SelectedItem przy odświeżeniu/filtrowaniu (jak w Fakturach)
+            if (selectedId.HasValue)
+            {
+                var reselect = Offers.FirstOrDefault(o => o.Id == selectedId.Value);
+                if (reselect != null)
+                {
+                    SelectedOffer = reselect;
+                    RequestScrollToSelectedOffer?.Invoke(this, EventArgs.Empty);
+                }
+                else
+                {
+                    SelectedOffer = null;
+                }
+            }
+            // Zaznacz pierwszą ofertę TYLKO przy pierwszym ładowaniu (SelectedOffer było null)
+            else if (string.IsNullOrWhiteSpace(SearchText) && Offers.Count > 0)
+            {
+                SelectedOffer = Offers[0];
+                RequestScrollToSelectedOffer?.Invoke(this, EventArgs.Empty);
             }
         }
         catch (Exception ex)
@@ -342,6 +430,9 @@ public class OffersViewModel : ViewModelBase
 
     /// <summary>Wywołane po ustawieniu IsSelected na węźle – View może przewinąć do zaznaczonego (BringIntoView).</summary>
     public event EventHandler? RequestBringIntoView;
+
+    /// <summary>Zgłaszane po automatycznym zaznaczeniu pierwszej oferty – View wywołuje ScrollIntoView.</summary>
+    public event EventHandler? RequestScrollToSelectedOffer;
 
     private static DateTime? ClarionToDateTime(int? clarionDate)
     {
@@ -623,15 +714,17 @@ public class OffersViewModel : ViewModelBase
     
     private bool FilterOffers(object obj)
     {
+        // Przy użyciu FULLTEXT search (SearchText niepusty) filtrowanie odbywa się na serwerze – przepuszczamy wszystko
+        if (!string.IsNullOrWhiteSpace(SearchText))
+            return true;
+
         if (obj is not OfferDto offer)
             return false;
-        
+
         if (string.IsNullOrWhiteSpace(SearchText))
             return true;
-        
+
         var searchTextLower = SearchText.ToLowerInvariant();
-        
-        // Wyszukiwanie po wszystkich kolumnach
         return (offer.Id.ToString().Contains(searchTextLower)) ||
                (offer.OfferNumber?.ToString().Contains(searchTextLower) ?? false) ||
                (offer.NrOferty?.ToString().Contains(searchTextLower) ?? false) ||
@@ -687,7 +780,8 @@ public class OffersViewModel : ViewModelBase
                 _offerService, 
                 _productRepository, 
                 SelectedOfferPosition,
-                _userContext);
+                _userContext,
+                SelectedOffer?.Currency ?? "PLN");
             var editWindow = new OfferPositionEditWindow(editViewModel)
             {
                 Owner = System.Windows.Application.Current.MainWindow
@@ -721,7 +815,7 @@ public class OffersViewModel : ViewModelBase
         {
             var editViewModel = new OfferEditViewModel(
                 _offerService, 
-                _customerRepository, 
+                _kontrahenciRepository, 
                 SelectedOffer,
                 _userContext);
             var editWindow = new OfferEditWindow(editViewModel)
@@ -763,10 +857,13 @@ public class OffersViewModel : ViewModelBase
             // Pobieramy kolejny numer oferty dla dzisiejszego dnia
             var nextOfferNumber = await _offerService.GetNextOfferNumberForDateAsync(offerDate, companyId);
             
-            // Tworzymy nową ofertę
+            // Tworzymy nową ofertę z wartościami domyślnymi („NOWA OFERTA” – spójne z DB i UI)
             var offer = new Offer(companyId, operatorName);
             offer.UpdateOfferInfo(offerDate, nextOfferNumber, "PLN");
-            
+            offer.UpdateFlags(forProforma: false, forOrder: false, forInvoice: false);
+            offer.UpdatePricing(totalPrice: 0m, vatRate: 23m, totalVat: 0m, totalBrutto: 0m);
+            offer.UpdateSumBrutto(0m);
+
             // Dodajemy ofertę do bazy
             var id = await _offerService.AddAsync(offer);
             
@@ -854,6 +951,45 @@ public class OffersViewModel : ViewModelBase
         }
     }
 
+    private async Task SaveOfferFlagsAsync()
+    {
+        if (SelectedOffer == null || !_userContext.CompanyId.HasValue || SelectedOffer.Id <= 0) return;
+        try
+        {
+            await _offerService.SetFlagsAsync(SelectedOffer.Id, _userContext.CompanyId.Value,
+                SelectedOffer.ForProforma, SelectedOffer.ForOrder, SelectedOffer.ForInvoice);
+            FilteredOffers.Refresh();
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Błąd zapisu flag: {ex.Message}", "Zapisz flagi",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+    }
+
+    private async Task MarkAsDoZleceniaAsync()
+    {
+        if (SelectedOffer == null || !_userContext.CompanyId.HasValue) return;
+
+        try
+        {
+            var offerId = SelectedOffer.Id;
+            var companyId = _userContext.CompanyId.Value;
+            await _offerService.SetFlagsAsync(offerId, companyId, SelectedOffer.ForProforma, forOrder: true, SelectedOffer.ForInvoice);
+            SelectedOffer.ForOrder = true;
+
+            await LoadOffersAsync();
+            SelectedOffer = Offers.FirstOrDefault(o => o.Id == offerId);
+            System.Windows.MessageBox.Show("Oferta oznaczona jako 'do zlecenia'.", "Do zlecenia",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Błąd: {ex.Message}", "Do zlecenia",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+    }
+
     private async Task CreateOrderFromOfferAsync()
     {
         if (SelectedOffer == null || !_userContext.CompanyId.HasValue) return;
@@ -861,11 +997,19 @@ public class OffersViewModel : ViewModelBase
         try
         {
             var orderId = await _orderMainService.CreateFromOfferAsync(SelectedOffer.Id);
+            var offerId = SelectedOffer.Id;
+            var companyId = _userContext.CompanyId.Value;
+            await _offerService.SetFlagsAsync(offerId, companyId, SelectedOffer.ForProforma, forOrder: true, SelectedOffer.ForInvoice);
+            SelectedOffer.ForOrder = true;
+
             System.Windows.MessageBox.Show(
                 $"Zamówienie utworzone z oferty. ID zamówienia: {orderId}.",
                 "Utwórz zamówienie z oferty",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Information);
+
+            await LoadOffersAsync();
+            SelectedOffer = Offers.FirstOrDefault(o => o.Id == offerId);
         }
         catch (ERP.Domain.Exceptions.BusinessRuleException ex)
         {
@@ -879,9 +1023,155 @@ public class OffersViewModel : ViewModelBase
         }
     }
 
+    private async Task CopyToOrderAsync()
+    {
+        if (SelectedOffer == null || !_userContext.CompanyId.HasValue) return;
+        if (SelectedOffer.Id <= 0)
+        {
+            System.Windows.MessageBox.Show("Brak ID oferty. Oferta musi być zapisana w bazie przed kopiowaniem do zlecenia.",
+                "Kopiuj do zlecenia", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        try
+        {
+            var zlecenieId = await _offerToZlecenieService.CopyOfferToZlecenieAsync(
+                SelectedOffer.Id, _userContext.CompanyId.Value);
+
+            var offerId = SelectedOffer.Id;
+            SelectedOffer.ForOrder = true;
+
+            System.Windows.MessageBox.Show(
+                $"Skopiowano do zlecenia. ID zlecenia: {zlecenieId}.",
+                "Kopiuj do zlecenia",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
+
+            await LoadOffersAsync();
+            SelectedOffer = Offers.FirstOrDefault(o => o.Id == offerId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            System.Windows.MessageBox.Show(ex.Message, "Kopiuj do zlecenia",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Błąd: {ex.Message}", "Kopiuj do zlecenia",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+    }
+
+    private async Task CopyToFvAsync()
+    {
+        if (SelectedOffer == null || !_userContext.CompanyId.HasValue) return;
+        if (SelectedOffer.Id <= 0)
+        {
+            System.Windows.MessageBox.Show("Brak ID oferty. Oferta musi być zapisana w bazie przed kopiowaniem do faktury VAT.",
+                "Kopiuj do FV", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        try
+        {
+            var (invoiceId, createdNew) = await _offerToFpfService.CopyOfferToFvAsync(
+                SelectedOffer.Id, _userContext.CompanyId.Value);
+
+            if (createdNew)
+            {
+                var offerId = SelectedOffer!.Id;
+                var companyId = _userContext.CompanyId.Value;
+                await _offerService.SetFlagsAsync(offerId, companyId, SelectedOffer.ForProforma, SelectedOffer.ForOrder, forInvoice: true);
+                SelectedOffer.ForInvoice = true;
+
+                System.Windows.MessageBox.Show(
+                    "Skopiowano do FV",
+                    "Sukces",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+
+                await LoadOffersAsync();
+                SelectedOffer = Offers.FirstOrDefault(o => o.Id == offerId);
+                if (SelectedOffer != null)
+                    await LoadDocumentTreeAsync(SelectedOffer, selectFirstDocumentNode: true);
+
+                var viewModel = new FakturaEditViewModel(invoiceId);
+                var window = new FakturaEditWindow(viewModel)
+                {
+                    Owner = System.Windows.Application.Current.MainWindow
+                };
+                window.Show();
+            }
+            else
+            {
+                System.Windows.MessageBox.Show(
+                    "Oferta była już kopiowana do FV",
+                    "Informacja",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Błąd: {ex.Message}", "Kopiuj do FV",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+    }
+
+    private async Task CopyToFvzAsync()
+    {
+        if (SelectedOffer == null || !_userContext.CompanyId.HasValue) return;
+        if (SelectedOffer.Id <= 0)
+        {
+            System.Windows.MessageBox.Show("Brak ID oferty. Oferta musi być zapisana w bazie przed kopiowaniem do faktury zaliczkowej.",
+                "Kopiuj do FVZ", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        try
+        {
+            var (invoiceId, createdNew) = await _offerToFpfService.CopyOfferToFvzAsync(
+                SelectedOffer.Id, _userContext.CompanyId.Value);
+
+            if (createdNew)
+            {
+                var offerId = SelectedOffer!.Id;
+                System.Windows.MessageBox.Show(
+                    $"Skopiowano do FVZ. ID faktury: {invoiceId}.",
+                    "Kopiuj do FVZ",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+
+                await LoadOffersAsync();
+                SelectedOffer = Offers.FirstOrDefault(o => o.Id == offerId);
+                if (SelectedOffer != null)
+                    await LoadDocumentTreeAsync(SelectedOffer, selectFirstDocumentNode: true);
+            }
+            else
+            {
+                System.Windows.MessageBox.Show(
+                    "Oferta była już kopiowana do FVZ.",
+                    "Informacja",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Błąd: {ex.Message}", "Kopiuj do FVZ",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+    }
+
     private async Task CopyToFpfAsync()
     {
         if (SelectedOffer == null || !_userContext.CompanyId.HasValue) return;
+        if (SelectedOffer.Id <= 0)
+        {
+            System.Windows.MessageBox.Show("Brak ID oferty. Oferta musi być zapisana w bazie przed kopiowaniem do proformy.",
+                "Kopiuj do FPF", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
 
         try
         {
@@ -890,13 +1180,17 @@ public class OffersViewModel : ViewModelBase
 
             if (createdNew)
             {
+                var offerId = SelectedOffer!.Id;
+                var companyId = _userContext.CompanyId.Value;
+                await _offerService.SetFlagsAsync(offerId, companyId, forProforma: true, forOrder: SelectedOffer.ForOrder, forInvoice: SelectedOffer.ForInvoice);
+                SelectedOffer.ForProforma = true;
+
                 System.Windows.MessageBox.Show(
                     "Skopiowano do FPF",
                     "Sukces",
                     System.Windows.MessageBoxButton.OK,
                     System.Windows.MessageBoxImage.Information);
 
-                var offerId = SelectedOffer!.Id;
                 await LoadOffersAsync();
                 SelectedOffer = Offers.FirstOrDefault(o => o.Id == offerId);
                 if (SelectedOffer != null)
@@ -1015,7 +1309,8 @@ public class OffersViewModel : ViewModelBase
                 _offerService,
                 _productRepository,
                 newPositionDto,
-                _userContext);
+                _userContext,
+                SelectedOffer.Currency ?? "PLN");
             var editWindow = new OfferPositionEditWindow(editViewModel)
             {
                 Owner = System.Windows.Application.Current.MainWindow

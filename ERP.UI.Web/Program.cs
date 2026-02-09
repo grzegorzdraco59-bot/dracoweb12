@@ -43,23 +43,16 @@ builder.Services.AddSession(options =>
 });
 
 // Dependency Injection - Database Context
-builder.Services.AddSingleton<DatabaseContext>(sp =>
-{
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    if (string.IsNullOrWhiteSpace(connectionString))
-    {
-        throw new InvalidOperationException(
-            "Connection string 'DefaultConnection' nie został znaleziony. " +
-            "Upewnij się, że connection string jest skonfigurowany w appsettings.json lub User Secrets.");
-    }
-    return new DatabaseContext(connectionString);
-});
+builder.Services.AddSingleton<ERP.Infrastructure.Services.IConnectionStringProvider, ERP.Infrastructure.Services.ConnectionStringProvider>();
+builder.Services.AddSingleton<DatabaseContext>();
 
 // Dependency Injection - Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserLoginRepository, UserLoginRepository>();
 builder.Services.AddScoped<IUserCompanyRepository, UserCompanyRepository>();
 builder.Services.AddScoped<ICompanyRepository, CompanyRepository>();
+builder.Services.AddScoped<ERP.Application.Repositories.ICompanyQueryRepository, CompanyRepository>();
+builder.Services.AddScoped<ERP.Application.Repositories.IKontrahenciQueryRepository, KontrahenciQueryRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IOfferRepository, OfferRepository>();
 builder.Services.AddScoped<IOfferPositionRepository, OfferPositionRepository>();
@@ -87,6 +80,7 @@ builder.Services.AddScoped<ERP.Application.Services.IUserContext>(sp => (ERP.App
 
 // Unit of Work dla transakcji
 builder.Services.AddScoped<ERP.Infrastructure.Services.IUnitOfWork, ERP.Infrastructure.Services.UnitOfWork>();
+builder.Services.AddScoped<ERP.Infrastructure.Services.IIdGenerator, ERP.Infrastructure.Services.IdGeneratorService>();
 builder.Services.AddScoped<IDocumentNumberService, ERP.Infrastructure.Services.DocumentNumberService>();
 builder.Services.AddScoped<IInvoiceTotalsService, ERP.Infrastructure.Services.InvoiceTotalsService>();
 
@@ -118,40 +112,22 @@ builder.Services.AddAuthorization(options =>
     });
 
     // Policies dla uprawnień do tabel
-    // Customers (Odbiorcy)
-    options.AddPolicy("Customers:Read", policy =>
+    // Kontrahenci
+    options.AddPolicy("Kontrahenci:Read", policy =>
     {
         policy.Requirements.Add(new CompanyAccessRequirement());
-        policy.Requirements.Add(new TablePermissionRequirement("Odbiorcy", "SELECT"));
+        policy.Requirements.Add(new TablePermissionRequirement("kontrahenci", "SELECT"));
     });
-    options.AddPolicy("Customers:Write", policy =>
+    options.AddPolicy("Kontrahenci:Write", policy =>
     {
         policy.Requirements.Add(new CompanyAccessRequirement());
-        policy.Requirements.Add(new TablePermissionRequirement("Odbiorcy", "INSERT"));
-        policy.Requirements.Add(new TablePermissionRequirement("Odbiorcy", "UPDATE"));
+        policy.Requirements.Add(new TablePermissionRequirement("kontrahenci", "INSERT"));
+        policy.Requirements.Add(new TablePermissionRequirement("kontrahenci", "UPDATE"));
     });
-    options.AddPolicy("Customers:Delete", policy =>
+    options.AddPolicy("Kontrahenci:Delete", policy =>
     {
         policy.Requirements.Add(new CompanyAccessRequirement());
-        policy.Requirements.Add(new TablePermissionRequirement("Odbiorcy", "DELETE"));
-    });
-
-    // Suppliers (Dostawcy)
-    options.AddPolicy("Suppliers:Read", policy =>
-    {
-        policy.Requirements.Add(new CompanyAccessRequirement());
-        policy.Requirements.Add(new TablePermissionRequirement("dostawcy", "SELECT"));
-    });
-    options.AddPolicy("Suppliers:Write", policy =>
-    {
-        policy.Requirements.Add(new CompanyAccessRequirement());
-        policy.Requirements.Add(new TablePermissionRequirement("dostawcy", "INSERT"));
-        policy.Requirements.Add(new TablePermissionRequirement("dostawcy", "UPDATE"));
-    });
-    options.AddPolicy("Suppliers:Delete", policy =>
-    {
-        policy.Requirements.Add(new CompanyAccessRequirement());
-        policy.Requirements.Add(new TablePermissionRequirement("dostawcy", "DELETE"));
+        policy.Requirements.Add(new TablePermissionRequirement("kontrahenci", "DELETE"));
     });
 
     // Products (Towary)

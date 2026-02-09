@@ -14,16 +14,40 @@ public partial class OffersView : UserControl
         InitializeComponent();
     }
 
+    private void OfferFlag_Changed(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is OffersViewModel vm && vm.SaveOfferFlagsCommand.CanExecute(null))
+            vm.SaveOfferFlagsCommand.Execute(null);
+    }
+
     private void UserControl_Loaded(object sender, RoutedEventArgs e)
     {
         if (DataContext is OffersViewModel vm)
+        {
             vm.RequestBringIntoView += OnRequestBringIntoView;
+            vm.RequestScrollToSelectedOffer += OnRequestScrollToSelectedOffer;
+        }
     }
 
     private void UserControl_Unloaded(object sender, RoutedEventArgs e)
     {
         if (DataContext is OffersViewModel vm)
+        {
             vm.RequestBringIntoView -= OnRequestBringIntoView;
+            vm.RequestScrollToSelectedOffer -= OnRequestScrollToSelectedOffer;
+        }
+    }
+
+    private void OnRequestScrollToSelectedOffer(object? sender, EventArgs e)
+    {
+        if (DataContext is OffersViewModel vm && vm.SelectedOffer != null && OffersDataGrid != null)
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                OffersDataGrid.ScrollIntoView(vm.SelectedOffer);
+                // NIE wywołujemy Focus() – powodowało ucieczkę focusu z TextBoxa wyszukiwania
+            }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        }
     }
 
     private void OnRequestBringIntoView(object? sender, EventArgs e)

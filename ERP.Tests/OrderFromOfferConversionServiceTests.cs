@@ -42,10 +42,11 @@ public class OrderFromOfferConversionServiceTests
             .ReturnsAsync((int?)null);
 
         var uow = new Mock<IUnitOfWork>();
+        var idGenerator = new Mock<IIdGenerator>();
         var offerPositionRepo = new Mock<IOfferPositionRepository>();
 
         var sut = new OrderFromOfferConversionService(
-            uow.Object, offerRepo.Object, offerPositionRepo.Object, orderPositionRepo.Object);
+            uow.Object, idGenerator.Object, offerRepo.Object, offerPositionRepo.Object, orderPositionRepo.Object);
 
         var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
             sut.CreateFromOfferAsync(offerId, companyId));
@@ -72,10 +73,11 @@ public class OrderFromOfferConversionServiceTests
             .ReturnsAsync(existingOrderId);
 
         var uow = new Mock<IUnitOfWork>();
+        var idGenerator = new Mock<IIdGenerator>();
         var offerPositionRepo = new Mock<IOfferPositionRepository>();
 
         var sut = new OrderFromOfferConversionService(
-            uow.Object, offerRepo.Object, offerPositionRepo.Object, orderPositionRepo.Object);
+            uow.Object, idGenerator.Object, offerRepo.Object, offerPositionRepo.Object, orderPositionRepo.Object);
 
         var result = await sut.CreateFromOfferAsync(offerId, companyId);
 
@@ -103,11 +105,12 @@ public class OrderFromOfferConversionServiceTests
             .ReturnsAsync(Array.Empty<OfferPosition>());
 
         var uow = new Mock<IUnitOfWork>();
+        var idGenerator = new Mock<IIdGenerator>();
         uow.Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<MySqlTransaction, Task<int>>>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Simulated DB failure"));
 
         var sut = new OrderFromOfferConversionService(
-            uow.Object, offerRepo.Object, offerPositionRepo.Object, orderPositionRepo.Object);
+            uow.Object, idGenerator.Object, offerRepo.Object, offerPositionRepo.Object, orderPositionRepo.Object);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             sut.CreateFromOfferAsync(offerId, companyId));

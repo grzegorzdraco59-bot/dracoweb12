@@ -1,4 +1,5 @@
 using ERP.Application.Services;
+using System.IO;
 using ERP.Domain.Entities;
 using ERP.Domain.Repositories;
 using ERP.Infrastructure.Data;
@@ -7,16 +8,19 @@ using MySqlConnector;
 namespace ERP.Infrastructure.Services;
 
 /// <summary>
-/// Konwersja oferty (oferty + ofertypozycje) na proformę FPF (faktury + pozycjefaktury).
+/// Konwersja aoferty (aoferty + apozycjeoferty) na proformę FPF (faktury + pozycjefaktury).
 /// Idempotencja: SELECT Id_faktury FROM faktury WHERE id_oferty=@offerId AND doc_type='FPF' LIMIT 1.
 /// W pozycjefaktury FK do nagłówka: id_faktury.
 /// </summary>
 public class OfferToFpfConversionService : IOfferToFpfConversionService
 {
     private const string FpfSkrot = "FPF";
+    private const string FvzSkrot = "FVZ";
+    private const string FvSkrot = "FV";
 
     private readonly DatabaseContext _context;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IIdGenerator _idGenerator;
     private readonly IDocumentNumberService _documentNumberService;
     private readonly IInvoiceTotalsService _invoiceTotalsService;
     private readonly IOfferRepository _offerRepository;
@@ -25,6 +29,7 @@ public class OfferToFpfConversionService : IOfferToFpfConversionService
     public OfferToFpfConversionService(
         DatabaseContext context,
         IUnitOfWork unitOfWork,
+        IIdGenerator idGenerator,
         IDocumentNumberService documentNumberService,
         IInvoiceTotalsService invoiceTotalsService,
         IOfferRepository offerRepository,
@@ -32,6 +37,7 @@ public class OfferToFpfConversionService : IOfferToFpfConversionService
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+        _idGenerator = idGenerator ?? throw new ArgumentNullException(nameof(idGenerator));
         _documentNumberService = documentNumberService ?? throw new ArgumentNullException(nameof(documentNumberService));
         _invoiceTotalsService = invoiceTotalsService ?? throw new ArgumentNullException(nameof(invoiceTotalsService));
         _offerRepository = offerRepository ?? throw new ArgumentNullException(nameof(offerRepository));
@@ -40,56 +46,87 @@ public class OfferToFpfConversionService : IOfferToFpfConversionService
 
     public async Task<int> CopyOfferToProformaAsync(int offerId, int companyId, int userId, CancellationToken cancellationToken = default)
     {
-        var existingId = await GetExistingFpfIdAsync(offerId, cancellationToken).ConfigureAwait(false);
+        var existingId = await GetExistingInvoiceIdAsync(offerId, FpfSkrot, cancellationToken).ConfigureAwait(false);
         if (existingId.HasValue)
             return existingId.Value;
 
+        return await CopyOfferToInvoiceAsync(offerId, companyId, FpfSkrot, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<int> CopyOfferToInvoiceAsync(int offerId, int companyId, string docType, CancellationToken cancellationToken)
+    {
         var offer = await _offerRepository.GetByIdAsync(offerId, companyId, cancellationToken).ConfigureAwait(false);
         if (offer == null)
             throw new InvalidOperationException($"Oferta o ID {offerId} nie została znaleziona.");
 
         var positions = (await _offerPositionRepository.GetByOfferIdAsync(offerId, cancellationToken).ConfigureAwait(false)).ToList();
-
-        // Sumy z pozycji (netto/VAT/brutto, rabat w %, zaokrąglenia 2 miejsca)
         var (sumNetto, sumVat, sumBrutto) = ComputePositionTotals(positions);
-
-        // data_faktury = dzisiaj; numer FPF miesięczny z doc_counters (docDate = dzisiaj)
-        const string docTypeFpf = "FPF";
         var docDate = DateTime.Today;
         var dataFakturyClarion = (int)(docDate - new DateTime(1800, 12, 28)).TotalDays;
 
         return await _unitOfWork.ExecuteInTransactionAsync(async transaction =>
         {
-            var conn = transaction.Connection ?? throw new InvalidOperationException("Brak połączenia w transakcji.");
-            var (docYear, docMonth, nextNo, docFullNo) = await _documentNumberService.GetNextNumberAsync(companyId, docTypeFpf, docDate, transaction, cancellationToken).ConfigureAwait(false);
-            var invoiceId = await InsertFakturaAsync(conn, transaction, offerId, companyId, offer, docTypeFpf, docYear, docMonth, nextNo, docFullNo, dataFakturyClarion, sumNetto, sumVat, sumBrutto, cancellationToken).ConfigureAwait(false);
+            var conn = (transaction.Connection as MySqlConnection) ?? throw new InvalidOperationException("Brak połączenia MySQL w transakcji.");
+            var (_, _, nextNo, _) = await _documentNumberService.GetNextNumberAsync(companyId, docType, docDate, transaction, cancellationToken).ConfigureAwait(false);
+            var invoiceId = (int)await _idGenerator.GetNextIdAsync("faktury", conn, (MySqlTransaction)transaction, cancellationToken).ConfigureAwait(false);
+            await InsertFakturaAsync(conn, transaction, invoiceId, offerId, companyId, offer, docType, nextNo, dataFakturyClarion, sumNetto, sumVat, sumBrutto, cancellationToken).ConfigureAwait(false);
+            await VerifyRootDocIdAsync(conn, transaction, invoiceId, cancellationToken).ConfigureAwait(false);
             foreach (var pos in positions)
                 await InsertPozycjaFakturyAsync(conn, transaction, invoiceId, offerId, companyId, pos, cancellationToken).ConfigureAwait(false);
             await _invoiceTotalsService.RecalculateTotalsAsync(invoiceId, transaction, cancellationToken).ConfigureAwait(false);
-            await UpdateOfferSumBruttoFromFpfAsync(conn, transaction, offerId, companyId, invoiceId, cancellationToken).ConfigureAwait(false);
+            await UpdateOfferSumBruttoFromInvoiceAsync(conn, transaction, offerId, companyId, invoiceId, cancellationToken).ConfigureAwait(false);
             return invoiceId;
         }, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<(int InvoiceId, bool CreatedNew)> CopyOfferToFpfAsync(int offerId, int companyId, CancellationToken cancellationToken = default)
     {
-        var existingId = await GetExistingFpfIdAsync(offerId, cancellationToken).ConfigureAwait(false);
+        if (offerId <= 0)
+            throw new InvalidOperationException("Brak ID aoferty. Oferta musi być zapisana w bazie przed kopiowaniem do proformy.");
+
+        var existingId = await GetExistingInvoiceIdAsync(offerId, FpfSkrot, cancellationToken).ConfigureAwait(false);
         if (existingId.HasValue)
             return (existingId.Value, false);
 
-        var invoiceId = await CopyOfferToProformaAsync(offerId, companyId, 0, cancellationToken).ConfigureAwait(false);
+        var invoiceId = await CopyOfferToInvoiceAsync(offerId, companyId, FpfSkrot, cancellationToken).ConfigureAwait(false);
         return (invoiceId, true);
     }
 
-    private async Task<int?> GetExistingFpfIdAsync(int offerId, CancellationToken cancellationToken)
+    public async Task<(int InvoiceId, bool CreatedNew)> CopyOfferToFvzAsync(int offerId, int companyId, CancellationToken cancellationToken = default)
+    {
+        if (offerId <= 0)
+            throw new InvalidOperationException("Brak ID aoferty. Oferta musi być zapisana w bazie przed kopiowaniem do faktury zaliczkowej.");
+
+        var existingId = await GetExistingInvoiceIdAsync(offerId, FvzSkrot, cancellationToken).ConfigureAwait(false);
+        if (existingId.HasValue)
+            return (existingId.Value, false);
+
+        var invoiceId = await CopyOfferToInvoiceAsync(offerId, companyId, FvzSkrot, cancellationToken).ConfigureAwait(false);
+        return (invoiceId, true);
+    }
+
+    public async Task<(int InvoiceId, bool CreatedNew)> CopyOfferToFvAsync(int offerId, int companyId, CancellationToken cancellationToken = default)
+    {
+        if (offerId <= 0)
+            throw new InvalidOperationException("Brak ID aoferty. Oferta musi być zapisana w bazie przed kopiowaniem do faktury VAT.");
+
+        var existingId = await GetExistingInvoiceIdAsync(offerId, FvSkrot, cancellationToken).ConfigureAwait(false);
+        if (existingId.HasValue)
+            return (existingId.Value, false);
+
+        var invoiceId = await CopyOfferToInvoiceAsync(offerId, companyId, FvSkrot, cancellationToken).ConfigureAwait(false);
+        return (invoiceId, true);
+    }
+
+    private async Task<int?> GetExistingInvoiceIdAsync(int offerId, string docType, CancellationToken cancellationToken)
     {
         await using var connection = await _context.CreateConnectionAsync();
         var cmd = new MySqlCommand(
-            "SELECT id FROM faktury WHERE id_oferty = @OfferId AND doc_type = @Skrot LIMIT 1",
+            "SELECT id_faktury FROM faktury WHERE id_oferty = @OfferId AND doc_type = @Skrot LIMIT 1",
             connection);
         cmd.Parameters.AddWithValue("@OfferId", offerId);
-        cmd.Parameters.AddWithValue("@Skrot", FpfSkrot);
-        var result = await cmd.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+        cmd.Parameters.AddWithValue("@Skrot", docType);
+        var result = await cmd.ExecuteScalarWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
         if (result == null || result == DBNull.Value) return null;
         return Convert.ToInt32(result);
     }
@@ -145,27 +182,27 @@ public class OfferToFpfConversionService : IOfferToFpfConversionService
         return decimal.TryParse(s, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var rate) ? rate : 0m;
     }
 
-    private static async Task<int> InsertFakturaAsync(MySqlConnection conn, MySqlTransaction transaction, int offerId, int companyId, Offer offer, string docType, int docYear, int docMonth, int docNo, string docFullNo, int dataFakturyClarion, decimal sumNetto, decimal sumVat, decimal sumBrutto, CancellationToken cancellationToken)
+    private static async Task InsertFakturaAsync(MySqlConnection conn, MySqlTransaction transaction, int invoiceId, int offerId, int companyId, Offer offer, string docType, int docNo, int dataFakturyClarion, decimal sumNetto, decimal sumVat, decimal sumBrutto, CancellationToken cancellationToken)
     {
         var empty = "";
         var cmd = new MySqlCommand(
-            "INSERT INTO faktury (id_oferty, source_offer_id, id_firmy, doc_type, doc_year, doc_month, doc_no, doc_full_no, id_faktur_powiazanych, numer_faktury_korygowanej_text, data_sprzedazy, data_faktury_korygowanej, " +
+            "INSERT INTO faktury (id_faktury, id_oferty, parent_doc_id, root_doc_id, id_firmy, doc_type, skrot_nazwa_faktury, id_faktur_powiazanych, numer_faktury_korygowanej_text, data_sprzedazy, data_faktury_korygowanej, " +
             "skrot_kolejne_faktury, firma_nazwa, naglowek1, naglowek2, firma_adres, firma_kod_pocztowy, firma_miejscowosc, firma_panstwo, firma_nip, firma_bank_nazwa, firma_nr_konta, firma_iban, firma_swift_bic, " +
             "id_odbiorca, odbiorca_nazwa, odbiorca_adres, odbiorca_kod_pocztowy, odbiorca_miejscowosc, odbiorca_panstwo, odbiorca_nip, odbiorca_mail, " +
             "waluta, data_faktury, nr_faktury, kwota_netto, stawka_vat, total_vat, kwota_brutto, sum_netto, sum_vat, sum_brutto, uwagi_do_faktury, operator) " +
-            "VALUES (@IdOferty, @SourceOfferId, @IdFirmy, @DocType, @DocYear, @DocMonth, @DocNo, @DocFullNo, 0, '', @DataSprzedazy, @DataFakturyKorygowanej, '', " +
+            "VALUES (@IdFaktury, @IdOferty, @ParentDocId, @RootDocId, @IdFirmy, @DocType, @SkrotNazwaFaktury, @IdFakturPowiazanych, '', @DataSprzedazy, @DataFakturyKorygowanej, '', " +
             "@FirmaNazwa, '', '', '', '', NULL, '', '', '', '', '', '', " +
             "@IdOdbiorca, @OdbiorcaNazwa, @OdbiorcaAdres, @OdbiorcaKodPocztowy, @OdbiorcaMiejscowosc, @OdbiorcaPanstwo, @OdbiorcaNip, @OdbiorcaMail, " +
-            "@Waluta, @DataFaktury, @NrFaktury, @KwotaNetto, @StawkaVat, @TotalVat, @KwotaBrutto, @SumNetto, @SumVat, @SumBrutto, @Uwagi, @Operator); SELECT LAST_INSERT_ID();",
+            "@Waluta, @DataFaktury, @NrFaktury, @KwotaNetto, @StawkaVat, @TotalVat, @KwotaBrutto, @SumNetto, @SumVat, @SumBrutto, @Uwagi, @Operator)",
             conn, transaction);
+        cmd.Parameters.AddWithValue("@IdFaktury", invoiceId);
         cmd.Parameters.AddWithValue("@IdOferty", offerId);
-        cmd.Parameters.AddWithValue("@SourceOfferId", offerId);
+        cmd.Parameters.AddWithValue("@ParentDocId", DBNull.Value);
+        cmd.Parameters.AddWithValue("@RootDocId", invoiceId);
         cmd.Parameters.AddWithValue("@IdFirmy", companyId);
         cmd.Parameters.AddWithValue("@DocType", docType);
-        cmd.Parameters.AddWithValue("@DocYear", docYear);
-        cmd.Parameters.AddWithValue("@DocMonth", docMonth);
-        cmd.Parameters.AddWithValue("@DocNo", docNo);
-        cmd.Parameters.AddWithValue("@DocFullNo", docFullNo);
+        cmd.Parameters.AddWithValue("@SkrotNazwaFaktury", docType);
+        cmd.Parameters.AddWithValue("@IdFakturPowiazanych", 0); // opcjonalne: FK do powiązanych faktur (korekty); nowa FPF = brak powiązań
         cmd.Parameters.AddWithValue("@NrFaktury", docNo);
         cmd.Parameters.AddWithValue("@DataSprzedazy", dataFakturyClarion);
         cmd.Parameters.AddWithValue("@DataFakturyKorygowanej", dataFakturyClarion);
@@ -190,21 +227,39 @@ public class OfferToFpfConversionService : IOfferToFpfConversionService
         cmd.Parameters.AddWithValue("@Uwagi", offer.OfferNotes ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@Operator", offer.Operator ?? empty);
 
-        var result = await cmd.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
-        return Convert.ToInt32(result);
+        await cmd.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    private static async Task InsertPozycjaFakturyAsync(MySqlConnection conn, MySqlTransaction transaction, int invoiceId, int offerId, int companyId, OfferPosition pos, CancellationToken cancellationToken)
+    private static async Task VerifyRootDocIdAsync(MySqlConnection conn, MySqlTransaction transaction, int invoiceId, CancellationToken cancellationToken)
+    {
+        var cmd = new MySqlCommand(
+            "SELECT root_doc_id FROM faktury WHERE id_faktury = @InvoiceId",
+            conn, transaction);
+        cmd.Parameters.AddWithValue("@InvoiceId", invoiceId);
+        var result = await cmd.ExecuteScalarWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
+        if (result == null || result == DBNull.Value)
+        {
+            var logPath = Path.Combine(AppContext.BaseDirectory, "logs", "faktury_root_doc_id_missing.log");
+            Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
+            File.AppendAllText(logPath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] root_doc_id NULL for faktury.id_faktury={invoiceId}\r\n");
+        }
+    }
+
+    private async Task InsertPozycjaFakturyAsync(MySqlConnection conn, MySqlTransaction transaction, int invoiceId, int offerId, int companyId, OfferPosition pos, CancellationToken cancellationToken)
     {
         var ilosc = pos.Ilosc ?? 0m;
         var cenaNetto = pos.CenaNetto ?? 0m;
         var rabat = pos.Discount ?? 0m;
         var (nettoPoz, vatPoz, bruttoPoz) = ComputePositionAmounts(ilosc, cenaNetto, rabat, pos.VatRate);
 
+        var posId = (int)await _idGenerator.GetNextIdAsync("pozycjefaktury", conn, transaction, cancellationToken).ConfigureAwait(false);
+
         var cmd = new MySqlCommand(
-            "INSERT INTO pozycjefaktury (id_firmy, faktura_id, id_faktury, id_oferty, po_korekcie, Nazwa_towaru, Nazwa_towaru_eng, jednostki, ilosc, cena_netto, rabat, stawka_vat, netto_poz, vat_poz, brutto_poz, id_towaru, nr_zespolu, id_pozycji_oferty) " +
-            "VALUES (@IdFirmy, @IdFaktury, @IdFaktury, @IdOferty, 0, @NazwaTowaru, @NazwaTowaruEng, @Jednostki, @Ilosc, @CenaNetto, @Rabat, @StawkaVat, @NettoPoz, @VatPoz, @BruttoPoz, @IdTowaru, @NrZespolu, @IdPozycjiOferty);",
+            "INSERT INTO pozycjefaktury (id, id_pozycji_faktury, id_firmy, faktura_id, id_faktury, id_oferty, po_korekcie, Nazwa_towaru, Nazwa_towaru_eng, jednostki, ilosc, cena_netto, rabat, stawka_vat, netto_poz, vat_poz, brutto_poz, id_towaru, nr_zespolu, id_pozycji_oferty) " +
+            "VALUES (@Id, @IdPozycjiFaktury, @IdFirmy, @IdFaktury, @IdFaktury, @IdOferty, 0, @NazwaTowaru, @NazwaTowaruEng, @Jednostki, @Ilosc, @CenaNetto, @Rabat, @StawkaVat, @NettoPoz, @VatPoz, @BruttoPoz, @IdTowaru, @NrZespolu, @IdPozycjiOferty);",
             conn, transaction);
+        cmd.Parameters.AddWithValue("@Id", posId);
+        cmd.Parameters.AddWithValue("@IdPozycjiFaktury", posId);
         cmd.Parameters.AddWithValue("@IdFirmy", companyId);
         cmd.Parameters.AddWithValue("@IdFaktury", invoiceId);
         cmd.Parameters.AddWithValue("@IdOferty", offerId);
@@ -222,21 +277,21 @@ public class OfferToFpfConversionService : IOfferToFpfConversionService
         cmd.Parameters.AddWithValue("@NrZespolu", pos.GroupNumber ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@IdPozycjiOferty", pos.Id);
 
-        await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await cmd.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>Po utworzeniu FPF: ustaw oferty.sum_brutto = faktury.sum_brutto tej FPF (w tej samej transakcji).</summary>
-    private static async Task UpdateOfferSumBruttoFromFpfAsync(MySqlConnection conn, MySqlTransaction transaction, int offerId, int companyId, int fpfInvoiceId, CancellationToken cancellationToken)
+    /// <summary>Po utworzeniu FPF/FV: ustaw aoferty.sum_brutto = faktury.sum_brutto (w tej samej transakcji).</summary>
+    private static async Task UpdateOfferSumBruttoFromInvoiceAsync(MySqlConnection conn, MySqlTransaction transaction, int offerId, int companyId, int invoiceId, CancellationToken cancellationToken)
     {
         var cmd = new MySqlCommand(
-            "UPDATE oferty o " +
-            "INNER JOIN faktury f ON f.id = @FpfId AND f.id_firmy = @CompanyId " +
+            "UPDATE aoferty o " +
+            "INNER JOIN faktury f ON f.id_faktury = @InvoiceId AND f.id_firmy = @CompanyId " +
             "SET o.sum_brutto = f.sum_brutto " +
-            "WHERE o.id = @OfferId AND o.id_firmy = @CompanyId",
+            "WHERE o.id_oferta = @OfferId AND o.id_firmy = @CompanyId",
             conn, transaction);
         cmd.Parameters.AddWithValue("@OfferId", offerId);
         cmd.Parameters.AddWithValue("@CompanyId", companyId);
-        cmd.Parameters.AddWithValue("@FpfId", fpfInvoiceId);
-        await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        cmd.Parameters.AddWithValue("@InvoiceId", invoiceId);
+        await cmd.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
     }
 }

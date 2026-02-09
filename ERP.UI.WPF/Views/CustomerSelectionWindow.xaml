@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Wybierz odbiorcę" Height="500" Width="700"
+        Title="Wybierz kontrahenta" Height="500" Width="700"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize">
     <Grid Margin="15">
@@ -16,7 +16,7 @@
         </Grid.RowDefinitions>
 
         <!-- Nagłówek -->
-        <TextBlock Grid.Row="0" Text="Wybierz odbiorcę" 
+        <TextBlock Grid.Row="0" Text="Wybierz kontrahenta" 
                    FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
 
         <!-- Pole wyszukiwania -->
@@ -31,13 +31,12 @@
                      Padding="5"/>
         </Grid>
 
-        <!-- Lista odbiorców -->
+        <!-- Lista kontrahentów -->
         <DataGrid Grid.Row="2" 
                   x:Name="CustomersDataGrid"
                   ItemsSource="{Binding}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
-                  GridLinesVisibility="All"
                   HeadersVisibility="Column"
                   SelectionMode="Single"
                   SelectionChanged="CustomersDataGrid_SelectionChanged"
@@ -45,10 +44,11 @@
                   Margin="0,0,0,10">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60"/>
-                <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="*"/>
-                <DataGridTextColumn Header="NIP" Binding="{Binding Nip}" Width="150"/>
-                <DataGridTextColumn Header="Miasto" Binding="{Binding City}" Width="150"/>
-                <DataGridTextColumn Header="Email" Binding="{Binding Email1}" Width="200"/>
+                <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="*"/>
+                <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="200"/>
+                <DataGridTextColumn Header="Telefon" Binding="{Binding Telefon}" Width="150"/>
+                <DataGridTextColumn Header="Miasto" Binding="{Binding Miasto}" Width="150"/>
+                <DataGridTextColumn Header="Waluta" Binding="{Binding Waluta}" Width="80"/>
             </DataGrid.Columns>
         </DataGrid>
 

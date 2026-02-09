@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Logowanie" 
-        Height="300" 
+        Height="380" 
         Width="400"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize">
@@ -11,6 +11,9 @@
     </Window.Resources>
     <Grid Margin="20">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -45,12 +48,30 @@
                    Margin="0,0,0,5"/>
         <PasswordBox Grid.Row="4" 
                      x:Name="PasswordBox"
-                     Margin="0,0,0,20"
+                     Margin="0,0,0,10"
                      Padding="5"
                      FontSize="14"/>
 
+        <!-- Baza danych -->
+        <TextBlock Grid.Row="5" Text="Środowisko bazy:" Margin="0,0,0,5"/>
+        <Grid Grid.Row="6" Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <ComboBox Grid.Column="0" 
+                      ItemsSource="{Binding EnvironmentOptions}"
+                      DisplayMemberPath="DisplayName"
+                      SelectedValuePath="Value"
+                      SelectedValue="{Binding SelectedEnvironment, UpdateSourceTrigger=PropertyChanged}"
+                      Padding="5" FontSize="12" VerticalContentAlignment="Center"/>
+            <Button Grid.Column="1" Content="Test połączenia" 
+                    Command="{Binding TestConnectionCommand}"
+                    Padding="10,5" Margin="10,0,0,0" MinWidth="110"/>
+        </Grid>
+
         <!-- Przyciski -->
-        <StackPanel Grid.Row="5" 
+        <StackPanel Grid.Row="8" 
                     Orientation="Horizontal" 
                     HorizontalAlignment="Right">
             <Button Content="Zaloguj" 
@@ -67,7 +88,7 @@
         </StackPanel>
 
         <!-- Komunikat błędu -->
-        <TextBlock Grid.Row="6" 
+        <TextBlock Grid.Row="9" 
                    Text="{Binding ErrorMessage}" 
                    Foreground="Red" 
                    TextWrapping="Wrap"

@@ -1,6 +1,8 @@
 using ERP.Application.DTOs;
 using ERP.Application.Repositories;
 using ERP.Infrastructure.Data;
+using ERP.Application.Services;
+using ERP.Infrastructure.Services;
 using MySqlConnector;
 
 namespace ERP.Infrastructure.Repositories;
@@ -11,10 +13,22 @@ namespace ERP.Infrastructure.Repositories;
 public class OrderPositionMainRepository : IOrderPositionMainRepository
 {
     private readonly DatabaseContext _context;
+    private readonly IIdGenerator _idGenerator;
+    private readonly IUserContext _userContext;
 
-    public OrderPositionMainRepository(DatabaseContext context)
+    public OrderPositionMainRepository(DatabaseContext context, IIdGenerator idGenerator, IUserContext userContext)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
+        _idGenerator = idGenerator ?? throw new ArgumentNullException(nameof(idGenerator));
+        _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
+    }
+
+    private int GetCurrentCompanyId()
+    {
+        var companyId = _userContext.CompanyId;
+        if (!companyId.HasValue)
+            throw new InvalidOperationException("Brak wybranej firmy. Użytkownik musi być zalogowany i wybrać firmę.");
+        return companyId.Value;
     }
 
     public async Task<OrderPositionMainDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -25,7 +39,7 @@ public class OrderPositionMainRepository : IOrderPositionMainRepository
             connection);
         command.Parameters.AddWithValue("@Id", id);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
         {
             return MapToDto(reader);
@@ -42,7 +56,7 @@ public class OrderPositionMainRepository : IOrderPositionMainRepository
             "SELECT * FROM pozycjezamowienia ORDER BY id_zamowienia, id_pozycji_zamowienia",
             connection);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             positions.Add(MapToDto(reader));
@@ -61,11 +75,14 @@ public class OrderPositionMainRepository : IOrderPositionMainRepository
             // Połączenie przez zam.id_zamowienia = pozzam.id_zamowienia
             // Używamy id_zamowienia zgodnie ze strukturą bazy danych
             var command = new MySqlCommand(
-                "SELECT * FROM pozycjezamowienia WHERE id_zamowienia = @OrderId",
+                "SELECT p.* FROM pozycjezamowienia_V p " +
+                "WHERE COALESCE(p.company_id, p.id_firmy) = @CompanyId AND p.id_zamowienia = @OrderId " +
+                "ORDER BY COALESCE(p.id, p.id_pozycji_zamowienia)",
                 connection);
+            command.Parameters.AddWithValue("@CompanyId", GetCurrentCompanyId());
             command.Parameters.AddWithValue("@OrderId", orderId);
 
-            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
             
             while (await reader.ReadAsync(cancellationToken))
             {
@@ -102,13 +119,13 @@ public class OrderPositionMainRepository : IOrderPositionMainRepository
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
             "SELECT p.id_zamowienia FROM pozycjezamowienia p " +
-            "INNER JOIN ofertypozycje a ON a.id = p.id_pozycji_pozycji_oferty AND a.id_firmy = @CompanyId " +
+            "INNER JOIN apozycjeoferty a ON a.id_pozycja_oferty = p.id_pozycji_pozycji_oferty AND a.id_firmy = @CompanyId " +
             "WHERE a.oferta_id = @OfferId AND p.id_firmy = @CompanyId " +
             "LIMIT 1",
             connection);
         command.Parameters.AddWithValue("@OfferId", offerId);
         command.Parameters.AddWithValue("@CompanyId", companyId);
-        var result = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+        var result = await command.ExecuteScalarWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
         if (result == null || result == DBNull.Value) return null;
         return Convert.ToInt32(result);
     }
@@ -116,21 +133,25 @@ public class OrderPositionMainRepository : IOrderPositionMainRepository
     public async Task<int> AddAsync(OrderPositionMainDto position, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        var newId = await _idGenerator.GetNextIdAsync("pozycjezamowienia", connection, transaction, cancellationToken);
+
         var command = new MySqlCommand(
-            "INSERT INTO pozycjezamowienia (id_firmy, id_zamowienia, id_towaru, data_dostawy_pozycji, " +
+            "INSERT INTO pozycjezamowienia (id_pozycji_zamowienia, id_firmy, id_zamowienia, id_towaru, data_dostawy_pozycji, " +
             "towar_nazwa_draco, towar, towar_nazwa_ENG, jednostki_zamawiane, ilosc_zamawiana, ilosc_dostarczona, " +
             "cena_zamawiana, status_towaru, jednostki_zakupu, ilosc_zakupu, cena_zakupu, wartsc_zakupu, " +
             "cena_zakupu_pln, przelicznik_m_kg, cena_zakupu_PLN_nowe_jednostki, uwagi, dostawca_pozycji, " +
             "stawka_vat, ciezar_jednostkowy, ilosc_w_opakowaniu, id_zamowienia_hala, id_pozycji_pozycji_oferty, " +
             "zaznacz_do_kopiowania, skopiowano_do_magazynu, dlugosc) " +
-            "VALUES (@CompanyId, @OrderId, @ProductId, @DeliveryDateInt, @ProductNameDraco, @Product, " +
+            "VALUES (@Id, @CompanyId, @OrderId, @ProductId, @DeliveryDateInt, @ProductNameDraco, @Product, " +
             "@ProductNameEng, @OrderUnit, @OrderQuantity, @DeliveredQuantity, @OrderPrice, @ProductStatus, " +
             "@PurchaseUnit, @PurchaseQuantity, @PurchasePrice, @PurchaseValue, @PurchasePricePln, " +
             "@ConversionFactor, @PurchasePricePlnNewUnit, @Notes, @Supplier, @VatRate, @UnitWeight, " +
-            "@QuantityInPackage, @OrderHalaId, @OfferPositionId, @MarkForCopying, @CopiedToWarehouse, @Length); " +
-            "SELECT LAST_INSERT_ID();",
-            connection);
+            "@QuantityInPackage, @OrderHalaId, @OfferPositionId, @MarkForCopying, @CopiedToWarehouse, @Length)",
+            connection, transaction);
 
+        command.Parameters.AddWithValue("@Id", newId);
         command.Parameters.AddWithValue("@CompanyId", position.CompanyId);
         command.Parameters.AddWithValue("@OrderId", position.OrderId);
         command.Parameters.AddWithValue("@ProductId", position.ProductId ?? (object)DBNull.Value);
@@ -161,8 +182,9 @@ public class OrderPositionMainRepository : IOrderPositionMainRepository
         command.Parameters.AddWithValue("@CopiedToWarehouse", position.CopiedToWarehouse ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@Length", position.Length ?? (object)DBNull.Value);
 
-        var result = await command.ExecuteScalarAsync(cancellationToken);
-        return Convert.ToInt32(result);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return (int)newId;
     }
 
     public async Task UpdateAsync(OrderPositionMainDto position, CancellationToken cancellationToken = default)
@@ -216,7 +238,7 @@ public class OrderPositionMainRepository : IOrderPositionMainRepository
         command.Parameters.AddWithValue("@CopiedToWarehouse", position.CopiedToWarehouse ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@Length", position.Length ?? (object)DBNull.Value);
 
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
     }
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
@@ -226,7 +248,7 @@ public class OrderPositionMainRepository : IOrderPositionMainRepository
             "DELETE FROM pozycjezamowienia WHERE id_pozycji_zamowienia = @Id",
             connection);
         command.Parameters.AddWithValue("@Id", id);
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
     }
 
     private static OrderPositionMainDto MapToDto(MySqlDataReader reader)
@@ -263,7 +285,7 @@ public class OrderPositionMainRepository : IOrderPositionMainRepository
         }
 
         var idCol = FindColumn(availableColumns, "id_pozycji_zamowienia", "id", "ID_pozycji_zamowienia", "ID");
-        var companyIdCol = FindColumn(availableColumns, "id_firmy", "ID_firmy");
+        var companyIdCol = FindColumn(availableColumns, "company_id", "id_firmy", "ID_firmy");
         var orderIdCol = FindColumn(availableColumns, "id_zamowienia", "ID_zamowienia");
         var productIdCol = FindColumn(availableColumns, "id_towaru", "ID_towaru");
         var deliveryDateCol = FindColumn(availableColumns, "data_dostawy_pozycji", "DATA_dostawy_pozycji");

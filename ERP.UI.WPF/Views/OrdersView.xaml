@@ -100,34 +100,20 @@
         <!-- Browse Zamówień -->
         <DataGrid Grid.Row="2" 
                   ItemsSource="{Binding Orders}"
-                  SelectedItem="{Binding SelectedOrder}"
+                  SelectedItem="{Binding SelectedOrder, Mode=TwoWay}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
-                  GridLinesVisibility="All"
                   HeadersVisibility="Column"
+                  ColumnHeaderStyle="{StaticResource FakturyOrangeColumnHeaderStyle}"
+                  AlternationCount="2"
                   Margin="0,0,0,10">
             <DataGrid.RowStyle>
-                <Style TargetType="DataGridRow">
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding Status}" Value="1">
-                            <Setter Property="Background" Value="#FFA500"/>
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding Status}" Value="2">
-                            <Setter Property="Background" Value="#FFFF00"/>
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding Status}" Value="3">
-                            <Setter Property="Background" Value="#00FF00"/>
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding Status}" Value="4">
-                            <Setter Property="Background" Value="#00FF00"/>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
+                <Style TargetType="DataGridRow" BasedOn="{StaticResource ErpDataGridRowStyle}"/>
             </DataGrid.RowStyle>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60"/>
                 <DataGridTextColumn Header="Data" Binding="{Binding OrderDate, StringFormat='{}{0:yyyy-MM-dd}'}" Width="100"/>
-                <DataGridTextColumn Header="Dostawca" Binding="{Binding SupplierName}" Width="150"/>
+                <DataGridTextColumn Header="Kontrahent" Binding="{Binding SupplierName}" Width="150"/>
                 <DataGridTextColumn Header="Nazwa" Binding="{Binding ProductNameDraco}" Width="200"/>
                 <DataGridTextColumn Header="Jednostki" Binding="{Binding SalesUnit}" Width="100"/>
                 <DataGridTextColumn Header="Ilość" Binding="{Binding Quantity, StringFormat='{}{0:N2}'}" Width="80"/>

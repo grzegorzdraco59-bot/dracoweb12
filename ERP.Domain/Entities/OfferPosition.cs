@@ -1,7 +1,7 @@
 namespace ERP.Domain.Entities;
 
 /// <summary>
-/// Encja domenowa reprezentująca pozycję oferty
+/// Encja domenowa reprezentująca pozycję oferty (tabela apozycjeoferty, PK: id_pozycja_oferty)
 /// </summary>
 public class OfferPosition : BaseEntity
 {

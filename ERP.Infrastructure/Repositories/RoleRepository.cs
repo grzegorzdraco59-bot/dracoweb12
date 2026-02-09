@@ -25,7 +25,7 @@ public class RoleRepository : IRoleRepository
             connection);
         command.Parameters.AddWithValue("@Id", id);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
         {
             return MapToRole(reader);
@@ -42,7 +42,7 @@ public class RoleRepository : IRoleRepository
             "SELECT id_roli, nazwa FROM rola ORDER BY nazwa",
             connection);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             roles.Add(MapToRole(reader));
@@ -60,8 +60,8 @@ public class RoleRepository : IRoleRepository
             connection);
 
         command.Parameters.AddWithValue("@Name", role.Name);
-        var result = await command.ExecuteScalarAsync(cancellationToken);
-        return Convert.ToInt32(result);
+        var newId = await command.ExecuteInsertAndGetIdAsync(cancellationToken);
+        return (int)newId;
     }
 
     public async Task UpdateAsync(Role role, CancellationToken cancellationToken = default)
@@ -74,7 +74,7 @@ public class RoleRepository : IRoleRepository
         command.Parameters.AddWithValue("@Id", role.Id);
         command.Parameters.AddWithValue("@Name", role.Name);
 
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
     }
 
     public async Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default)
@@ -82,7 +82,7 @@ public class RoleRepository : IRoleRepository
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand("SELECT COUNT(1) FROM rola WHERE id_roli = @Id", connection);
         command.Parameters.AddWithValue("@Id", id);
-        var result = await command.ExecuteScalarAsync(cancellationToken);
+        var result = await command.ExecuteScalarWithDiagnosticsAsync(cancellationToken);
         return Convert.ToInt32(result) > 0;
     }
 

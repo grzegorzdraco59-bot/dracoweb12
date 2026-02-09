@@ -35,8 +35,8 @@ public class MainController : BaseController
         {
             1 => RedirectToAction("Index", "Offers"), // Oferty
             5 => RedirectToAction("Index", "Invoices"), // Faktury
-            8 => RedirectToAction("Index", "Suppliers"), // Dostawcy
-            9 => RedirectToAction("Index", "Customers"), // Odbiorcy
+            8 => RedirectToAction("Index", "Kontrahenci"), // Kontrahenci
+            9 => RedirectToAction("Index", "Kontrahenci"), // Kontrahenci
             10 => RedirectToAction("Index", "Products"), // Towary
             11 => RedirectToAction("Index", "Orders"), // Zamówienia
             13 => RedirectToAction("Index", "OrdersHala"), // zamowienia hala

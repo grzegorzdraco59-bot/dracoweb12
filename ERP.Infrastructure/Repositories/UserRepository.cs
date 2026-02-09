@@ -19,19 +19,32 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand(
-            "SELECT id_operatora, id_firmy, imie_nazwisko, uprawnienia, senderEmail, senderUserName, " +
-            "senderEmailServer, senderEmailPassword, messageText, ccAdresse " +
-            "FROM operator WHERE id_operatora = @Id",
-            connection);
-        command.Parameters.AddWithValue("@Id", id);
+        if (id <= 0)
+            return null;
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var connection = await _context.CreateConnectionAsync();
+        const string sql = """
+            SELECT
+              id,
+              id_firmy,
+              imie_nazwisko,
+              uprawnienia,
+              senderEmail,
+              senderUserName,
+              senderEmailServer,
+              senderEmailPassword,
+              messageText,
+              ccAdresse
+            FROM `operator`
+            WHERE id = @id
+            LIMIT 1
+            """;
+        using var command = new MySqlCommand(sql, connection);
+        command.Parameters.Add("@id", MySqlDbType.Int32).Value = id;
+
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
-        {
             return MapToUser(reader);
-        }
 
         return null;
     }
@@ -39,14 +52,14 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByFullNameAsync(string fullName, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand(
-            "SELECT id_operatora, id_firmy, imie_nazwisko, uprawnienia, senderEmail, senderUserName, " +
+        using var command = new MySqlCommand(
+            "SELECT id, id_firmy, imie_nazwisko, uprawnienia, senderEmail, senderUserName, " +
             "senderEmailServer, senderEmailPassword, messageText, ccAdresse " +
-            "FROM operator WHERE imie_nazwisko = @FullName LIMIT 1",
+            "FROM `operator` WHERE imie_nazwisko = @FullName LIMIT 1",
             connection);
         command.Parameters.AddWithValue("@FullName", fullName);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
         {
             return MapToUser(reader);
@@ -59,13 +72,13 @@ public class UserRepository : IUserRepository
     {
         var users = new List<User>();
         await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand(
-            "SELECT id_operatora, id_firmy, imie_nazwisko, uprawnienia, senderEmail, senderUserName, " +
+        using var command = new MySqlCommand(
+            "SELECT id, id_firmy, imie_nazwisko, uprawnienia, senderEmail, senderUserName, " +
             "senderEmailServer, senderEmailPassword, messageText, ccAdresse " +
-            "FROM operator ORDER BY imie_nazwisko",
+            "FROM `operator` ORDER BY imie_nazwisko",
             connection);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             users.Add(MapToUser(reader));
@@ -78,14 +91,14 @@ public class UserRepository : IUserRepository
     {
         var users = new List<User>();
         await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand(
-            "SELECT id_operatora, id_firmy, imie_nazwisko, uprawnienia, senderEmail, senderUserName, " +
+        using var command = new MySqlCommand(
+            "SELECT id, id_firmy, imie_nazwisko, uprawnienia, senderEmail, senderUserName, " +
             "senderEmailServer, senderEmailPassword, messageText, ccAdresse " +
-            "FROM operator WHERE id_firmy = @CompanyId ORDER BY imie_nazwisko",
+            "FROM `operator` WHERE id_firmy = @CompanyId ORDER BY imie_nazwisko",
             connection);
         command.Parameters.AddWithValue("@CompanyId", companyId);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             users.Add(MapToUser(reader));
@@ -97,8 +110,8 @@ public class UserRepository : IUserRepository
     public async Task<int> AddAsync(User user, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand(
-            "INSERT INTO operator (id_firmy, imie_nazwisko, uprawnienia, senderEmail, senderUserName, " +
+        using var command = new MySqlCommand(
+            "INSERT INTO `operator` (id_firmy, imie_nazwisko, uprawnienia, senderEmail, senderUserName, " +
             "senderEmailServer, senderEmailPassword, messageText, ccAdresse) " +
             "VALUES (@CompanyId, @FullName, @Permissions, @SenderEmail, @SenderUserName, " +
             "@SenderEmailServer, @SenderEmailPassword, @MessageText, @CcAddress); " +
@@ -106,58 +119,82 @@ public class UserRepository : IUserRepository
             connection);
 
         AddUserParameters(command, user);
-        var result = await command.ExecuteScalarAsync(cancellationToken);
-        return Convert.ToInt32(result);
+        var newId = await command.ExecuteInsertAndGetIdAsync(cancellationToken);
+        if (newId == 0)
+            throw new InvalidOperationException("Nie udało się pobrać ID nowo utworzonego rekordu operator.");
+        return (int)newId;
     }
 
     public async Task UpdateAsync(User user, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand(
-            "UPDATE operator SET id_firmy = @CompanyId, imie_nazwisko = @FullName, uprawnienia = @Permissions, " +
+        using var command = new MySqlCommand(
+            "UPDATE `operator` SET id_firmy = @CompanyId, imie_nazwisko = @FullName, uprawnienia = @Permissions, " +
             "senderEmail = @SenderEmail, senderUserName = @SenderUserName, senderEmailServer = @SenderEmailServer, " +
             "senderEmailPassword = @SenderEmailPassword, messageText = @MessageText, ccAdresse = @CcAddress " +
-            "WHERE id_operatora = @Id",
+            "WHERE id = @id",
             connection);
 
-        command.Parameters.AddWithValue("@Id", user.Id);
+        command.Parameters.Add("@id", MySqlDbType.Int32).Value = user.Id;
         AddUserParameters(command, user);
 
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
     }
 
     public async Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default)
     {
+        if (id <= 0)
+            return false;
+
         await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand("SELECT COUNT(1) FROM operator WHERE id_operatora = @Id", connection);
-        command.Parameters.AddWithValue("@Id", id);
-        var result = await command.ExecuteScalarAsync(cancellationToken);
-        return Convert.ToInt32(result) > 0;
+        using var command = new MySqlCommand("SELECT COUNT(1) FROM `operator` WHERE id = @id", connection);
+        command.Parameters.Add("@id", MySqlDbType.Int32).Value = id;
+        var result = await command.ExecuteScalarWithDiagnosticsAsync(cancellationToken);
+        return result != null && result != DBNull.Value && Convert.ToInt32(result) > 0;
     }
 
     private static User MapToUser(MySqlDataReader reader)
     {
-        // Używamy refleksji do ustawienia Id i innych właściwości
-        var id = reader.GetInt32(reader.GetOrdinal("id_operatora"));
-        var companyId = reader.GetInt32(reader.GetOrdinal("id_firmy"));
-        var fullName = reader.GetString(reader.GetOrdinal("imie_nazwisko"));
-        var permissions = reader.GetInt32(reader.GetOrdinal("uprawnienia"));
-        
-        var senderEmail = reader.IsDBNull(reader.GetOrdinal("senderEmail")) ? string.Empty : reader.GetString(reader.GetOrdinal("senderEmail"));
-        var senderUserName = reader.IsDBNull(reader.GetOrdinal("senderUserName")) ? string.Empty : reader.GetString(reader.GetOrdinal("senderUserName"));
-        var senderEmailServer = reader.IsDBNull(reader.GetOrdinal("senderEmailServer")) ? string.Empty : reader.GetString(reader.GetOrdinal("senderEmailServer"));
-        var senderEmailPassword = reader.IsDBNull(reader.GetOrdinal("senderEmailPassword")) ? string.Empty : reader.GetString(reader.GetOrdinal("senderEmailPassword"));
-        var messageText = reader.IsDBNull(reader.GetOrdinal("messageText")) ? string.Empty : reader.GetString(reader.GetOrdinal("messageText"));
-        var ccAddress = reader.IsDBNull(reader.GetOrdinal("ccAdresse")) ? string.Empty : reader.GetString(reader.GetOrdinal("ccAdresse"));
+        var idOrd = reader.GetOrdinal("id");
+        var id = reader.GetInt32(idOrd);
+        var companyId = SafeGetInt32(reader, "id_firmy", 0);
+        var fullName = SafeGetString(reader, "imie_nazwisko", string.Empty);
+        var permissions = SafeGetInt32(reader, "uprawnienia", 0);
 
-        var user = new User(companyId, fullName, permissions);
+        var senderEmail = SafeGetString(reader, "senderEmail", string.Empty);
+        var senderUserName = SafeGetString(reader, "senderUserName", string.Empty);
+        var senderEmailServer = SafeGetString(reader, "senderEmailServer", string.Empty);
+        var senderEmailPassword = SafeGetString(reader, "senderEmailPassword", string.Empty);
+        var messageText = SafeGetString(reader, "messageText", string.Empty);
+        var ccAddress = SafeGetString(reader, "ccAdresse", string.Empty);
+
+        var user = new User(companyId, fullName ?? string.Empty, permissions);
         user.UpdateEmailSettings(senderEmail, senderUserName, senderEmailServer, senderEmailPassword);
-        
-        // Ustawiamy Id używając refleksji
+
         var idProperty = typeof(BaseEntity).GetProperty("Id", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
         idProperty.SetValue(user, id);
 
         return user;
+    }
+
+    private static int SafeGetInt32(MySqlDataReader reader, string column, int defaultValue)
+    {
+        try
+        {
+            var ord = reader.GetOrdinal(column);
+            return reader.IsDBNull(ord) ? defaultValue : reader.GetInt32(ord);
+        }
+        catch { return defaultValue; }
+    }
+
+    private static string SafeGetString(MySqlDataReader reader, string column, string defaultValue)
+    {
+        try
+        {
+            var ord = reader.GetOrdinal(column);
+            return reader.IsDBNull(ord) ? defaultValue : (reader.GetString(ord) ?? defaultValue);
+        }
+        catch { return defaultValue; }
     }
 
     private static void AddUserParameters(MySqlCommand command, User user)

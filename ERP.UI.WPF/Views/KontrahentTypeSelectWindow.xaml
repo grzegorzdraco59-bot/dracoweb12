@@ -1,0 +1,25 @@
+<Window x:Class="ERP.UI.WPF.Views.KontrahentTypeSelectWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Wybór typu kontrahenta" Height="200" Width="360"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Wybierz typ kontrahenta:" FontWeight="Bold" Margin="0,0,0,10"/>
+
+        <ComboBox Grid.Row="1" x:Name="TypeCombo" SelectedIndex="0" Margin="0,0,0,12" Padding="4">
+            <ComboBoxItem Content="Kontrahent"/>
+        </ComboBox>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="OK" Width="90" Margin="0,0,8,0" Click="OkButton_Click"/>
+            <Button Content="Anuluj" Width="90" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

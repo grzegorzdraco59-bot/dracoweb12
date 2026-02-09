@@ -1,4 +1,5 @@
 using ERP.Application.Repositories;
+using ERP.Infrastructure.Data;
 using ERP.Application.Services;
 using ERP.Domain.Entities;
 using ERP.Domain.Enums;
@@ -16,17 +17,20 @@ namespace ERP.Infrastructure.Services;
 public class OrderFromOfferConversionService : IOrderFromOfferConversionService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IIdGenerator _idGenerator;
     private readonly IOfferRepository _offerRepository;
     private readonly IOfferPositionRepository _offerPositionRepository;
     private readonly IOrderPositionMainRepository _orderPositionRepository;
 
     public OrderFromOfferConversionService(
         IUnitOfWork unitOfWork,
+        IIdGenerator idGenerator,
         IOfferRepository offerRepository,
         IOfferPositionRepository offerPositionRepository,
         IOrderPositionMainRepository orderPositionRepository)
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+        _idGenerator = idGenerator ?? throw new ArgumentNullException(nameof(idGenerator));
         _offerRepository = offerRepository ?? throw new ArgumentNullException(nameof(offerRepository));
         _offerPositionRepository = offerPositionRepository ?? throw new ArgumentNullException(nameof(offerPositionRepository));
         _orderPositionRepository = orderPositionRepository ?? throw new ArgumentNullException(nameof(orderPositionRepository));
@@ -50,22 +54,24 @@ public class OrderFromOfferConversionService : IOrderFromOfferConversionService
 
         return await _unitOfWork.ExecuteInTransactionAsync(async transaction =>
         {
-            var conn = transaction.Connection ?? throw new InvalidOperationException("Brak połączenia w transakcji.");
-            var newOrderId = await InsertOrderAsync(conn, transaction, offer, cancellationToken).ConfigureAwait(false);
+            var conn = (transaction.Connection as MySqlConnection) ?? throw new InvalidOperationException("Brak połączenia MySQL w transakcji.");
+            var mysqlTransaction = (MySqlTransaction)transaction;
+            var newOrderId = (int)await _idGenerator.GetNextIdAsync("zamowienia", conn, mysqlTransaction, cancellationToken).ConfigureAwait(false);
+            await InsertOrderAsync(conn, mysqlTransaction, newOrderId, offer, cancellationToken).ConfigureAwait(false);
             foreach (var pos in positions)
-                await InsertOrderPositionAsync(conn, transaction, newOrderId, companyId, pos, cancellationToken).ConfigureAwait(false);
+                await InsertOrderPositionAsync(conn, mysqlTransaction, newOrderId, companyId, pos, cancellationToken).ConfigureAwait(false);
             return newOrderId;
         }, cancellationToken).ConfigureAwait(false);
     }
 
-    private static async Task<int> InsertOrderAsync(MySqlConnection conn, MySqlTransaction transaction, Offer offer, CancellationToken cancellationToken)
+    private static async Task InsertOrderAsync(MySqlConnection conn, MySqlTransaction transaction, int orderId, Offer offer, CancellationToken cancellationToken)
     {
         int? orderDateInt = offer.OfferDate; // Clarion format (już int w encji)
         var cmd = new MySqlCommand(
-            "INSERT INTO zamowienia (id_firmy, nr_zamowienia, data_zamowienia, id_dostawcy, dostawca, uwagi, status) " +
-            "VALUES (@CompanyId, @OrderNumber, @OrderDateInt, @SupplierId, @SupplierName, @Notes, @Status); " +
-            "SELECT LAST_INSERT_ID();",
+            "INSERT INTO zamowienia (id_zamowienia, id_firmy, nr_zamowienia, data_zamowienia, id_dostawcy, dostawca, uwagi, status) " +
+            "VALUES (@OrderId, @CompanyId, @OrderNumber, @OrderDateInt, @SupplierId, @SupplierName, @Notes, @Status);",
             conn, transaction);
+        cmd.Parameters.AddWithValue("@OrderId", orderId);
         cmd.Parameters.AddWithValue("@CompanyId", offer.CompanyId);
         cmd.Parameters.AddWithValue("@OrderNumber", offer.OfferNumber ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@OrderDateInt", orderDateInt ?? (object)DBNull.Value);
@@ -74,26 +80,28 @@ public class OrderFromOfferConversionService : IOrderFromOfferConversionService
         cmd.Parameters.AddWithValue("@Notes", offer.OfferNotes ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@Status", OrderStatusMapping.ToDb(OrderStatus.Draft));
 
-        var result = await cmd.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
-        return Convert.ToInt32(result);
+        await cmd.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    private static async Task InsertOrderPositionAsync(MySqlConnection conn, MySqlTransaction transaction, int orderId, int companyId, OfferPosition pos, CancellationToken cancellationToken)
+    private async Task InsertOrderPositionAsync(MySqlConnection conn, MySqlTransaction transaction, int orderId, int companyId, OfferPosition pos, CancellationToken cancellationToken)
     {
+        var posId = (int)await _idGenerator.GetNextIdAsync("pozycjezamowienia", conn, transaction, cancellationToken).ConfigureAwait(false);
+
         var cmd = new MySqlCommand(
-            "INSERT INTO pozycjezamowienia (id_firmy, id_zamowienia, id_towaru, data_dostawy_pozycji, " +
+            "INSERT INTO pozycjezamowienia (id_pozycji_zamowienia, id_firmy, id_zamowienia, id_towaru, data_dostawy_pozycji, " +
             "towar_nazwa_draco, towar, towar_nazwa_ENG, jednostki_zamawiane, ilosc_zamawiana, ilosc_dostarczona, " +
             "cena_zamawiana, status_towaru, jednostki_zakupu, ilosc_zakupu, cena_zakupu, wartsc_zakupu, " +
             "cena_zakupu_pln, przelicznik_m_kg, cena_zakupu_PLN_nowe_jednostki, uwagi, dostawca_pozycji, " +
             "stawka_vat, ciezar_jednostkowy, ilosc_w_opakowaniu, id_zamowienia_hala, id_pozycji_pozycji_oferty, " +
             "zaznacz_do_kopiowania, skopiowano_do_magazynu, dlugosc) " +
-            "VALUES (@CompanyId, @OrderId, @ProductId, @DeliveryDateInt, @ProductNameDraco, @Product, " +
+            "VALUES (@PosId, @CompanyId, @OrderId, @ProductId, @DeliveryDateInt, @ProductNameDraco, @Product, " +
             "@ProductNameEng, @OrderUnit, @OrderQuantity, @DeliveredQuantity, @OrderPrice, @ProductStatus, " +
             "@PurchaseUnit, @PurchaseQuantity, @PurchasePrice, @PurchaseValue, @PurchasePricePln, " +
             "@ConversionFactor, @PurchasePricePlnNewUnit, @Notes, @Supplier, @VatRate, @UnitWeight, " +
             "@QuantityInPackage, @OrderHalaId, @OfferPositionId, @MarkForCopying, @CopiedToWarehouse, @Length);",
             conn, transaction);
 
+        cmd.Parameters.AddWithValue("@PosId", posId);
         cmd.Parameters.AddWithValue("@CompanyId", companyId);
         cmd.Parameters.AddWithValue("@OrderId", orderId);
         cmd.Parameters.AddWithValue("@ProductId", pos.ProductId ?? (object)DBNull.Value);
@@ -124,6 +132,6 @@ public class OrderFromOfferConversionService : IOrderFromOfferConversionService
         cmd.Parameters.AddWithValue("@CopiedToWarehouse", (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@Length", (object)DBNull.Value);
 
-        await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await cmd.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
     }
 }

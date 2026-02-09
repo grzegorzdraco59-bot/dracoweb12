@@ -34,7 +34,7 @@ ORDER BY t.TABLE_NAME;
 -- Poniżej znajdują się przykładowe zapytania dla głównych tabel
 -- Możesz je uruchomić osobno lub zmodyfikować dla innych tabel
 
--- Przykład dla tabeli operator (jeśli potrzebujesz):
+-- Przykład dla tabeli operator (locbd.operator ma id, localbddraco ma id_operatora):
 /*
 SELECT 
     'operator' AS tabela,
@@ -43,7 +43,7 @@ FROM localbddraco.operator src
 WHERE NOT EXISTS (
     SELECT 1 
     FROM locbd.operator dest 
-    WHERE dest.id_operatora = src.id_operatora
+    WHERE dest.id = src.id_operatora
 );
 */
 
@@ -55,36 +55,36 @@ WHERE NOT EXISTS (
 -- UWAGA: Poniższe zapytania są przykładami. 
 -- Dla pełnej automatycznej synchronizacji użyj skryptu 015_SyncAllTablesFromLocalbddraco.sql
 
--- Przykład synchronizacji dla tabeli operator:
+-- Przykład synchronizacji dla tabeli operator (locbd.operator.id AUTO_INCREMENT):
 /*
 INSERT INTO locbd.operator (
-    id_operatora, id_firmy, imie_nazwisko, uprawnienia,
+    id_firmy, imie_nazwisko, uprawnienia,
     senderEmail, senderUserName, senderEmailServer, 
     senderEmailPassword, messageText, ccAdresse
 )
 SELECT 
-    src.id_operatora, src.id_firmy, src.imie_nazwisko, src.uprawnienia,
+    src.id_firmy, src.imie_nazwisko, src.uprawnienia,
     src.senderEmail, src.senderUserName, src.senderEmailServer,
     src.senderEmailPassword, src.messageText, src.ccAdresse
 FROM localbddraco.operator src
 WHERE NOT EXISTS (
     SELECT 1 
     FROM locbd.operator dest 
-    WHERE dest.id_operatora = src.id_operatora
+    WHERE dest.id = src.id_operatora
 );
 */
 
--- Przykład synchronizacji dla tabeli Odbiorcy:
+-- Przykład synchronizacji dla tabeli Odbiorcy (po migracji PK: id):
 /*
 INSERT INTO locbd.Odbiorcy (
-    ID_odbiorcy, id_firmy, Nazwa, Nazwisko, Imie, Uwagi,
+    id, id_firmy, Nazwa, Nazwisko, Imie, Uwagi,
     Tel_1, Tel_2, NIP, Ulica_nr, Kod_pocztowy, Miasto, Kraj,
     Ulica_nr_wysylka, Kod_pocztowy_wysylka, Miasto_wysylka, Kraj_wysylka,
     Email_1, Email_2, kod, status, waluta, odbiorca_typ,
     do_oferty, status_vat, regon, adres_caly
 )
 SELECT 
-    src.ID_odbiorcy, src.id_firmy, src.Nazwa, src.Nazwisko, src.Imie, src.Uwagi,
+    src.id, src.id_firmy, src.Nazwa, src.Nazwisko, src.Imie, src.Uwagi,
     src.Tel_1, src.Tel_2, src.NIP, src.Ulica_nr, src.Kod_pocztowy, src.Miasto, src.Kraj,
     src.Ulica_nr_wysylka, src.Kod_pocztowy_wysylka, src.Miasto_wysylka, src.Kraj_wysylka,
     src.Email_1, src.Email_2, src.kod, src.status, src.waluta, src.odbiorca_typ,
@@ -93,6 +93,6 @@ FROM localbddraco.Odbiorcy src
 WHERE NOT EXISTS (
     SELECT 1 
     FROM locbd.Odbiorcy dest 
-    WHERE dest.ID_odbiorcy = src.ID_odbiorcy
+    WHERE dest.id = src.id
 );
 */

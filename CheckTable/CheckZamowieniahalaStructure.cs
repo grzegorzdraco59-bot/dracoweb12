@@ -34,7 +34,7 @@ try
     await reader.CloseAsync();
     
     // Sprawdź przykładowe dane
-    var sampleCommand = new MySqlCommand("SELECT * FROM zamowieniahala LIMIT 3", connection);
+    var sampleCommand = new MySqlCommand("SELECT * FROM zamowieniahala_v LIMIT 3", connection);
     using var sampleReader = await sampleCommand.ExecuteReaderAsync();
     
     if (sampleReader.HasRows)

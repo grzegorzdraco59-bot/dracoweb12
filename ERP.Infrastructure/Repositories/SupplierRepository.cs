@@ -7,7 +7,7 @@ using MySqlConnector;
 namespace ERP.Infrastructure.Repositories;
 
 /// <summary>
-/// Implementacja repozytorium Dostawcy (Supplier) używająca MySqlConnector
+/// Implementacja repozytorium kontrahentów (Supplier) używająca MySqlConnector
 /// </summary>
 public class SupplierRepository : ISupplierRepository
 {
@@ -24,13 +24,32 @@ public class SupplierRepository : ISupplierRepository
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT id_dostawcy, id_firmy, nazwa_dostawcy, waluta, mail, telefon, uwagi " +
-            "FROM dostawcy WHERE id_dostawcy = @Id AND id_firmy = @CompanyId",
+            "SELECT id, company_id, nazwa, waluta, email, telefon " +
+            "FROM kontrahenci_v WHERE id = @Id AND company_id = @CompanyId",
             connection);
         command.Parameters.AddWithValue("@Id", id);
         command.Parameters.AddWithValue("@CompanyId", GetCurrentCompanyId());
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
+        if (await reader.ReadAsync(cancellationToken))
+        {
+            return MapToSupplier(reader);
+        }
+
+        return null;
+    }
+
+    public async Task<Supplier?> GetByKontrahentIdAsync(int kontrahentId, int companyId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _context.CreateConnectionAsync();
+        var command = new MySqlCommand(
+            "SELECT id, company_id, nazwa, waluta, email, telefon " +
+            "FROM kontrahenci_v WHERE id = @KontrahentId AND company_id = @CompanyId",
+            connection);
+        command.Parameters.AddWithValue("@KontrahentId", kontrahentId);
+        command.Parameters.AddWithValue("@CompanyId", companyId);
+
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
         {
             return MapToSupplier(reader);
@@ -44,12 +63,12 @@ public class SupplierRepository : ISupplierRepository
         var suppliers = new List<Supplier>();
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT id_dostawcy, id_firmy, nazwa_dostawcy, waluta, mail, telefon, uwagi " +
-            "FROM dostawcy WHERE id_firmy = @CompanyId ORDER BY nazwa_dostawcy",
+            "SELECT id, company_id, nazwa, waluta, email, telefon " +
+            "FROM kontrahenci_v WHERE company_id = @CompanyId ORDER BY nazwa",
             connection);
         command.Parameters.AddWithValue("@CompanyId", GetCurrentCompanyId());
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             suppliers.Add(MapToSupplier(reader));
@@ -62,13 +81,13 @@ public class SupplierRepository : ISupplierRepository
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT id_dostawcy, id_firmy, nazwa_dostawcy, waluta, mail, telefon, uwagi " +
-            "FROM dostawcy WHERE nazwa_dostawcy = @Name AND id_firmy = @CompanyId LIMIT 1",
+            "SELECT id, company_id, nazwa, waluta, email, telefon " +
+            "FROM kontrahenci_v WHERE nazwa = @Name AND company_id = @CompanyId LIMIT 1",
             connection);
         command.Parameters.AddWithValue("@Name", name);
         command.Parameters.AddWithValue("@CompanyId", GetCurrentCompanyId());
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
         {
             return MapToSupplier(reader);
@@ -81,63 +100,63 @@ public class SupplierRepository : ISupplierRepository
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "INSERT INTO dostawcy (id_firmy, nazwa_dostawcy, waluta, mail, telefon, uwagi) " +
-            "VALUES (@CompanyId, @Name, @Currency, @Email, @Phone, @Notes); " +
+            "INSERT INTO kontrahenci (company_id, typ, nazwa, waluta, email, telefon) " +
+            "VALUES (@CompanyId, @Typ, @Name, @Currency, @Email, @Phone); " +
             "SELECT LAST_INSERT_ID();",
             connection);
 
         command.Parameters.AddWithValue("@CompanyId", supplier.CompanyId);
+        command.Parameters.AddWithValue("@Typ", DBNull.Value);
         command.Parameters.AddWithValue("@Name", supplier.Name);
-        command.Parameters.AddWithValue("@Currency", supplier.Currency);
+        command.Parameters.AddWithValue("@Currency", string.IsNullOrWhiteSpace(supplier.Currency) ? "PLN" : supplier.Currency);
         command.Parameters.AddWithValue("@Email", supplier.Email ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Phone", supplier.Phone);
-        command.Parameters.AddWithValue("@Notes", supplier.Notes ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@Phone", supplier.Phone ?? string.Empty);
 
-        var result = await command.ExecuteScalarAsync(cancellationToken);
-        return Convert.ToInt32(result);
+        var newId = await command.ExecuteInsertAndGetIdAsync(cancellationToken);
+        return (int)newId;
     }
 
     public async Task UpdateAsync(Supplier supplier, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "UPDATE dostawcy SET " +
-            "id_firmy = @CompanyId, nazwa_dostawcy = @Name, waluta = @Currency, " +
-            "mail = @Email, telefon = @Phone, uwagi = @Notes " +
-            "WHERE id_dostawcy = @Id AND id_firmy = @CompanyId",
+            "UPDATE kontrahenci SET " +
+            "company_id = @CompanyId, typ = @Typ, nazwa = @Name, waluta = @Currency, " +
+            "email = @Email, telefon = @Phone " +
+            "WHERE id = @Id AND company_id = @CompanyId",
             connection);
 
         command.Parameters.AddWithValue("@Id", supplier.Id);
         command.Parameters.AddWithValue("@CompanyId", supplier.CompanyId);
+        command.Parameters.AddWithValue("@Typ", DBNull.Value);
         command.Parameters.AddWithValue("@Name", supplier.Name);
-        command.Parameters.AddWithValue("@Currency", supplier.Currency);
+        command.Parameters.AddWithValue("@Currency", string.IsNullOrWhiteSpace(supplier.Currency) ? "PLN" : supplier.Currency);
         command.Parameters.AddWithValue("@Email", supplier.Email ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Phone", supplier.Phone);
-        command.Parameters.AddWithValue("@Notes", supplier.Notes ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@Phone", supplier.Phone ?? string.Empty);
 
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
     }
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "DELETE FROM dostawcy WHERE id_dostawcy = @Id AND id_firmy = @CompanyId",
+            "DELETE FROM kontrahenci WHERE id = @Id AND company_id = @CompanyId",
             connection);
         command.Parameters.AddWithValue("@Id", id);
         command.Parameters.AddWithValue("@CompanyId", GetCurrentCompanyId());
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
     }
 
     public async Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT COUNT(1) FROM dostawcy WHERE id_dostawcy = @Id AND id_firmy = @CompanyId",
+            "SELECT COUNT(1) FROM kontrahenci WHERE id = @Id AND company_id = @CompanyId",
             connection);
         command.Parameters.AddWithValue("@Id", id);
         command.Parameters.AddWithValue("@CompanyId", GetCurrentCompanyId());
-        var result = await command.ExecuteScalarAsync(cancellationToken);
+        var result = await command.ExecuteScalarWithDiagnosticsAsync(cancellationToken);
         return Convert.ToInt32(result) > 0;
     }
 
@@ -151,16 +170,14 @@ public class SupplierRepository : ISupplierRepository
 
     private static Supplier MapToSupplier(MySqlDataReader reader)
     {
-        int id = reader.GetInt32(reader.GetOrdinal("id_dostawcy"));
-        int companyId = reader.GetInt32(reader.GetOrdinal("id_firmy"));
-        string name = reader.GetString(reader.GetOrdinal("nazwa_dostawcy"));
-        string currency = reader.GetString(reader.GetOrdinal("waluta"));
-        string phone = reader.GetString(reader.GetOrdinal("telefon"));
-        
-        string? email = GetNullableString(reader, "mail");
-        string? notes = GetNullableString(reader, "uwagi");
-        
-        var supplier = SupplierFactory.FromDatabase(id, companyId, name, phone, currency, email, notes);
+        int id = reader.GetInt32(reader.GetOrdinal("id"));
+        int companyId = reader.GetInt32(reader.GetOrdinal("company_id"));
+        string name = reader.GetString(reader.GetOrdinal("nazwa"));
+        string currency = GetNullableString(reader, "waluta") ?? "PLN";
+        string phone = GetNullableString(reader, "telefon") ?? string.Empty;
+        string? email = GetNullableString(reader, "email");
+
+        var supplier = SupplierFactory.FromDatabase(id, companyId, name, phone, currency, email, null);
         return supplier;
     }
 

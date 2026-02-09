@@ -37,12 +37,23 @@
         <!-- Browse Towary -->
         <DataGrid Grid.Row="2" 
                   ItemsSource="{Binding FilteredProducts}"
-                  SelectedItem="{Binding SelectedProduct}"
+                  SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
-                  GridLinesVisibility="All"
                   HeadersVisibility="Column"
+                  ColumnHeaderStyle="{StaticResource FakturyOrangeColumnHeaderStyle}"
+                  AlternationCount="2"
                   Margin="0,0,0,10">
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow" BasedOn="{StaticResource DataGridRowSelectionStyle}">
+                    <Setter Property="Background" Value="White"/>
+                    <Style.Triggers>
+                        <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                            <Setter Property="Background" Value="#F2F2F2"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.RowStyle>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60"/>
                 <DataGridTextColumn Header="Dostawa" Binding="{Binding SupplierName}" Width="150"/>
@@ -81,17 +92,28 @@
         <!-- Browse Magazyn -->
         <DataGrid Grid.Row="5" 
                   ItemsSource="{Binding FilteredWarehouseItems}"
-                  SelectedItem="{Binding SelectedWarehouseItem}"
+                  SelectedItem="{Binding SelectedWarehouseItem, Mode=TwoWay}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
-                  GridLinesVisibility="All"
                   HeadersVisibility="Column"
+                  ColumnHeaderStyle="{StaticResource FakturyOrangeColumnHeaderStyle}"
+                  AlternationCount="2"
                   Margin="0,0,0,10">
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow" BasedOn="{StaticResource DataGridRowSelectionStyle}">
+                    <Setter Property="Background" Value="White"/>
+                    <Style.Triggers>
+                        <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                            <Setter Property="Background" Value="#F2F2F2"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.RowStyle>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60"/>
                 <DataGridTextColumn Header="Data operacji" Binding="{Binding OperationDate}" Width="100"/>
                 <DataGridTextColumn Header="Nr dok." Binding="{Binding DocumentNumber}" Width="120"/>
-                <DataGridTextColumn Header="Dostawca/Odbiorca" Binding="{Binding SupplierCustomerName}" Width="200"/>
+                <DataGridTextColumn Header="Kontrahent" Binding="{Binding SupplierCustomerName}" Width="200"/>
                 <DataGridTextColumn Header="ID towaru" Binding="{Binding ProductId}" Width="80"/>
                 <DataGridTextColumn Header="Nazwa towaru" Binding="{Binding ProductName}" Width="*"/>
                 <DataGridTextColumn Header="Jednostka" Binding="{Binding Unit}" Width="80"/>

@@ -1,0 +1,19 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Ciemnoszare linie rozdzielające pola (1px) – globalnie w całej aplikacji -->
+    <SolidColorBrush x:Key="GlobalTableLinesBrush" Color="#555555"/>
+
+    <!-- Globalny styl DataGrid: pionowe + poziome linie, ciemnoszary, większe napisy -->
+    <Style TargetType="DataGrid">
+        <Setter Property="GridLinesVisibility" Value="All"/>
+        <Setter Property="VerticalGridLinesBrush" Value="{StaticResource GlobalTableLinesBrush}"/>
+        <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource GlobalTableLinesBrush}"/>
+        <Setter Property="FontSize" Value="14"/>
+    </Style>
+
+    <!-- ListView: większy font w wierszach – przy dodaniu ListView automatycznie zastosowany -->
+    <!-- Uwaga: ListViewItemSelectionStyle z App.xaml nadal obowiązuje; FontSize ustawiony tutaj -->
+    <Style TargetType="ListViewItem" BasedOn="{StaticResource ListViewItemSelectionStyle}">
+        <Setter Property="FontSize" Value="14"/>
+    </Style>
+</ResourceDictionary>

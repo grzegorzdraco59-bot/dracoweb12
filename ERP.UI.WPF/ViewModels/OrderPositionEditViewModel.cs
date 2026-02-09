@@ -1,6 +1,6 @@
 using System.Windows.Input;
 using ERP.Application.DTOs;
-using ERP.Application.Repositories;
+using ERP.Application.Services;
 
 namespace ERP.UI.WPF.ViewModels;
 
@@ -9,14 +9,23 @@ namespace ERP.UI.WPF.ViewModels;
 /// </summary>
 public class OrderPositionEditViewModel : ViewModelBase
 {
-    private readonly IOrderPositionMainRepository _repository;
+    private readonly IOrderMainService _orderMainService;
+    private readonly ERP.UI.WPF.Services.ITowarPicker _towarPicker;
+    private readonly string _orderCurrency;
     private readonly OrderPositionMainDto _originalPosition;
     private OrderPositionMainDto _position;
+    private string _deliveryDateIntText = "";
 
-    public OrderPositionEditViewModel(IOrderPositionMainRepository repository, OrderPositionMainDto position)
+    public OrderPositionEditViewModel(
+        IOrderMainService orderMainService,
+        ERP.UI.WPF.Services.ITowarPicker towarPicker,
+        OrderPositionMainDto position,
+        string? orderCurrency = null)
     {
-        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _orderMainService = orderMainService ?? throw new ArgumentNullException(nameof(orderMainService));
+        _towarPicker = towarPicker ?? throw new ArgumentNullException(nameof(towarPicker));
         _originalPosition = position ?? throw new ArgumentNullException(nameof(position));
+        _orderCurrency = orderCurrency ?? "";
         
         // Tworzymy kopię do edycji
         _position = new OrderPositionMainDto
@@ -56,8 +65,12 @@ public class OrderPositionEditViewModel : ViewModelBase
             UpdatedAt = position.UpdatedAt
         };
 
+        if (_position.DeliveryDateInt.HasValue && _position.DeliveryDateInt.Value > 0)
+            _deliveryDateIntText = _position.DeliveryDateInt.Value.ToString();
+
         SaveCommand = new RelayCommand(async () => await SaveAsync(), () => CanSave());
         CancelCommand = new RelayCommand(() => OnCancelled());
+        SelectProductCommand = new RelayCommand(async () => await SelectProductAsync());
     }
 
     public event EventHandler? Saved;
@@ -85,6 +98,19 @@ public class OrderPositionEditViewModel : ViewModelBase
         {
             _position.ProductId = value;
             OnPropertyChanged();
+        }
+    }
+
+    public string DeliveryDateIntText
+    {
+        get => _deliveryDateIntText;
+        set
+        {
+            if (_deliveryDateIntText != value)
+            {
+                _deliveryDateIntText = value ?? "";
+                OnPropertyChanged();
+            }
         }
     }
 
@@ -290,6 +316,7 @@ public class OrderPositionEditViewModel : ViewModelBase
 
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
+    public ICommand SelectProductCommand { get; }
 
     private bool CanSave()
     {
@@ -300,17 +327,25 @@ public class OrderPositionEditViewModel : ViewModelBase
     {
         try
         {
+            if (!ValidateBeforeSave())
+                return;
+
+            if (int.TryParse(_deliveryDateIntText, out var deliveryInt) && deliveryInt > 0)
+                _position.DeliveryDateInt = deliveryInt;
+            else
+                _position.DeliveryDateInt = null;
+
             if (_position.Id == 0)
             {
-                // Nowa pozycja
-                await _repository.AddAsync(_position);
+                var newId = await _orderMainService.AddPositionAsync(_position);
+                _position.Id = newId;
             }
             else
             {
-                // Aktualizacja istniejącej pozycji
-                await _repository.UpdateAsync(_position);
+                await _orderMainService.UpdatePositionAsync(_position);
             }
 
+            SavedPositionId = _position.Id;
             OnSaved();
         }
         catch (Exception ex)
@@ -321,6 +356,96 @@ public class OrderPositionEditViewModel : ViewModelBase
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Error);
         }
+    }
+
+    public int? SavedPositionId { get; private set; }
+
+    private async Task SelectProductAsync()
+    {
+        try
+        {
+            if (CompanyId <= 0)
+            {
+                System.Windows.MessageBox.Show("Brak wybranej firmy.", "Towary",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
+            var selectedProduct = await _towarPicker.PickAsync(CompanyId);
+            if (selectedProduct == null)
+                return;
+
+            _position.ProductId = selectedProduct.Id;
+            _position.ProductNameDraco = selectedProduct.NazwaPLdraco ?? selectedProduct.NamePl ?? selectedProduct.NazwaPL;
+            _position.Product = selectedProduct.NazwaPL ?? selectedProduct.NamePl;
+            _position.ProductNameEng = selectedProduct.NazwaENG ?? selectedProduct.NameEng;
+            if (!string.IsNullOrWhiteSpace(selectedProduct.StawkaVat))
+                _position.VatRate = selectedProduct.StawkaVat;
+
+            var price = GetPriceForCurrency(selectedProduct, _orderCurrency);
+            if (!price.HasValue)
+            {
+                _position.PurchasePrice = 0m;
+                System.Windows.MessageBox.Show(
+                    $"Brak ceny dla waluty {_orderCurrency}. Ustawiono 0.",
+                    "Towary",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Warning);
+            }
+            else
+            {
+                _position.PurchasePrice = price.Value;
+            }
+
+            OnPropertyChanged(nameof(ProductId));
+            OnPropertyChanged(nameof(ProductNameDraco));
+            OnPropertyChanged(nameof(Product));
+            OnPropertyChanged(nameof(ProductNameEng));
+            OnPropertyChanged(nameof(PurchasePrice));
+            OnPropertyChanged(nameof(VatRate));
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(
+                $"Błąd podczas wyboru towaru: {ex.Message}",
+                "Towary",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
+        }
+    }
+
+    private static decimal? GetPriceForCurrency(ProductDto product, string? currency)
+    {
+        var cur = (currency ?? "").Trim().ToUpperInvariant();
+        return cur switch
+        {
+            "EUR" => product.PriceEur,
+            "USD" => product.PriceUsd,
+            _ => product.PricePln
+        };
+    }
+
+    private bool ValidateBeforeSave()
+    {
+        if (_position.ProductId.GetValueOrDefault() <= 0)
+        {
+            System.Windows.MessageBox.Show("Podaj poprawny id_towaru.", "Walidacja",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return false;
+        }
+        if (!_position.OrderQuantity.HasValue)
+        {
+            System.Windows.MessageBox.Show("Podaj ilosc_zamawiana.", "Walidacja",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return false;
+        }
+        if (!string.IsNullOrWhiteSpace(_deliveryDateIntText) && !int.TryParse(_deliveryDateIntText, out _))
+        {
+            System.Windows.MessageBox.Show("data_dostawy_pozycji musi być liczbą całkowitą.", "Walidacja",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return false;
+        }
+        return true;
     }
 
     protected virtual void OnSaved()

@@ -1,0 +1,6 @@
+Rodzic | Dziecko | CONSTRAINT | kolumna_fk | ref_col | DELETE | UPDATE
+------------------------------------------------------------------------------------------
+faktury      | pozycjefaktury            | fk_pozycjefaktury_faktury           | faktura_id   | id           | RESTRICT | RESTRICT
+firmy        | doc_counters              | FK_doc_counters_firmy               | company_id   | id           | RESTRICT | RESTRICT
+oferty       | ofertypozycje             | fk_ofertypozycje_oferty             | oferta_id    | id           | RESTRICT | RESTRICT
+operator     | operator_table_permissions | operator_table_permissions_ibfk_1   | id_operatora | id_operatora | CASCADE  | RESTRICT

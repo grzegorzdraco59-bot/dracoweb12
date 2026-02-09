@@ -4,7 +4,7 @@ using ERP.Infrastructure.Data;
 using ERP.Infrastructure.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
-Console.WriteLine("=== Test połączenia z bazą danych i odczytu odbiorców ===\n");
+Console.WriteLine("=== Test połączenia z bazą danych i odczytu kontrahentów ===\n");
 
 // Konfiguracja Dependency Injection
 var services = new ServiceCollection();
@@ -19,15 +19,15 @@ try
     
     Console.WriteLine("1. Test połączenia z bazą danych...");
     var allCustomers = await customerService.GetAllAsync();
-    Console.WriteLine($"   ✓ Połączenie OK! Znaleziono {allCustomers.Count()} odbiorców.\n");
+    Console.WriteLine($"   ✓ Połączenie OK! Znaleziono {allCustomers.Count()} kontrahentów.\n");
     
-    Console.WriteLine("2. Wyświetlanie pierwszych 5 odbiorców:");
+    Console.WriteLine("2. Wyświetlanie pierwszych 5 kontrahentów:");
     Console.WriteLine("   " + "=".PadRight(100, '='));
     int count = 0;
     foreach (var customer in allCustomers.Take(5))
     {
         count++;
-        Console.WriteLine($"\n   Odbiorca #{count}:");
+        Console.WriteLine($"\n   Kontrahent #{count}:");
         Console.WriteLine($"   - ID: {customer.Id}");
         Console.WriteLine($"   - Nazwa: {customer.Name}");
         Console.WriteLine($"   - Email: {customer.Email1 ?? "(brak)"}");
@@ -39,24 +39,24 @@ try
     }
     Console.WriteLine("\n   " + "=".PadRight(100, '='));
     
-    Console.WriteLine("\n3. Test odczytu pojedynczego odbiorcy...");
+    Console.WriteLine("\n3. Test odczytu pojedynczego kontrahenta...");
     if (allCustomers.Any())
     {
         var firstCustomer = allCustomers.First();
         var customerById = await customerService.GetByIdAsync(firstCustomer.Id);
         if (customerById != null)
         {
-            Console.WriteLine($"   ✓ Odczytywanie po ID działa! Odbiorca: {customerById.Name}");
+            Console.WriteLine($"   ✓ Odczytywanie po ID działa! Kontrahent: {customerById.Name}");
         }
         else
         {
-            Console.WriteLine("   ✗ Błąd: Nie udało się odczytać odbiorcy po ID");
+            Console.WriteLine("   ✗ Błąd: Nie udało się odczytać kontrahenta po ID");
         }
     }
     
-    Console.WriteLine("\n4. Test odczytu aktywnych odbiorców...");
+    Console.WriteLine("\n4. Test odczytu aktywnych kontrahentów...");
     var activeCustomers = await customerService.GetActiveAsync();
-    Console.WriteLine($"   ✓ Znaleziono {activeCustomers.Count()} aktywnych odbiorców.");
+    Console.WriteLine($"   ✓ Znaleziono {activeCustomers.Count()} aktywnych kontrahentów.");
     
     Console.WriteLine("\n=== Wszystkie testy zakończone pomyślnie! ===");
 }

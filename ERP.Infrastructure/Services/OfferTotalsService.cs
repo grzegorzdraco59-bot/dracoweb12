@@ -5,7 +5,7 @@ using MySqlConnector;
 namespace ERP.Infrastructure.Services;
 
 /// <summary>
-/// Przeliczanie kwot pozycji (netto_poz, vat_poz, brutto_poz) i sumy brutto oferty (sum_brutto).
+/// Przeliczanie kwot pozycji (netto_poz, vat_poz, brutto_poz) i sumy brutto aoferty (sum_brutto).
 /// </summary>
 public class OfferTotalsService : IOfferTotalsService
 {
@@ -20,20 +20,24 @@ public class OfferTotalsService : IOfferTotalsService
     public async Task RecalculateOfferLinesAsync(int offerId, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
-        // netto_poz = ROUND(ilosc * cena_netto * (1 - IFNULL(Rabat,0)/100), 2), vat_poz = ROUND(netto_poz * stawka_vat_pct/100, 2), brutto_poz = netto_poz + vat_poz
-        // stawka_vat w DB to VARCHAR – parsowanie: zamiana ',' na '.', usunięcie '%'
+        // Mapowanie docelowe: Cena_po_rabacie_i_sztukach, vat, cena_brutto. Źródło: COALESCE(ilosc,Sztuki), COALESCE(cena_netto,Cena).
+        var iloscExpr = "COALESCE(p.ilosc, p.Sztuki, 0)";
+        var cenaExpr = "COALESCE(p.cena_netto, p.Cena, 0)";
+        var stawkaExpr = "COALESCE(CAST(REPLACE(REPLACE(TRIM(REPLACE(IFNULL(p.stawka_vat, '0'), '%', '')), ',', '.'), ' ', '') AS DECIMAL(10,4)), 0)";
+        var nettoExpr = $"ROUND({iloscExpr} * {cenaExpr} * (1 - IFNULL(p.Rabat, 0) / 100), 2)";
+        var vatExpr = $"ROUND({nettoExpr} * {stawkaExpr} / 100, 2)";
+        var bruttoExpr = $"ROUND({nettoExpr} + {vatExpr}, 2)";
+        var whereClause = "WHERE COALESCE(p.oferta_id, p.ID_oferta) = @OfferId";
+
         var cmd = new MySqlCommand(
-            "UPDATE ofertypozycje p SET " +
-            "p.netto_poz = ROUND(COALESCE(p.ilosc, 0) * COALESCE(p.cena_netto, 0) * (1 - IFNULL(p.Rabat, 0) / 100), 2), " +
-            "p.vat_poz = ROUND(ROUND(COALESCE(p.ilosc, 0) * COALESCE(p.cena_netto, 0) * (1 - IFNULL(p.Rabat, 0) / 100), 2) * " +
-            "COALESCE(CAST(REPLACE(REPLACE(TRIM(REPLACE(IFNULL(p.stawka_vat, '0'), '%', '')), ',', '.'), ' ', '') AS DECIMAL(10,4)), 0) / 100, 2), " +
-            "p.brutto_poz = ROUND(COALESCE(p.ilosc, 0) * COALESCE(p.cena_netto, 0) * (1 - IFNULL(p.Rabat, 0) / 100), 2) + " +
-            "ROUND(ROUND(COALESCE(p.ilosc, 0) * COALESCE(p.cena_netto, 0) * (1 - IFNULL(p.Rabat, 0) / 100), 2) * " +
-            "COALESCE(CAST(REPLACE(REPLACE(TRIM(REPLACE(IFNULL(p.stawka_vat, '0'), '%', '')), ',', '.'), ' ', '') AS DECIMAL(10,4)), 0) / 100, 2) " +
-            "WHERE p.oferta_id = @OfferId",
+            "UPDATE apozycjeoferty p SET " +
+            "p.Cena_po_rabacie_i_sztukach = " + nettoExpr + ", " +
+            "p.vat = " + vatExpr + ", " +
+            "p.cena_brutto = " + bruttoExpr + " " +
+            whereClause,
             connection);
         cmd.Parameters.AddWithValue("@OfferId", offerId);
-        await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await cmd.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -41,38 +45,51 @@ public class OfferTotalsService : IOfferTotalsService
     {
         await using var connection = await _context.CreateConnectionAsync();
         var selectCmd = new MySqlCommand(
-            "SELECT COALESCE(SUM(brutto_poz), 0) FROM ofertypozycje WHERE oferta_id = @OfferId",
+            "SELECT COALESCE(SUM(COALESCE(brutto_poz, cena_brutto)), 0) FROM apozycjeoferty WHERE COALESCE(oferta_id, ID_oferta) = @OfferId",
             connection);
         selectCmd.Parameters.AddWithValue("@OfferId", offerId);
-        var sumBrutto = (decimal)(await selectCmd.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) ?? 0m);
+        var sumBrutto = (decimal)(await selectCmd.ExecuteScalarWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false) ?? 0m);
 
         var updateCmd = new MySqlCommand(
-            "UPDATE oferty SET sum_brutto = @SumBrutto WHERE id = @OfferId",
+            "UPDATE aoferty SET sum_brutto = @SumBrutto WHERE id_oferta = @OfferId",
             connection);
         updateCmd.Parameters.AddWithValue("@OfferId", offerId);
         updateCmd.Parameters.AddWithValue("@SumBrutto", sumBrutto);
-        await updateCmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await updateCmd.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
         return sumBrutto;
     }
 
     /// <inheritdoc />
     public async Task RecalcOfferTotalsAsync(int offerId, CancellationToken cancellationToken = default)
     {
+        await RecalculateOfferTotalsAsync(offerId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Przelicza sum_netto, sum_vat, sum_brutto nagłówka oferty na podstawie pozycji.
+    /// Formuła: suma_netto = SUM(cena_netto * ilosc), suma_vat = SUM((cena_netto * ilosc) * stawka_vat / 100), suma_brutto = suma_netto + suma_vat.
+    /// Oferta bez pozycji → sumy = 0.
+    /// </summary>
+    public async Task RecalculateOfferTotalsAsync(int offerId, CancellationToken cancellationToken = default)
+    {
         await using var connection = await _context.CreateConnectionAsync();
-        var cmd = new MySqlCommand(
-            "UPDATE oferty o " +
+        var stawkaVatExpr = "COALESCE(CAST(REPLACE(REPLACE(TRIM(REPLACE(IFNULL(p.stawka_vat, '0'), '%', '')), ',', '.'), ' ', '') AS DECIMAL(10,4)), 0)";
+        var iloscExpr = "COALESCE(p.ilosc, p.Sztuki, 0)";
+        var cenaExpr = "COALESCE(p.cena_netto, p.Cena, 0)";
+        var nettoExpr = iloscExpr + " * " + cenaExpr;
+        var sql =
+            "UPDATE aoferty o " +
             "LEFT JOIN (" +
-            "  SELECT oferta_id, " +
-            "    COALESCE(SUM(netto_poz), 0) AS s_netto, " +
-            "    COALESCE(SUM(vat_poz), 0) AS s_vat, " +
-            "    COALESCE(SUM(brutto_poz), 0) AS s_brutto " +
-            "  FROM ofertypozycje WHERE oferta_id = @OfferId GROUP BY oferta_id" +
-            ") x ON x.oferta_id = o.id " +
-            "SET o.sum_netto = COALESCE(x.s_netto, 0), o.sum_vat = COALESCE(x.s_vat, 0), o.sum_brutto = COALESCE(x.s_brutto, 0) " +
-            "WHERE o.id = @OfferId",
-            connection);
+            "  SELECT COALESCE(p.oferta_id, p.ID_oferta) AS oferta_id, " +
+            "    ROUND(SUM(" + nettoExpr + "), 2) AS s_netto, " +
+            "    ROUND(SUM(" + nettoExpr + " * " + stawkaVatExpr + " / 100), 2) AS s_vat " +
+            "  FROM apozycjeoferty p WHERE COALESCE(p.oferta_id, p.ID_oferta) = @OfferId GROUP BY COALESCE(p.oferta_id, p.ID_oferta)" +
+            ") x ON x.oferta_id = o.id_oferta " +
+            "SET o.sum_netto = COALESCE(x.s_netto, 0), o.sum_vat = COALESCE(x.s_vat, 0), o.sum_brutto = COALESCE(x.s_netto, 0) + COALESCE(x.s_vat, 0) " +
+            "WHERE o.id_oferta = @OfferId";
+        var cmd = new MySqlCommand(sql, connection);
         cmd.Parameters.AddWithValue("@OfferId", offerId);
-        await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await cmd.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -80,10 +97,10 @@ public class OfferTotalsService : IOfferTotalsService
     {
         await using var connection = await _context.CreateConnectionAsync();
         var cmd = new MySqlCommand(
-            "SELECT COALESCE(sum_brutto, 0) FROM oferty WHERE id = @OfferId",
+            "SELECT COALESCE(total_brutto, 0) FROM aoferty_V WHERE id = @OfferId",
             connection);
         cmd.Parameters.AddWithValue("@OfferId", offerId);
-        var result = await cmd.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+        var result = await cmd.ExecuteScalarWithDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
         return result != null && result != DBNull.Value ? Convert.ToDecimal(result) : 0m;
     }
 }

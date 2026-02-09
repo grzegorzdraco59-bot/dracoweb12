@@ -1,53 +1,68 @@
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Windows.Data;
+using System.Linq;
 using System.Windows.Input;
+using System.Windows.Threading;
 using ERP.Application.DTOs;
 using ERP.Application.Repositories;
 using ERP.Application.Services;
-using ERP.Domain.Enums;
 
 namespace ERP.UI.WPF.ViewModels;
 
 /// <summary>
-/// ViewModel dla widoku zamówień z pozycjami
+/// ViewModel dla listy zamówień (górny grid).
 /// </summary>
 public class OrdersMainViewModel : ViewModelBase
 {
+    private readonly IOrderRowRepository _orderRowRepository;
+    private readonly IOrderPositionRepository _orderPositionRepository;
     private readonly IOrderMainService _orderMainService;
-    private OrderMainDto? _selectedOrder;
-    private OrderPositionMainDto? _selectedOrderPosition;
-    private string _searchText = string.Empty;
-    private CollectionViewSource _ordersViewSource;
+    private readonly ERP.UI.WPF.Services.ITowarPicker _towarPicker;
+    private readonly IUserContext _userContext;
+    private OrderRow? _selectedOrder;
+    private OrderPositionRow? _selectedPosition;
+    private string _searchText = "";
+    private DispatcherTimer? _searchDebounceTimer;
+    private const int SearchDebounceMs = 300;
 
-    public OrdersMainViewModel(IOrderMainService orderMainService)
+    public OrdersMainViewModel(
+        IOrderRowRepository orderRowRepository,
+        IOrderPositionRepository orderPositionRepository,
+        IOrderMainService orderMainService,
+        ERP.UI.WPF.Services.ITowarPicker towarPicker,
+        IUserContext userContext)
     {
+        _orderRowRepository = orderRowRepository ?? throw new ArgumentNullException(nameof(orderRowRepository));
+        _orderPositionRepository = orderPositionRepository ?? throw new ArgumentNullException(nameof(orderPositionRepository));
         _orderMainService = orderMainService ?? throw new ArgumentNullException(nameof(orderMainService));
-        
-        Orders = new ObservableCollection<OrderMainDto>();
-        OrderPositions = new ObservableCollection<OrderPositionMainDto>();
-        
-        _ordersViewSource = new CollectionViewSource { Source = Orders };
-        _ordersViewSource.View.Filter = FilterOrders;
-        
-        LoadOrdersCommand = new RelayCommand(async () => await LoadOrdersAsync());
+        _towarPicker = towarPicker ?? throw new ArgumentNullException(nameof(towarPicker));
+        _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
+
+        Orders = new ObservableCollection<OrderRow>();
+        Positions = new ObservableCollection<OrderPositionRow>();
+
         AddOrderCommand = new RelayCommand(async () => await AddOrderAsync());
-        EditOrderCommand = new RelayCommand(() => EditOrder(), () => SelectedOrder != null);
+        EditOrderCommand = new RelayCommand(async () => await EditOrderAsync(), () => SelectedOrder != null);
         DeleteOrderCommand = new RelayCommand(async () => await DeleteOrderAsync(), () => SelectedOrder != null);
-        ChangeStatusCommand = new RelayCommand(async () => await ChangeStatusAsync(), () => SelectedOrder != null);
+
         AddPositionCommand = new RelayCommand(async () => await AddPositionAsync(), () => SelectedOrder != null);
-        EditPositionCommand = new RelayCommand(() => EditPosition(), () => SelectedOrderPosition != null);
-        DeletePositionCommand = new RelayCommand(async () => await DeletePositionAsync(), () => SelectedOrderPosition != null);
-        
+        EditPositionCommand = new RelayCommand(async () => await EditPositionAsync(), () => SelectedOrder != null && SelectedPosition != null);
+        DeletePositionCommand = new RelayCommand(async () => await DeletePositionAsync(), () => SelectedOrder != null && SelectedPosition != null);
+
         // Automatyczne ładowanie przy starcie
         _ = LoadOrdersAsync();
     }
 
-    public ObservableCollection<OrderMainDto> Orders { get; }
-    public ObservableCollection<OrderPositionMainDto> OrderPositions { get; }
-    
-    public ICollectionView FilteredOrders => _ordersViewSource.View;
-    
+    public ObservableCollection<OrderRow> Orders { get; }
+    public ObservableCollection<OrderPositionRow> Positions { get; }
+
+    public ICommand AddOrderCommand { get; }
+    public ICommand EditOrderCommand { get; }
+    public ICommand DeleteOrderCommand { get; }
+
+    public ICommand AddPositionCommand { get; }
+    public ICommand EditPositionCommand { get; }
+    public ICommand DeletePositionCommand { get; }
+
     public string SearchText
     {
         get => _searchText;
@@ -55,14 +70,14 @@ public class OrdersMainViewModel : ViewModelBase
         {
             if (_searchText != value)
             {
-                _searchText = value;
+                _searchText = value ?? "";
                 OnPropertyChanged();
-                FilteredOrders.Refresh();
+                ScheduleSearchDebounce();
             }
         }
     }
 
-    public OrderMainDto? SelectedOrder
+    public OrderRow? SelectedOrder
     {
         get => _selectedOrder;
         set
@@ -71,204 +86,339 @@ public class OrdersMainViewModel : ViewModelBase
             {
                 _selectedOrder = value;
                 OnPropertyChanged();
-                if (EditOrderCommand is RelayCommand editCmd)
-                    editCmd.RaiseCanExecuteChanged();
-                if (DeleteOrderCommand is RelayCommand deleteCmd)
-                    deleteCmd.RaiseCanExecuteChanged();
-                if (ChangeStatusCommand is RelayCommand changeStatusCmd)
-                    changeStatusCmd.RaiseCanExecuteChanged();
-                if (AddPositionCommand is RelayCommand addPosCmd)
-                    addPosCmd.RaiseCanExecuteChanged();
-                if (value != null)
-                {
-                    _ = LoadOrderPositionsAsync(value.Id);
-                }
+                RaiseOrderCommandStates();
+                RaisePositionCommandStates();
+                if (_selectedOrder != null)
+                    _ = LoadPositionsAsync(_selectedOrder.id);
                 else
                 {
-                    OrderPositions.Clear();
+                    Positions.Clear();
+                    SelectedPosition = null;
                 }
             }
         }
     }
 
-    public OrderPositionMainDto? SelectedOrderPosition
+    public OrderPositionRow? SelectedPosition
     {
-        get => _selectedOrderPosition;
+        get => _selectedPosition;
         set
         {
-            if (_selectedOrderPosition != value)
+            if (_selectedPosition != value)
             {
-                _selectedOrderPosition = value;
+                _selectedPosition = value;
                 OnPropertyChanged();
-                if (EditPositionCommand is RelayCommand editCmd)
-                    editCmd.RaiseCanExecuteChanged();
-                if (DeletePositionCommand is RelayCommand deleteCmd)
-                    deleteCmd.RaiseCanExecuteChanged();
+                RaisePositionCommandStates();
             }
         }
     }
-
-    public ICommand LoadOrdersCommand { get; }
-    public ICommand AddOrderCommand { get; }
-    public ICommand EditOrderCommand { get; }
-    public ICommand DeleteOrderCommand { get; }
-    public ICommand ChangeStatusCommand { get; }
-    public ICommand AddPositionCommand { get; }
-    public ICommand EditPositionCommand { get; }
-    public ICommand DeletePositionCommand { get; }
 
     private async Task LoadOrdersAsync()
     {
-        try
+        if (!_userContext.CompanyId.HasValue)
         {
+            System.Windows.MessageBox.Show("Brak wybranej firmy.", "Zamówienia",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             Orders.Clear();
-            var orders = await _orderMainService.GetAllAsync();
-            foreach (var order in orders)
-            {
-                Orders.Add(order);
-            }
-            
-            if (Orders.Count == 0)
-            {
-                System.Windows.MessageBox.Show(
-                    "Brak zamówień w bazie danych lub tabela 'zamowienia' nie istnieje.\n\nSprawdź:\n1. Czy tabela 'zamowienia' istnieje w bazie\n2. Czy są rekordy w tabeli\n3. Czy id_firmy jest poprawne",
-                    "Brak danych",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Information);
-            }
+            SelectedOrder = null;
+            return;
         }
-        catch (Exception ex)
-        {
-            System.Windows.MessageBox.Show(
-                $"Błąd podczas ładowania zamówień: {ex.Message}\n\nSzczegóły: {ex.GetType().Name}",
-                "Błąd",
-                System.Windows.MessageBoxButton.OK,
-                System.Windows.MessageBoxImage.Error);
-        }
-    }
-
-    private async Task LoadOrderPositionsAsync(int orderId)
-    {
         try
         {
-            OrderPositions.Clear();
-            var positions = await _orderMainService.GetPositionsByOrderIdAsync(orderId);
-            foreach (var position in positions)
-            {
-                OrderPositions.Add(position);
-            }
-            
-            if (OrderPositions.Count == 0)
-            {
-                System.Diagnostics.Debug.WriteLine($"Brak pozycji dla zamówienia ID: {orderId}");
-                // Nie pokazujemy komunikatu, bo może po prostu nie ma pozycji
-            }
+            var selectedId = SelectedOrder?.id;
+            Orders.Clear();
+            IEnumerable<OrderRow> orders;
+            if (string.IsNullOrWhiteSpace(SearchText))
+                orders = await _orderRowRepository.GetByCompanyIdAsync(_userContext.CompanyId.Value);
             else
+                orders = await _orderRowRepository.GetByCompanyIdAsync(_userContext.CompanyId.Value, SearchText);
+            foreach (var order in orders)
+                Orders.Add(order);
+            if (selectedId.HasValue)
             {
-                System.Diagnostics.Debug.WriteLine($"Załadowano {OrderPositions.Count} pozycji dla zamówienia ID: {orderId}");
+                var match = Orders.FirstOrDefault(o => o.id == selectedId.Value);
+                if (match != null)
+                    SelectedOrder = match;
+            }
+            else if (string.IsNullOrWhiteSpace(SearchText) && SelectedOrder == null && Orders.Count > 0)
+            {
+                SelectedOrder = Orders.FirstOrDefault();
             }
         }
         catch (Exception ex)
         {
             System.Windows.MessageBox.Show(
-                $"Błąd podczas ładowania pozycji zamówienia: {ex.Message}\n\nSzczegóły: {ex.GetType().Name}\n\nStack trace: {ex.StackTrace}",
-                "Błąd",
+                $"Błąd podczas ładowania zamówień: {ex.Message}",
+                "Zamówienia",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Error);
         }
     }
 
-    private bool FilterOrders(object obj)
+    private async Task LoadPositionsAsync(int orderId)
     {
-        if (obj is not OrderMainDto order)
-            return false;
-        
-        if (string.IsNullOrWhiteSpace(SearchText))
-            return true;
-        
-        var searchTextLower = SearchText.ToLowerInvariant();
-        
-        return (order.Id.ToString().Contains(searchTextLower)) ||
-               (order.OrderNumber?.ToString().Contains(searchTextLower) ?? false) ||
-               (order.SupplierName?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
-               (order.Notes?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
-               (order.Status?.ToLowerInvariant().Contains(searchTextLower) ?? false);
+        if (!_userContext.CompanyId.HasValue || orderId <= 0)
+        {
+            Positions.Clear();
+            return;
+        }
+        try
+        {
+            Positions.Clear();
+            var items = await _orderPositionRepository.GetByOrderIdAsync(_userContext.CompanyId.Value, orderId);
+            foreach (var item in items)
+                Positions.Add(item);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(
+                $"Błąd podczas ładowania pozycji zamówienia: {ex.Message}",
+                "Zamówienia",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
+        }
     }
 
     private async Task AddOrderAsync()
     {
-        System.Windows.MessageBox.Show("Funkcjonalność dodawania zamówienia - w przygotowaniu", "Info", 
-            System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
-    }
-
-    private void EditOrder()
-    {
-        System.Windows.MessageBox.Show("Funkcjonalność edycji zamówienia - w przygotowaniu", "Info", 
-            System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
-    }
-
-    private async Task ChangeStatusAsync()
-    {
-        if (SelectedOrder == null) return;
-
-        var current = OrderStatusMapping.FromDb(SelectedOrder.Status);
-        if (current != OrderStatus.Draft)
+        if (!_userContext.CompanyId.HasValue)
         {
-            System.Windows.MessageBox.Show(
-                "Test: tylko przejście Draft→Confirmed. Wybierz zamówienie w statusie Draft.",
-                "Zmień status",
-                System.Windows.MessageBoxButton.OK,
-                System.Windows.MessageBoxImage.Information);
+            System.Windows.MessageBox.Show("Brak wybranej firmy.", "Zamówienia",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             return;
         }
 
-        var result = System.Windows.MessageBox.Show(
-            "Ustaw status: Potwierdzone (Confirmed)?",
-            "Zmień status",
-            System.Windows.MessageBoxButton.YesNo,
-            System.Windows.MessageBoxImage.Question);
-        if (result != System.Windows.MessageBoxResult.Yes) return;
+        var newOrder = new OrderMainDto
+        {
+            Id = 0,
+            CompanyId = _userContext.CompanyId.Value
+        };
 
-        try
+        var vm = new OrderMainEditViewModel(_orderMainService, newOrder);
+        var win = new ERP.UI.WPF.Views.OrderMainEditWindow(vm)
         {
-            await _orderMainService.SetStatusAsync(SelectedOrder.Id, OrderStatus.Confirmed);
-            await LoadOrdersAsync();
-            System.Windows.MessageBox.Show("Status zmieniony na Confirmed.", "Zmień status",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+        if (win.ShowDialog() == true)
+        {
+            if (vm.SavedOrderId.HasValue)
+                await ReloadOrdersPreserveSelectionAsync(vm.SavedOrderId.Value);
+            else
+                await LoadOrdersAsync();
         }
-        catch (ERP.Domain.Exceptions.BusinessRuleException ex)
+    }
+
+    private async Task EditOrderAsync()
+    {
+        if (SelectedOrder == null)
         {
-            System.Windows.MessageBox.Show(ex.Message, "Reguła biznesowa",
+            System.Windows.MessageBox.Show("Wybierz zamówienie do edycji.", "Zamówienia",
                 System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
         }
-        catch (Exception ex)
+
+        var order = await _orderMainService.GetByIdAsync(SelectedOrder.id);
+        if (order == null)
         {
-            System.Windows.MessageBox.Show($"Błąd: {ex.Message}", "Błąd",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            System.Windows.MessageBox.Show("Nie znaleziono zamówienia do edycji.", "Zamówienia",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        var vm = new OrderMainEditViewModel(_orderMainService, order);
+        var win = new ERP.UI.WPF.Views.OrderMainEditWindow(vm)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+        if (win.ShowDialog() == true)
+        {
+            await ReloadOrdersPreserveSelectionAsync(order.Id);
         }
     }
 
     private async Task DeleteOrderAsync()
     {
-        System.Windows.MessageBox.Show("Funkcjonalność usuwania zamówienia - w przygotowaniu", "Info", 
-            System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        if (SelectedOrder == null)
+            return;
+
+        var result = System.Windows.MessageBox.Show(
+            "Czy na pewno usunąć wybrane zamówienie?",
+            "Potwierdź usunięcie",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Question);
+        if (result != System.Windows.MessageBoxResult.Yes)
+            return;
+
+        try
+        {
+            var deletedId = SelectedOrder.id;
+            await _orderMainService.DeleteAsync(deletedId);
+            await LoadOrdersAsync();
+            if (SelectedOrder?.id == deletedId && Orders.Count > 0)
+                SelectedOrder = Orders.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(
+                $"Błąd podczas usuwania zamówienia: {ex.Message}",
+                "Zamówienia",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
+        }
     }
 
     private async Task AddPositionAsync()
     {
-        System.Windows.MessageBox.Show("Funkcjonalność dodawania pozycji zamówienia - w przygotowaniu", "Info", 
+        System.Windows.MessageBox.Show("DEBUG: AddPositionCommand", "Pozycje zamówienia",
             System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        if (SelectedOrder == null)
+        {
+            System.Windows.MessageBox.Show("Wybierz zamówienie, aby dodać pozycję.", "Pozycje zamówienia",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+        if (!_userContext.CompanyId.HasValue)
+        {
+            System.Windows.MessageBox.Show("Brak wybranej firmy.", "Pozycje zamówienia",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        var newPosition = new OrderPositionMainDto
+        {
+            Id = 0,
+            CompanyId = _userContext.CompanyId.Value,
+            OrderId = SelectedOrder.id
+        };
+
+        var vm = new OrderPositionEditViewModel(_orderMainService, _towarPicker, newPosition, SelectedOrder.waluta);
+        var win = new ERP.UI.WPF.Views.OrderPositionEditView(vm)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+        if (win.ShowDialog() == true)
+        {
+            await LoadPositionsAsync(SelectedOrder.id);
+            if (vm.SavedPositionId.HasValue)
+                SelectedPosition = Positions.FirstOrDefault(p => p.id_pozycji_zamowienia == vm.SavedPositionId.Value);
+            await ReloadOrdersPreserveSelectionAsync(SelectedOrder.id);
+        }
     }
 
-    private void EditPosition()
+    private async Task EditPositionAsync()
     {
-        System.Windows.MessageBox.Show("Funkcjonalność edycji pozycji zamówienia - w przygotowaniu", "Info", 
+        System.Windows.MessageBox.Show("DEBUG: EditPositionCommand", "Pozycje zamówienia",
             System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        if (SelectedOrder == null || SelectedPosition == null)
+        {
+            System.Windows.MessageBox.Show("Wybierz pozycję do edycji.", "Pozycje zamówienia",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        var full = await _orderMainService.GetPositionByIdAsync(SelectedPosition.id_pozycji_zamowienia);
+        if (full == null)
+        {
+            System.Windows.MessageBox.Show("Nie znaleziono pozycji do edycji.", "Pozycje zamówienia",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        var vm = new OrderPositionEditViewModel(_orderMainService, _towarPicker, full, SelectedOrder.waluta);
+        var win = new ERP.UI.WPF.Views.OrderPositionEditView(vm)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+        if (win.ShowDialog() == true)
+        {
+            var selectedId = SelectedPosition.id_pozycji_zamowienia;
+            await LoadPositionsAsync(SelectedOrder.id);
+            SelectedPosition = Positions.FirstOrDefault(p => p.id_pozycji_zamowienia == selectedId);
+            await ReloadOrdersPreserveSelectionAsync(SelectedOrder.id);
+        }
     }
 
     private async Task DeletePositionAsync()
     {
-        System.Windows.MessageBox.Show("Funkcjonalność usuwania pozycji zamówienia - w przygotowaniu", "Info", 
+        System.Windows.MessageBox.Show("DEBUG: DeletePositionCommand", "Pozycje zamówienia",
             System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        if (SelectedOrder == null || SelectedPosition == null)
+        {
+            System.Windows.MessageBox.Show("Wybierz pozycję do usunięcia.", "Pozycje zamówienia",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        var result = System.Windows.MessageBox.Show(
+            "Czy na pewno usunąć wybraną pozycję zamówienia?",
+            "Potwierdź usunięcie",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Question);
+        if (result != System.Windows.MessageBoxResult.Yes)
+            return;
+
+        try
+        {
+            var deletedId = SelectedPosition.id_pozycji_zamowienia;
+            await _orderMainService.DeletePositionAsync(deletedId);
+            await LoadPositionsAsync(SelectedOrder.id);
+            SelectedPosition = Positions.FirstOrDefault();
+            await ReloadOrdersPreserveSelectionAsync(SelectedOrder.id);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(
+                $"Błąd podczas usuwania pozycji: {ex.Message}",
+                "Pozycje zamówienia",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
+        }
+    }
+
+    private void RaisePositionCommandStates()
+    {
+        if (AddPositionCommand is RelayCommand addCmd)
+            addCmd.RaiseCanExecuteChanged();
+        if (EditPositionCommand is RelayCommand editCmd)
+            editCmd.RaiseCanExecuteChanged();
+        if (DeletePositionCommand is RelayCommand deleteCmd)
+            deleteCmd.RaiseCanExecuteChanged();
+    }
+
+    private void RaiseOrderCommandStates()
+    {
+        if (EditOrderCommand is RelayCommand editCmd)
+            editCmd.RaiseCanExecuteChanged();
+        if (DeleteOrderCommand is RelayCommand deleteCmd)
+            deleteCmd.RaiseCanExecuteChanged();
+    }
+
+    private async Task ReloadOrdersPreserveSelectionAsync(int orderId)
+    {
+        if (orderId <= 0 || !_userContext.CompanyId.HasValue)
+            return;
+        var orders = await _orderRowRepository.GetByCompanyIdAsync(_userContext.CompanyId.Value, SearchText);
+        Orders.Clear();
+        foreach (var order in orders)
+            Orders.Add(order);
+        var match = Orders.FirstOrDefault(o => o.id == orderId);
+        if (match != null)
+            SelectedOrder = match;
+    }
+
+    private void ScheduleSearchDebounce()
+    {
+        _searchDebounceTimer?.Stop();
+        _searchDebounceTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(SearchDebounceMs)
+        };
+        _searchDebounceTimer.Tick += (_, _) =>
+        {
+            _searchDebounceTimer?.Stop();
+            _searchDebounceTimer = null;
+            _ = LoadOrdersAsync();
+        };
+        _searchDebounceTimer.Start();
     }
 }

@@ -1,7 +1,7 @@
 namespace ERP.Domain.Entities;
 
 /// <summary>
-/// Encja domenowa reprezentująca odbiorcę
+/// Encja domenowa reprezentująca kontrahenta
 /// </summary>
 public class Customer : BaseEntity
 {

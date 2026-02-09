@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Linq;
 using System.Windows.Input;
 using System.Windows;
 using ERP.Application.DTOs;
@@ -23,17 +25,20 @@ public class OfferPositionEditViewModel : ViewModelBase
     private readonly OfferPositionDto _originalPosition;
     private OfferPositionDto _position;
     private readonly ObservableCollection<ProductDto> _allProducts;
+    private readonly string _offerCurrency;
 
     public OfferPositionEditViewModel(
         IOfferService offerService, 
         ProductRepository productRepository, 
         OfferPositionDto position,
-        IUserContext userContext)
+        IUserContext userContext,
+        string offerCurrency)
     {
         _offerService = offerService ?? throw new ArgumentNullException(nameof(offerService));
         _productRepository = productRepository ?? throw new ArgumentNullException(nameof(productRepository));
         _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
         _originalPosition = position ?? throw new ArgumentNullException(nameof(position));
+        _offerCurrency = (offerCurrency ?? "").Trim().ToUpperInvariant();
         
         // Tworzymy kopię do edycji
         _position = new OfferPositionDto
@@ -88,6 +93,8 @@ public class OfferPositionEditViewModel : ViewModelBase
         {
             _position.ProductId = value;
             OnPropertyChanged();
+            if (SaveCommand is RelayCommand saveCmd)
+                saveCmd.RaiseCanExecuteChanged();
         }
     }
 
@@ -243,12 +250,48 @@ public class OfferPositionEditViewModel : ViewModelBase
     public ICommand CancelCommand { get; }
     public ICommand SelectProductCommand { get; }
 
-    /// <summary>Przycisk Zapisz włączony gdy OfertaId &gt; 0, ilość &gt; 0, cena netto &gt;= 0. Walidacja szczegółowa w SaveAsync.</summary>
+    /// <summary>Przycisk Zapisz aktywny gdy: wybrany towar + oferta. Walidacja waluty/ceny tylko w Execute.</summary>
     private bool CanSave()
     {
         return _position.OfferId > 0
-            && (_position.Ilosc ?? 0) > 0
-            && (_position.CenaNetto ?? -1) >= 0;
+            && _position.ProductId.HasValue
+            && _position.ProductId > 0;
+    }
+
+    private static bool IsValidCurrency(string currency)
+    {
+        return currency == "PLN" || currency == "EUR" || currency == "USD";
+    }
+
+    private decimal? GetPriceForCurrency(ProductDto product)
+    {
+        if (product == null || !IsValidCurrency(_offerCurrency))
+            return product?.PricePln;
+        return _offerCurrency switch
+        {
+            "PLN" => product.PricePln,
+            "EUR" => product.PriceEur,
+            "USD" => product.PriceUsd,
+            _ => product.PricePln
+        };
+    }
+
+    private decimal? GetNettoForCurrentProduct()
+    {
+        if (!_position.ProductId.HasValue || _position.ProductId <= 0)
+            return null;
+        if (!IsValidCurrency(_offerCurrency))
+            return null;
+        var product = _allProducts.FirstOrDefault(p => p.Id == _position.ProductId);
+        if (product == null)
+            return null;
+        return _offerCurrency switch
+        {
+            "PLN" => product.PricePln,
+            "EUR" => product.PriceEur,
+            "USD" => product.PriceUsd,
+            _ => null
+        };
     }
 
     // Kwoty (netto_poz, vat_poz, brutto_poz) liczone w serwisie/DB – UI tylko pokazuje (zgodnie z zasadą architektoniczną).
@@ -272,28 +315,74 @@ public class OfferPositionEditViewModel : ViewModelBase
 
     private async Task SaveAsync()
     {
-        // Walidacja przed zapisem
-        if (_position.OfferId <= 0)
-        {
-            System.Windows.MessageBox.Show("Nieprawidłowy identyfikator oferty (OfertaId > 0).", "Walidacja",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-            return;
-        }
-        if (!(_position.Ilosc.HasValue && _position.Ilosc.Value > 0))
-        {
-            System.Windows.MessageBox.Show("Ilość musi być większa od zera.", "Walidacja",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-            return;
-        }
-        if (!_position.CenaNetto.HasValue || _position.CenaNetto.Value < 0)
-        {
-            System.Windows.MessageBox.Show("Cena netto musi być podana i nieujemna.", "Walidacja",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-            return;
-        }
-
+        System.Windows.MessageBox.Show("SAVE_EXECUTE_START");
+        Debug.WriteLine("SAVE_POS_START");
         try
         {
+            // Walidacja przed zapisem
+            if (_position.OfferId <= 0)
+            {
+                System.Windows.MessageBox.Show("Nieprawidłowy identyfikator oferty (OfertaId > 0).", "Walidacja",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+            if (!(_position.Ilosc.HasValue && _position.Ilosc.Value > 0))
+            {
+                System.Windows.MessageBox.Show("Ilość musi być większa od zera.", "Walidacja",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+            if (!(_position.ProductId.HasValue && _position.ProductId > 0))
+            {
+                System.Windows.MessageBox.Show("Wybierz towar.", "Walidacja",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
+            // Waluta oferty → cena netto z towaru (cena_PLN / cena_EUR / cena_USD)
+            var currency = _offerCurrency;
+            if (!IsValidCurrency(currency))
+            {
+                System.Windows.MessageBox.Show(
+                    $"Nieznana waluta oferty: {(string.IsNullOrEmpty(currency) ? "(pusta)" : currency)}",
+                    "Brak ceny",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
+            var product = _allProducts.FirstOrDefault(p => p.Id == _position.ProductId);
+            if (product == null)
+            {
+                System.Windows.MessageBox.Show("Towar nie został znaleziony na liście. Odśwież listę produktów.",
+                    "Brak ceny",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
+            decimal? netto = currency switch
+            {
+                "PLN" => product.PricePln,
+                "EUR" => product.PriceEur,
+                "USD" => product.PriceUsd,
+                _ => null
+            };
+
+            if (!netto.HasValue || netto.Value <= 0)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Brak ceny dla waluty {currency}. Uzupełnij cenę w towarze (cena_PLN/EUR/USD).",
+                    "Brak ceny",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
+            _position.CenaNetto = netto.Value;
+            OnPropertyChanged(nameof(CenaNetto));
+            OnPropertyChanged(nameof(QuantityTimesPrice));
+
             bool isNewPosition = _position.Id == 0;
             OfferPosition position;
 
@@ -305,8 +394,8 @@ public class OfferPositionEditViewModel : ViewModelBase
             }
             else
             {
-                position = await _offerService.GetPositionByIdAsync((int)_position.Id);
-                if (position == null)
+                var positionOrNull = await _offerService.GetPositionByIdAsync((int)_position.Id);
+                if (positionOrNull == null)
                 {
                     System.Windows.MessageBox.Show(
                         "Pozycja oferty nie została znaleziona w bazie danych.",
@@ -315,6 +404,7 @@ public class OfferPositionEditViewModel : ViewModelBase
                         System.Windows.MessageBoxImage.Error);
                     return;
                 }
+                position = positionOrNull;
             }
 
             position.UpdateProductInfo(_position.ProductId, _position.SupplierId, _position.ProductCode, _position.Name, _position.NameEng);
@@ -337,20 +427,25 @@ public class OfferPositionEditViewModel : ViewModelBase
             }
 
             // Zamykanie okna (DialogResult + Close) musi być na wątku UI
+            Debug.WriteLine("SAVE_POS_OK");
             System.Windows.Application.Current.Dispatcher.Invoke(() => OnSaved());
         }
         catch (ERP.Domain.Exceptions.BusinessRuleException ex)
         {
+            Debug.WriteLine("SAVE_POS_ERR: " + ex.ToString());
             System.Windows.MessageBox.Show(ex.Message, "Reguła biznesowa",
                 System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            throw;
         }
         catch (Exception ex)
         {
+            Debug.WriteLine("SAVE_POS_ERR: " + ex.ToString());
             var text = ex.ToString();
             if (ex.InnerException != null)
                 text += "\n\nInner: " + ex.InnerException.ToString();
             System.Windows.MessageBox.Show(text, "Błąd zapisu",
                 System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            throw;
         }
     }
 
@@ -374,7 +469,8 @@ public class OfferPositionEditViewModel : ViewModelBase
                 await LoadProductsAsync();
             }
 
-            var productSelectionWindow = new ProductSelectionWindow(_allProducts)
+            var companyId = _userContext.CompanyId ?? 0;
+            var productSelectionWindow = new ProductSelectionWindow(_allProducts, _productRepository, companyId)
             {
                 Owner = System.Windows.Application.Current.MainWindow
             };
@@ -382,19 +478,21 @@ public class OfferPositionEditViewModel : ViewModelBase
             if (productSelectionWindow.ShowDialog() == true && productSelectionWindow.SelectedProduct != null)
             {
                 var selectedProduct = productSelectionWindow.SelectedProduct;
-                
+
                 _position.ProductId = selectedProduct.Id;
                 _position.Name = selectedProduct.NamePl;
                 _position.NameEng = selectedProduct.NameEng;
-                _position.Unit = selectedProduct.Unit ?? "szt"; // jednostki_sprzedazy -> jednostki
-                _position.CenaNetto = selectedProduct.PricePln;
-                
+                _position.Unit = selectedProduct.Unit ?? "szt";
+                _position.CenaNetto = GetPriceForCurrency(selectedProduct);
+
                 OnPropertyChanged(nameof(ProductId));
                 OnPropertyChanged(nameof(Name));
                 OnPropertyChanged(nameof(NameEng));
                 OnPropertyChanged(nameof(Unit));
                 OnPropertyChanged(nameof(CenaNetto));
                 OnPropertyChanged(nameof(QuantityTimesPrice));
+                if (SaveCommand is RelayCommand saveCmd)
+                    saveCmd.RaiseCanExecuteChanged();
             }
         }
         catch (Exception ex)
@@ -418,6 +516,8 @@ public class OfferPositionEditViewModel : ViewModelBase
             {
                 _allProducts.Add(product);
             }
+            if (SaveCommand is RelayCommand saveCmd)
+                saveCmd.RaiseCanExecuteChanged();
         }
         catch (Exception ex)
         {

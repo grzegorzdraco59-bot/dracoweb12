@@ -1,5 +1,8 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 using ERP.Application.DTOs;
 using ERP.Application.Services;
@@ -10,29 +13,32 @@ using IUserContext = ERP.UI.WPF.Services.IUserContext;
 namespace ERP.UI.WPF.ViewModels;
 
 /// <summary>
-/// ViewModel dla widoku dostawców
+/// ViewModel dla widoku kontrahentów
 /// </summary>
 public class SuppliersViewModel : ViewModelBase
 {
-    private readonly ICustomerService _customerService;
+    private readonly ISupplierService _supplierService;
     private readonly IUserContext _userContext;
-    private CustomerDto? _selectedSupplier;
+    private CollectionViewSource _suppliersViewSource;
+    private SupplierDto? _selectedSupplier;
+    private string _searchText = string.Empty;
     private string _newSupplierName = string.Empty;
     private string _newSupplierEmail = string.Empty;
     private string _newSupplierPhone = string.Empty;
 
-    public SuppliersViewModel(ICustomerService customerService, IUserContext userContext)
+    public SuppliersViewModel(ISupplierService supplierService, IUserContext userContext)
     {
-        _customerService = customerService ?? throw new ArgumentNullException(nameof(customerService));
+        _supplierService = supplierService ?? throw new ArgumentNullException(nameof(supplierService));
         _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
-        Suppliers = new ObservableCollection<CustomerDto>();
-        
+        Suppliers = new ObservableCollection<SupplierDto>();
+        _suppliersViewSource = new CollectionViewSource { Source = Suppliers };
+        _suppliersViewSource.View.Filter = FilterSuppliers;
+
         LoadSuppliersCommand = new RelayCommand(async () => await LoadSuppliersAsync());
         AddSupplierCommand = new RelayCommand(async () => await AddSupplierAsync(), () => !string.IsNullOrWhiteSpace(NewSupplierName));
         EditSupplierCommand = new RelayCommand(() => EditSupplier(), () => SelectedSupplier != null);
         DeleteSupplierCommand = new RelayCommand(async () => await DeleteSupplierAsync(), () => SelectedSupplier != null);
-        
-        // Automatyczne ładowanie przy starcie - asynchronicznie, aby nie blokować konstruktora
+
         System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
         {
             try
@@ -42,7 +48,7 @@ public class SuppliersViewModel : ViewModelBase
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    $"Błąd podczas ładowania dostawców przy starcie: {ex.Message}\n\n{ex.StackTrace}",
+                    $"Błąd podczas ładowania kontrahentów przy starcie: {ex.Message}\n\n{ex.StackTrace}",
                     "Błąd",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
@@ -50,9 +56,24 @@ public class SuppliersViewModel : ViewModelBase
         });
     }
 
-    public ObservableCollection<CustomerDto> Suppliers { get; }
+    public ObservableCollection<SupplierDto> Suppliers { get; }
+    public ICollectionView FilteredSuppliers => _suppliersViewSource.View;
 
-    public CustomerDto? SelectedSupplier
+    public string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (_searchText != value)
+            {
+                _searchText = value;
+                OnPropertyChanged();
+                FilteredSuppliers.Refresh();
+            }
+        }
+    }
+
+    public SupplierDto? SelectedSupplier
     {
         get => _selectedSupplier;
         set
@@ -103,6 +124,23 @@ public class SuppliersViewModel : ViewModelBase
     public ICommand EditSupplierCommand { get; }
     public ICommand DeleteSupplierCommand { get; }
 
+    private bool FilterSuppliers(object obj)
+    {
+        if (obj is not SupplierDto supplier)
+            return false;
+
+        if (string.IsNullOrWhiteSpace(SearchText))
+            return true;
+
+        var searchTextLower = SearchText.ToLowerInvariant();
+        return (supplier.Id.ToString().Contains(searchTextLower)) ||
+               (supplier.Name?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
+               (supplier.Email?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
+               (supplier.Phone?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
+               (supplier.Currency?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
+               (supplier.Notes?.ToLowerInvariant().Contains(searchTextLower) ?? false);
+    }
+
     private async Task LoadSuppliersAsync()
     {
         try
@@ -110,24 +148,32 @@ public class SuppliersViewModel : ViewModelBase
             if (!_userContext.CompanyId.HasValue)
             {
                 MessageBox.Show(
-                    "Brak wybranej firmy. Wybierz firmę przed załadowaniem dostawców.",
+                    "Brak wybranej firmy. Wybierz firmę przed załadowaniem kontrahentów.",
                     "Brak firmy",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
                 return;
             }
 
-            var suppliers = await _customerService.GetByCompanyIdAsync(_userContext.CompanyId.Value);
+            var suppliers = await _supplierService.GetByCompanyIdAsync(_userContext.CompanyId.Value);
             Suppliers.Clear();
             foreach (var supplier in suppliers)
             {
                 Suppliers.Add(supplier);
             }
+            FilteredSuppliers.Refresh();
+
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var first = FilteredSuppliers.OfType<SupplierDto>().FirstOrDefault();
+                if (first != null)
+                    SelectedSupplier = first;
+            });
         }
         catch (Exception ex)
         {
             MessageBox.Show(
-                $"Błąd podczas ładowania dostawców: {ex.Message}",
+                $"Błąd podczas ładowania kontrahentów: {ex.Message}",
                 "Błąd",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
@@ -141,23 +187,23 @@ public class SuppliersViewModel : ViewModelBase
             if (!_userContext.CompanyId.HasValue)
             {
                 MessageBox.Show(
-                    "Brak wybranej firmy. Wybierz firmę przed dodaniem dostawcy.",
+                    "Brak wybranej firmy. Wybierz firmę przed dodaniem kontrahenta.",
                     "Brak firmy",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
                 return;
             }
 
-            var supplierDto = new CustomerDto
+            var supplierDto = new SupplierDto
             {
                 CompanyId = _userContext.CompanyId.Value,
                 Name = NewSupplierName,
-                Email1 = NewSupplierEmail,
-                Phone1 = NewSupplierPhone
+                Email = NewSupplierEmail,
+                Phone = NewSupplierPhone ?? string.Empty,
+                Currency = "PLN"
             };
 
-            var supplier = await _customerService.CreateAsync(supplierDto);
-            
+            var supplier = await _supplierService.CreateAsync(supplierDto);
             Suppliers.Add(supplier);
             NewSupplierName = string.Empty;
             NewSupplierEmail = string.Empty;
@@ -166,7 +212,7 @@ public class SuppliersViewModel : ViewModelBase
         catch (Exception ex)
         {
             MessageBox.Show(
-                $"Błąd podczas dodawania dostawcy: {ex.Message}",
+                $"Błąd podczas dodawania kontrahenta: {ex.Message}",
                 "Błąd",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
@@ -179,15 +225,14 @@ public class SuppliersViewModel : ViewModelBase
 
         try
         {
-            var editViewModel = new CustomerEditViewModel(_customerService, SelectedSupplier);
-            var editWindow = new CustomerEditWindow(editViewModel)
+            var editViewModel = new SupplierEditViewModel(_supplierService, SelectedSupplier);
+            var editWindow = new SupplierEditWindow(editViewModel)
             {
                 Owner = System.Windows.Application.Current.MainWindow
             };
 
             if (editWindow.ShowDialog() == true)
             {
-                // Odświeżamy listę, aby pokazać zaktualizowane dane
                 _ = LoadSuppliersAsync();
             }
         }
@@ -206,7 +251,7 @@ public class SuppliersViewModel : ViewModelBase
         if (SelectedSupplier == null) return;
 
         var result = MessageBox.Show(
-            $"Czy na pewno chcesz usunąć dostawcę '{SelectedSupplier.Name}'?",
+            $"Czy na pewno chcesz usunąć kontrahenta '{SelectedSupplier.Name}'?",
             "Potwierdzenie usunięcia",
             MessageBoxButton.YesNo,
             MessageBoxImage.Question);
@@ -225,14 +270,14 @@ public class SuppliersViewModel : ViewModelBase
                 return;
             }
 
-            await _customerService.DeleteAsync(SelectedSupplier.Id, _userContext.CompanyId.Value);
+            await _supplierService.DeleteAsync(SelectedSupplier.Id, _userContext.CompanyId.Value);
             Suppliers.Remove(SelectedSupplier);
             SelectedSupplier = null;
         }
         catch (Exception ex)
         {
             MessageBox.Show(
-                $"Błąd podczas usuwania dostawcy: {ex.Message}",
+                $"Błąd podczas usuwania kontrahenta: {ex.Message}",
                 "Błąd",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);

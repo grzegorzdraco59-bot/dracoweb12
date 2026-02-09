@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Edycja pozycji zamówienia" Height="700" Width="800"
+        Title="Update Pozycje Zamówienia" Height="750" Width="950"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize">
     <Grid Margin="15">
@@ -14,196 +14,225 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Nagłówek -->
-        <TextBlock Grid.Row="0" Text="Edycja pozycji zamówienia" 
-                   FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
+        <TextBlock Grid.Row="0" Text="1) Update Pozycje Zamówienia" 
+                   FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
 
-        <!-- ScrollViewer z formularzem -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
-                <!-- Informacje podstawowe -->
-                <GroupBox Header="Informacje podstawowe" Margin="0,0,0,10" Padding="10">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="ID:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Id}" 
-                                 Margin="5" Padding="5" IsEnabled="False"/>
+                <!-- Lewa kolumna -->
+                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                    <!-- Towar i daty -->
+                    <GroupBox Header="Towar i data dostawy" Margin="0,0,0,8" Padding="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="data dostawy pozycji:" Margin="0,5"/>
+                            <DatePicker Grid.Row="0" Grid.Column="1" SelectedDate="{Binding DeliveryDate}" Margin="4"/>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="ID Zamówienia:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding OrderId, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Nazwa PL draco:" Margin="0,5"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ProductNameDraco, UpdateSourceTrigger=PropertyChanged}" Margin="4"/>
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="ID Towaru:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ProductId, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="towar:" Margin="0,5"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Product, UpdateSourceTrigger=PropertyChanged}" Margin="4"/>
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Status towaru:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding ProductStatus, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="towar nazwa ENG:" Margin="0,5"/>
+                            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding ProductNameEng, UpdateSourceTrigger=PropertyChanged}" Margin="4"/>
+                        </Grid>
+                    </GroupBox>
 
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Dostawca:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Supplier, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
-                    </Grid>
-                </GroupBox>
+                    <!-- Jednostki zamawiane/sprzedaży, ilości -->
+                    <GroupBox Header="Jednostki i ilości" Margin="0,0,0,8" Padding="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="jednostki zamawiane/sprzedaży:" Margin="0,5"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding OrderUnit, UpdateSourceTrigger=PropertyChanged}" Margin="4"/>
 
-                <!-- Informacje o towarze -->
-                <GroupBox Header="Informacje o towarze" Margin="0,0,0,10" Padding="10">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="ilosc zamawiana:" Margin="0,5"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding OrderQuantity, UpdateSourceTrigger=PropertyChanged, StringFormat=N4}" Margin="4"/>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Nazwa Draco:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ProductNameDraco, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="ilosc dostarczona:" Margin="0,5"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding DeliveredQuantity, UpdateSourceTrigger=PropertyChanged, StringFormat=N4}" Margin="4"/>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Towar:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Product, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="jednostki zakupu faktura:" Margin="0,5"/>
+                            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PurchaseUnit, UpdateSourceTrigger=PropertyChanged}" Margin="4"/>
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Nazwa ENG:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ProductNameEng, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
-                    </Grid>
-                </GroupBox>
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="ilosc zakupu w jedn zakupu:" Margin="0,5"/>
+                            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding PurchaseQuantity, UpdateSourceTrigger=PropertyChanged, StringFormat=N4}" Margin="4"/>
+                        </Grid>
+                    </GroupBox>
 
-                <!-- Informacje o zamówieniu -->
-                <GroupBox Header="Informacje o zamówieniu" Margin="0,0,0,10" Padding="10">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                    <!-- Status, przelicznik -->
+                    <GroupBox Header="Status i przeliczniki" Margin="0,0,0,8" Padding="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="status towaru:" Margin="0,5"/>
+                            <ComboBox Grid.Row="0" Grid.Column="1" Text="{Binding ProductStatus, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" Margin="4">
+                                <ComboBoxItem Content="k"/>
+                            </ComboBox>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Jednostki zamawiane:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding OrderUnit, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="przelicznik jedn. zak/sprzed:" Margin="0,5"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ConversionFactor, UpdateSourceTrigger=PropertyChanged, StringFormat=N8}" Margin="4"/>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Ilość zamawiana:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding OrderQuantity, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="cena zakupu netto:" Margin="0,5"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding PurchasePrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N4}" Margin="4"/>
+                        </Grid>
+                    </GroupBox>
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Ilość dostarczona:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding DeliveredQuantity, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                    <!-- Finansowe: stawka VAT, ceny -->
+                    <GroupBox Header="Finansowe" Margin="0,0,0,8" Padding="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="stawka vat:" Margin="0,5"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding VatRate, UpdateSourceTrigger=PropertyChanged}" Margin="4"/>
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Cena zamawiana:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding OrderPrice, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
-                    </Grid>
-                </GroupBox>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="cena zamawiana:" Margin="0,5"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding OrderPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N4}" Margin="4"/>
 
-                <!-- Informacje o zakupie -->
-                <GroupBox Header="Informacje o zakupie" Margin="0,0,0,10" Padding="10">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="cena zakupu PLN:" Margin="0,5"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding PurchasePricePln, UpdateSourceTrigger=PropertyChanged, StringFormat=N4}" Margin="4"/>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Jednostki zakupu:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding PurchaseUnit, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="wartsc zakupu:" Margin="0,5"/>
+                            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PurchaseValue, UpdateSourceTrigger=PropertyChanged, StringFormat=N4}" Margin="4"/>
+                        </Grid>
+                    </GroupBox>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Ilość zakupu:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding PurchaseQuantity, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                    <!-- Uwagi, dostawca -->
+                    <GroupBox Header="Uwagi i dostawca" Margin="0,0,0,8" Padding="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="uwagi:" Margin="0,5" VerticalAlignment="Top"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" 
+                                     TextWrapping="Wrap" AcceptsReturn="True" MinHeight="50" Margin="4"/>
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Cena zakupu:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding PurchasePrice, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="dostawca:" Margin="0,5"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Supplier, UpdateSourceTrigger=PropertyChanged}" Margin="4"/>
+                        </Grid>
+                    </GroupBox>
+                </StackPanel>
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Wartość zakupu:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PurchaseValue, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                <!-- Prawa kolumna: ID, waga, długość -->
+                <StackPanel Grid.Column="1">
+                    <GroupBox Header="Identyfikatory" Margin="0,0,0,8" Padding="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="id firmy:" Margin="0,5"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding CompanyId, Mode=OneWay}" IsReadOnly="True" Margin="4" Background="#F0F0F0"/>
 
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Cena zakupu PLN:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding PurchasePricePln, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="id pozycji zamowienia:" Margin="0,5"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Id, Mode=OneWay}" IsReadOnly="True" Margin="4" Background="#F0F0F0"/>
 
-                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Przelicznik m/kg:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding ConversionFactor, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
-                    </Grid>
-                </GroupBox>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="id zamowienia:" Margin="0,5"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding OrderId}" Margin="4"/>
 
-                <!-- Dodatkowe informacje -->
-                <GroupBox Header="Dodatkowe informacje" Margin="0,0,0,10" Padding="10">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="ID towar:" Margin="0,5"/>
+                            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding ProductId, UpdateSourceTrigger=PropertyChanged}" Margin="4"/>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Stawka VAT:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding VatRate, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="id zamowienia hala:" Margin="0,5"/>
+                            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding OrderHalaId, UpdateSourceTrigger=PropertyChanged}" Margin="4"/>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Ciężar jednostkowy:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding UnitWeight, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                            <TextBlock Grid.Row="5" Grid.Column="0" Text="id pozycji pozycji oferty:" Margin="0,5"/>
+                            <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding OfferPositionId, UpdateSourceTrigger=PropertyChanged}" Margin="4"/>
+                        </Grid>
+                    </GroupBox>
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Ilość w opakowaniu:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding QuantityInPackage, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                    <GroupBox Header="Waga i wymiary" Margin="0,0,0,8" Padding="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="ilosc w opakowaniu:" Margin="0,5"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding QuantityInPackage, UpdateSourceTrigger=PropertyChanged, StringFormat=N4}" Margin="4"/>
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Długość:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Length, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="ciezar jedn [kg]:" Margin="0,5"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding UnitWeight, UpdateSourceTrigger=PropertyChanged, StringFormat=N5}" Margin="4"/>
 
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Uwagi:" Margin="0,5" VerticalAlignment="Top"/>
-                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="60"/>
-                    </Grid>
-                </GroupBox>
-            </StackPanel>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="dlugosc:" Margin="0,5"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Length, UpdateSourceTrigger=PropertyChanged, StringFormat=N3}" Margin="4"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="cena zakupu PLN nowe jednostki:" Margin="0,5"/>
+                            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PurchasePricePlnNewUnit, UpdateSourceTrigger=PropertyChanged, StringFormat=N4}" Margin="4"/>
+                        </Grid>
+                    </GroupBox>
+
+                    <GroupBox Header="Flagi" Margin="0,0,0,8" Padding="10">
+                        <CheckBox Content="skopiowano do magazynu" IsChecked="{Binding CopiedToWarehouse}" Margin="0,5"/>
+                    </GroupBox>
+                </StackPanel>
+            </Grid>
         </ScrollViewer>
 
-        <!-- Przyciski -->
+        <!-- Przyciski OK / Cancel / Help -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
-            <Button Content="Zapisz" Command="{Binding SaveCommand}" 
-                    Padding="20,5" Margin="0,0,10,0" MinWidth="100"/>
-            <Button Content="Anuluj" Command="{Binding CancelCommand}" 
-                    Padding="20,5" MinWidth="100" IsCancel="True"/>
+            <Button Content="OK" Command="{Binding SaveCommand}" 
+                    Padding="20,6" Margin="0,0,10,0" MinWidth="90"/>
+            <Button Content="Cancel" Command="{Binding CancelCommand}" 
+                    Padding="20,6" Margin="0,0,10,0" MinWidth="90" IsCancel="True"/>
+            <Button Content="Help" Padding="20,6" MinWidth="90" IsEnabled="False"/>
         </StackPanel>
     </Grid>
 </Window>

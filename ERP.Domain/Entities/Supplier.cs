@@ -1,7 +1,7 @@
 namespace ERP.Domain.Entities;
 
 /// <summary>
-/// Encja domenowa reprezentująca dostawcę z tabeli dostawcy
+/// Encja domenowa reprezentująca kontrahenta
 /// </summary>
 public class Supplier : BaseEntity
 {
@@ -33,7 +33,7 @@ public class Supplier : BaseEntity
     public void UpdateName(string newName)
     {
         if (string.IsNullOrWhiteSpace(newName))
-            throw new ArgumentException("Nazwa dostawcy nie może być pusta.", nameof(newName));
+            throw new ArgumentException("Nazwa kontrahenta nie może być pusta.", nameof(newName));
 
         Name = newName;
         UpdateTimestamp();

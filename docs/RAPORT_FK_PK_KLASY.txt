@@ -1,0 +1,267 @@
+=== RAPORT: Klasyfikacja tabel według FK i PK ===
+
+Schemat: locbd
+
+--- 1) Statystyki FK i PK dla każdej tabeli ---
+
+  ar_internal_metadata                incoming_fk= 0  outgoing_fk= 0  pk=key
+  auta                                incoming_fk= 0  outgoing_fk= 0  pk=id
+  awariamaszyna                       incoming_fk= 0  outgoing_fk= 0  pk=id
+  awariapozycje                       incoming_fk= 0  outgoing_fk= 0  pk=id
+  banki                               incoming_fk= 0  outgoing_fk= 0  pk=id
+  daneobliczmaszyne                   incoming_fk= 0  outgoing_fk= 0  pk=id
+  danetabliczka                       incoming_fk= 0  outgoing_fk= 0  pk=id
+  doc_counters                        incoming_fk= 0  outgoing_fk= 1  pk=company_id,doc_type,year,month
+  dokdlaodbiorcy                      incoming_fk= 0  outgoing_fk= 0  pk=id
+  dostawcy                            incoming_fk= 0  outgoing_fk= 0  pk=id
+  fakturatyp                          incoming_fk= 0  outgoing_fk= 0  pk=id
+  faktury                             incoming_fk= 1  outgoing_fk= 0  pk=id
+  firmy                               incoming_fk= 1  outgoing_fk= 0  pk=id
+  foto                                incoming_fk= 0  outgoing_fk= 0  pk=id
+  grupagtu                            incoming_fk= 0  outgoing_fk= 0  pk=id
+  grupasprzedazy                      incoming_fk= 0  outgoing_fk= 0  pk=id
+  grupytowaru                         incoming_fk= 0  outgoing_fk= 0  pk=id
+  jednostki                           incoming_fk= 0  outgoing_fk= 0  pk=id
+  kalendarz                           incoming_fk= 0  outgoing_fk= 0  pk=id
+  kasa                                incoming_fk= 0  outgoing_fk= 0  pk=id
+  kurswaluty                          incoming_fk= 0  outgoing_fk= 0  pk=id
+  liniaprodukcyjna                    incoming_fk= 0  outgoing_fk= 0  pk=id
+  linieobciazenieoferta               incoming_fk= 0  outgoing_fk= 0  pk=id
+  linieobciazeniezlecenie             incoming_fk= 0  outgoing_fk= 0  pk=id
+  linieprodukcyjne                    incoming_fk= 0  outgoing_fk= 0  pk=id
+  linierhproduktu                     incoming_fk= 0  outgoing_fk= 0  pk=id
+  magazyn                             incoming_fk= 0  outgoing_fk= 0  pk=id_magazyn,id_firmy
+  maszynadaneobliczen                 incoming_fk= 0  outgoing_fk= 0  pk=(brak)
+  maszynaodbiorca                     incoming_fk= 0  outgoing_fk= 0  pk=(brak)
+  maszynaodbiorcapozycja              incoming_fk= 0  outgoing_fk= 0  pk=(brak)
+  maszynatyp                          incoming_fk= 0  outgoing_fk= 0  pk=id
+  maszynawymiar                       incoming_fk= 0  outgoing_fk= 0  pk=(brak)
+  maszyny                             incoming_fk= 0  outgoing_fk= 0  pk=id
+  narzedziawydane                     incoming_fk= 0  outgoing_fk= 0  pk=id
+  narzedziawydanepracownik            incoming_fk= 0  outgoing_fk= 0  pk=id
+  noty                                incoming_fk= 0  outgoing_fk= 0  pk=id
+  odbiorcagrupa                       incoming_fk= 0  outgoing_fk= 0  pk=id
+  odbiorcatyp                         incoming_fk= 0  outgoing_fk= 0  pk=id
+  odbiorcazapisanydogrupy             incoming_fk= 0  outgoing_fk= 0  pk=id
+  odbiorcy                            incoming_fk= 0  outgoing_fk= 0  pk=id
+  odbiorcylistatemp                   incoming_fk= 0  outgoing_fk= 0  pk=id
+  ofertastatus                        incoming_fk= 0  outgoing_fk= 0  pk=id
+  oferty                              incoming_fk= 1  outgoing_fk= 0  pk=id
+  ofertypozycje                       incoming_fk= 0  outgoing_fk= 1  pk=id
+  operator                            incoming_fk= 1  outgoing_fk= 0  pk=id_operatora
+  operatorfirma                       incoming_fk= 0  outgoing_fk= 0  pk=id
+  operator_login                      incoming_fk= 0  outgoing_fk= 0  pk=id
+  operator_table_permissions          incoming_fk= 0  outgoing_fk= 1  pk=id
+  packinglist                         incoming_fk= 0  outgoing_fk= 0  pk=id
+  platnosci                           incoming_fk= 0  outgoing_fk= 0  pk=id
+  platnoscstatus                      incoming_fk= 0  outgoing_fk= 0  pk=id
+  platnosctyp                         incoming_fk= 0  outgoing_fk= 0  pk=id
+  pliksql                             incoming_fk= 0  outgoing_fk= 0  pk=(brak)
+  pozycjedelegacji                    incoming_fk= 0  outgoing_fk= 0  pk=id
+  pozycjedokdlaodbiorcy               incoming_fk= 0  outgoing_fk= 0  pk=id
+  pozycjefaktury                      incoming_fk= 0  outgoing_fk= 1  pk=id
+  pozycjefakturytymcz                 incoming_fk= 0  outgoing_fk= 0  pk=(brak)
+  pozycjepozycjizlecenia              incoming_fk= 0  outgoing_fk= 0  pk=id
+  pozycjeproduktu                     incoming_fk= 0  outgoing_fk= 0  pk=id
+  pozycjeremanentu                    incoming_fk= 0  outgoing_fk= 0  pk=id_pozycji_rem,id_rem
+  pozycjezamowienia                   incoming_fk= 0  outgoing_fk= 0  pk=id
+  pozycjezlecenia                     incoming_fk= 0  outgoing_fk= 0  pk=id
+  pracownicy                          incoming_fk= 0  outgoing_fk= 0  pk=id
+  pracownicyrh                        incoming_fk= 0  outgoing_fk= 0  pk=(brak)
+  premia                              incoming_fk= 0  outgoing_fk= 0  pk=id
+  produkcjastatus                     incoming_fk= 0  outgoing_fk= 0  pk=id
+  produkty                            incoming_fk= 0  outgoing_fk= 0  pk=id
+  remanent                            incoming_fk= 0  outgoing_fk= 0  pk=id
+  rh                                  incoming_fk= 0  outgoing_fk= 0  pk=id
+  rhproduktu                          incoming_fk= 0  outgoing_fk= 0  pk=id
+  rodzajurlopu                        incoming_fk= 0  outgoing_fk= 0  pk=id
+  rola                                incoming_fk= 0  outgoing_fk= 0  pk=id
+  rola_backup                         incoming_fk= 0  outgoing_fk= 0  pk=(brak)
+  schema_migrations                   incoming_fk= 0  outgoing_fk= 0  pk=version
+  secwin_access                       incoming_fk= 0  outgoing_fk= 0  pk=(brak)
+  secwin_access_copy                  incoming_fk= 0  outgoing_fk= 0  pk=(brak)
+  secwin_counters                     incoming_fk= 0  outgoing_fk= 0  pk=(brak)
+  secwin_licence4                     incoming_fk= 0  outgoing_fk= 0  pk=(brak)
+  secwin_namecodes                    incoming_fk= 0  outgoing_fk= 0  pk=(brak)
+  secwin_operators5                   incoming_fk= 0  outgoing_fk= 0  pk=(brak)
+  secwin_operatorsusergroups          incoming_fk= 0  outgoing_fk= 0  pk=(brak)
+  serwistyp                           incoming_fk= 0  outgoing_fk= 0  pk=id
+  serwisy                             incoming_fk= 0  outgoing_fk= 0  pk=id
+  serwisypracownicy                   incoming_fk= 0  outgoing_fk= 0  pk=id
+  skrzynie                            incoming_fk= 0  outgoing_fk= 0  pk=id
+  specmaszklienta                     incoming_fk= 0  outgoing_fk= 0  pk=id
+  specyfikacjamaszyny                 incoming_fk= 0  outgoing_fk= 0  pk=id
+  sprawdzaniemaszyny                  incoming_fk= 0  outgoing_fk= 0  pk=id
+  srodkitrwale                        incoming_fk= 0  outgoing_fk= 0  pk=id
+  statusinne                          incoming_fk= 0  outgoing_fk= 0  pk=id
+  stawkavat                           incoming_fk= 0  outgoing_fk= 0  pk=id
+  tabtym                              incoming_fk= 0  outgoing_fk= 0  pk=id
+  test                                incoming_fk= 0  outgoing_fk= 0  pk=id
+  text                                incoming_fk= 0  outgoing_fk= 0  pk=id
+  towarstatus                         incoming_fk= 0  outgoing_fk= 0  pk=id
+  towary                              incoming_fk= 0  outgoing_fk= 0  pk=id
+  tym1                                incoming_fk= 0  outgoing_fk= 0  pk=id
+  umowypracownicy                     incoming_fk= 0  outgoing_fk= 0  pk=id
+  urlopy                              incoming_fk= 0  outgoing_fk= 0  pk=id
+  waluty                              incoming_fk= 0  outgoing_fk= 0  pk=id
+  wyplaty                             incoming_fk= 0  outgoing_fk= 0  pk=id
+  wyplatydanem                        incoming_fk= 0  outgoing_fk= 0  pk=id
+  wyplatydaney                        incoming_fk= 0  outgoing_fk= 0  pk=id
+  zamowienia                          incoming_fk= 0  outgoing_fk= 0  pk=id
+  zamowieniahala                      incoming_fk= 0  outgoing_fk= 0  pk=id
+  zamowieniestatus                    incoming_fk= 0  outgoing_fk= 0  pk=id
+  zlecenia                            incoming_fk= 0  outgoing_fk= 0  pk=id
+
+--- 2) A) IZOLOWANE (incoming=0, outgoing=0) ---
+
+  ar_internal_metadata
+  auta
+  awariamaszyna
+  awariapozycje
+  banki
+  daneobliczmaszyne
+  danetabliczka
+  dokdlaodbiorcy
+  dostawcy
+  fakturatyp
+  foto
+  grupagtu
+  grupasprzedazy
+  grupytowaru
+  jednostki
+  kalendarz
+  kasa
+  kurswaluty
+  liniaprodukcyjna
+  linieobciazenieoferta
+  linieobciazeniezlecenie
+  linieprodukcyjne
+  linierhproduktu
+  magazyn
+  maszynadaneobliczen
+  maszynaodbiorca
+  maszynaodbiorcapozycja
+  maszynatyp
+  maszynawymiar
+  maszyny
+  narzedziawydane
+  narzedziawydanepracownik
+  noty
+  odbiorcagrupa
+  odbiorcatyp
+  odbiorcazapisanydogrupy
+  odbiorcy
+  odbiorcylistatemp
+  ofertastatus
+  operator_login
+  operatorfirma
+  packinglist
+  platnosci
+  platnoscstatus
+  platnosctyp
+  pliksql
+  pozycjedelegacji
+  pozycjedokdlaodbiorcy
+  pozycjefakturytymcz
+  pozycjepozycjizlecenia
+  pozycjeproduktu
+  pozycjeremanentu
+  pozycjezamowienia
+  pozycjezlecenia
+  pracownicy
+  pracownicyrh
+  premia
+  produkcjastatus
+  produkty
+  remanent
+  rh
+  rhproduktu
+  rodzajurlopu
+  rola
+  rola_backup
+  schema_migrations
+  secwin_access
+  secwin_access_copy
+  secwin_counters
+  secwin_licence4
+  secwin_namecodes
+  secwin_operators5
+  secwin_operatorsusergroups
+  serwistyp
+  serwisy
+  serwisypracownicy
+  skrzynie
+  specmaszklienta
+  specyfikacjamaszyny
+  sprawdzaniemaszyny
+  srodkitrwale
+  statusinne
+  stawkavat
+  tabtym
+  test
+  text
+  towarstatus
+  towary
+  tym1
+  umowypracownicy
+  urlopy
+  waluty
+  wyplaty
+  wyplatydanem
+  wyplatydaney
+  zamowienia
+  zamowieniahala
+  zamowieniestatus
+  zlecenia
+  [99 tabel]
+
+--- B) DZIECI/LIŚCIE (incoming=0, outgoing>0) ---
+
+  doc_counters
+  ofertypozycje
+  operator_table_permissions
+  pozycjefaktury
+  [4 tabel]
+
+--- C) RDZEŃ/RODZICE (incoming>0) ---
+
+  faktury
+  firmy
+  oferty
+  operator
+  [4 tabel]
+
+--- 3) Tabele bez PRIMARY KEY ---
+
+  maszynadaneobliczen
+  maszynaodbiorca
+  maszynaodbiorcapozycja
+  maszynawymiar
+  pliksql
+  pozycjefakturytymcz
+  pracownicyrh
+  rola_backup
+  secwin_access
+  secwin_access_copy
+  secwin_counters
+  secwin_licence4
+  secwin_namecodes
+  secwin_operators5
+  secwin_operatorsusergroups
+  [15 tabel]
+
+--- 4) Tabele ze złożonym PRIMARY KEY (composite) ---
+
+  doc_counters: company_id,doc_type,year,month
+  magazyn: id_magazyn,id_firmy
+  pozycjeremanentu: id_pozycji_rem,id_rem
+  [3 tabel]
+
+--- 5) Podsumowanie ---
+
+  Wszystkie tabele:     107
+  Klasa A (izolowane):  99
+  Klasa B (dzieci):    4
+  Klasa C (rdzeń):     4
+  Bez PK:              15
+  Composite PK:        3

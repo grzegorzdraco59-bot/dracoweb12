@@ -15,6 +15,10 @@ public interface IOfferRepository
     Task UpdateAsync(Offer offer, CancellationToken cancellationToken = default);
     Task DeleteAsync(int id, int companyId, CancellationToken cancellationToken = default);
     Task SetStatusAsync(int id, int companyId, OfferStatus status, CancellationToken cancellationToken = default);
+    Task SetFlagsAsync(int offerId, int companyId, bool? forProforma, bool? forOrder, bool forInvoice, CancellationToken cancellationToken = default);
     Task<bool> ExistsAsync(int id, int companyId, CancellationToken cancellationToken = default);
     Task<int?> GetNextOfferNumberForDateAsync(int offerDate, int companyId, CancellationToken cancellationToken = default);
+
+    /// <summary>Wyszukiwanie LIKE po kolumnach odbiorcy (odbiorca_nazwa, odbiorca_ulica, odbiorca_panstwo, odbiorca_miasto). Limit 200.</summary>
+    Task<IEnumerable<Offer>> SearchByCompanyIdAsync(int companyId, string? searchText, int limit = 200, CancellationToken cancellationToken = default);
 }

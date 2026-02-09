@@ -4,6 +4,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using ERP.Application.DTOs;
 using ERP.Application.Repositories;
+using ERP.Application.Services;
 using ERP.UI.WPF.Views;
 
 namespace ERP.UI.WPF.ViewModels;
@@ -14,13 +15,17 @@ namespace ERP.UI.WPF.ViewModels;
 public class OrderPositionsViewModel : ViewModelBase
 {
     private readonly IOrderPositionMainRepository _repository;
+    private readonly IOrderMainService _orderMainService;
+    private readonly ERP.UI.WPF.Services.ITowarPicker _towarPicker;
     private string _searchText = string.Empty;
     private CollectionViewSource _positionsViewSource;
     private OrderPositionMainDto? _selectedPosition;
     
-    public OrderPositionsViewModel(IOrderPositionMainRepository repository)
+    public OrderPositionsViewModel(IOrderPositionMainRepository repository, IOrderMainService orderMainService, ERP.UI.WPF.Services.ITowarPicker towarPicker)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _orderMainService = orderMainService ?? throw new ArgumentNullException(nameof(orderMainService));
+        _towarPicker = towarPicker ?? throw new ArgumentNullException(nameof(towarPicker));
         
         Positions = new ObservableCollection<OrderPositionMainDto>();
         
@@ -132,7 +137,7 @@ public class OrderPositionsViewModel : ViewModelBase
                 OrderId = 0
             };
             
-            var editViewModel = new OrderPositionEditViewModel(_repository, newPosition);
+            var editViewModel = new OrderPositionEditViewModel(_orderMainService, _towarPicker, newPosition, string.Empty);
             var editWindow = new OrderPositionEditWindow(editViewModel)
             {
                 Owner = System.Windows.Application.Current.MainWindow
@@ -160,7 +165,7 @@ public class OrderPositionsViewModel : ViewModelBase
 
         try
         {
-            var editViewModel = new OrderPositionEditViewModel(_repository, SelectedPosition);
+            var editViewModel = new OrderPositionEditViewModel(_orderMainService, _towarPicker, SelectedPosition, string.Empty);
             var editWindow = new OrderPositionEditWindow(editViewModel)
             {
                 Owner = System.Windows.Application.Current.MainWindow
@@ -196,7 +201,7 @@ public class OrderPositionsViewModel : ViewModelBase
         {
             try
             {
-                await _repository.DeleteAsync(SelectedPosition.Id);
+                await _orderMainService.DeletePositionAsync(SelectedPosition.Id);
                 await LoadPositionsAsync();
             }
             catch (Exception ex)

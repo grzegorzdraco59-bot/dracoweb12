@@ -188,6 +188,12 @@ public class AdminViewModel : ViewModelBase
                     Permissions = user.Permissions
                 });
             }
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var first = Operators.FirstOrDefault();
+                if (first != null)
+                    SelectedOperator = first;
+            });
         }
         catch (Exception ex)
         {
@@ -261,6 +267,12 @@ public class AdminViewModel : ViewModelBase
                     RoleId = uc.RoleId
                 });
             }
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var first = UserCompanies.FirstOrDefault();
+                if (first != null)
+                    SelectedUserCompany = first;
+            });
         }
         catch (Exception ex)
         {
@@ -298,6 +310,12 @@ public class AdminViewModel : ViewModelBase
                     PasswordHash = userLogin.PasswordHash
                 });
             }
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var first = UserLogins.FirstOrDefault();
+                if (first != null)
+                    SelectedUserLogin = first;
+            });
         }
         catch (Exception ex)
         {
@@ -631,6 +649,12 @@ public class AdminViewModel : ViewModelBase
             {
                 Permissions.Add(permission);
             }
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var first = Permissions.FirstOrDefault();
+                if (first != null)
+                    SelectedPermission = first;
+            });
         }
         catch (Exception ex)
         {

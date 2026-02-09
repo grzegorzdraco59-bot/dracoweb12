@@ -1,7 +1,7 @@
 namespace ERP.Application.DTOs;
 
 /// <summary>
-/// DTO dla dostawcy z tabeli dostawcy
+/// DTO dla kontrahenta
 /// </summary>
 public class SupplierDto
 {

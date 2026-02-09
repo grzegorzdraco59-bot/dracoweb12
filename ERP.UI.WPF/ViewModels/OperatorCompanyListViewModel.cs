@@ -2,39 +2,54 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using ERP.Application.DTOs;
 using ERP.Infrastructure.Repositories;
+using ERP.UI.WPF.Services;
 using ERP.UI.WPF.Views;
 using MySqlConnector;
 
 namespace ERP.UI.WPF.ViewModels;
 
 /// <summary>
-/// ViewModel listy powiązań operator–firma (nowy moduł OperatorCompany).
-/// Soft delete (IsActive); lista domyślnie tylko aktywne; Dezaktywuj zamiast Usuń.
+/// ViewModel listy powiązań operator–firma (moduł OperatorFirma).
+/// Filtruje po wybranej firmie (id_firmy) i opcjonalnie po operatorze (id_operatora).
 /// </summary>
 public class OperatorCompanyListViewModel : ViewModelBase
 {
     private readonly OperatorCompanyRepository _repository;
-    private int _userId;
-    private int _currentUserId;
+    private readonly IUserContext _userContext;
+    private int _companyId;
+    private int _filterOperatorId;
     private bool _includeInactive;
     private OperatorCompanyDto? _selectedItem;
 
-    public OperatorCompanyListViewModel(OperatorCompanyRepository repository)
+    public OperatorCompanyListViewModel(OperatorCompanyRepository repository, IUserContext userContext)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
         Items = new ObservableCollection<OperatorCompanyDto>();
+        _companyId = userContext.CompanyId ?? 0;
 
-        LoadCommand = new RelayCommand(async () => await LoadAsync(CurrentUserId));
+        LoadCommand = new RelayCommand(async () => await LoadAsync());
         AddCommand = new RelayCommand(async () => await AddAsync());
         EditCommand = new RelayCommand(async () => await EditAsync(), () => SelectedItem != null);
         DeactivateCommand = new RelayCommand(async () => await DeactivateAsync(), () => SelectedItem != null && SelectedItem.IsActive);
+
+        // Auto-ładuj gdy firma jest wybrana
+        if (_companyId > 0)
+            System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => await LoadAsync());
     }
 
-    /// <summary>ID operatora do załadowania listy powiązań. Ustaw i wywołaj LoadCommand (Ładuj).</summary>
-    public int CurrentUserId
+    /// <summary>ID firmy do filtrowania (z kontekstu lub ręcznie).</summary>
+    public int CompanyId
     {
-        get => _currentUserId;
-        set => SetProperty(ref _currentUserId, value);
+        get => _companyId;
+        set => SetProperty(ref _companyId, value);
+    }
+
+    /// <summary>ID operatora do filtrowania (0 = wszystkie).</summary>
+    public int FilterOperatorId
+    {
+        get => _filterOperatorId;
+        set => SetProperty(ref _filterOperatorId, value);
     }
 
     /// <summary>Pokaż też nieaktywne powiązania (IsActive=0). Po zmianie lista jest przeładowywana.</summary>
@@ -44,8 +59,8 @@ public class OperatorCompanyListViewModel : ViewModelBase
         set
         {
             if (!SetProperty(ref _includeInactive, value)) return;
-            if (_userId != 0)
-                _ = LoadAsync(_userId);
+            if (_companyId > 0)
+                _ = LoadAsync();
         }
     }
 
@@ -70,17 +85,35 @@ public class OperatorCompanyListViewModel : ViewModelBase
     public ICommand DeactivateCommand { get; }
 
     /// <summary>
-    /// Ładuje listę powiązań dla danego operatora (domyślnie tylko IsActive=1). Po zapisie / dezaktywacji wywołaj ponownie.
+    /// Ładuje listę powiązań dla wybranej firmy (id_firmy) i opcjonalnie operatora (id_operatora).
     /// </summary>
-    public async Task LoadAsync(int userId)
+    public async Task LoadAsync()
     {
-        _userId = userId;
+        var companyId = _userContext.CompanyId ?? CompanyId;
+        if (companyId <= 0)
+        {
+            System.Windows.MessageBox.Show(
+                "Brak wybranej firmy. Wybierz firmę przed załadowaniem listy OperatorFirma.",
+                "Brak firmy",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+        _companyId = companyId;
         Items.Clear();
         try
         {
-            var list = await _repository.GetByUserIdAsync(userId, IncludeInactive);
+            var operatorId = FilterOperatorId > 0 ? FilterOperatorId : (int?)null;
+            var list = await _repository.GetByCompanyIdAsync(companyId, operatorId, IncludeInactive);
             foreach (var dto in list)
                 Items.Add(dto);
+
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var first = Items.FirstOrDefault();
+                if (first != null)
+                    SelectedItem = first;
+            });
         }
         catch (Exception ex)
         {
@@ -94,11 +127,12 @@ public class OperatorCompanyListViewModel : ViewModelBase
 
     private async Task AddAsync()
     {
-        var dto = new OperatorCompanyDto { Id = 0, UserId = _userId, CompanyId = 0, RoleId = null };
+        var companyId = _userContext.CompanyId ?? CompanyId;
+        var dto = new OperatorCompanyDto { Id = 0, UserId = 0, CompanyId = companyId > 0 ? companyId : 0, RoleId = null };
         var editVm = new OperatorCompanyEditViewModel(_repository, dto, isNew: true);
         var window = new OperatorCompanyEditWindow(editVm) { Owner = System.Windows.Application.Current.MainWindow };
         if (window.ShowDialog() == true)
-            await LoadAsync(_userId);
+            await LoadAsync();
     }
 
     private async Task EditAsync()
@@ -108,13 +142,13 @@ public class OperatorCompanyListViewModel : ViewModelBase
         if (existing == null)
         {
             System.Windows.MessageBox.Show("Rekord nie istnieje.", "Błąd", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-            await LoadAsync(_userId);
+            await LoadAsync();
             return;
         }
         var editVm = new OperatorCompanyEditViewModel(_repository, existing, isNew: false);
         var window = new OperatorCompanyEditWindow(editVm) { Owner = System.Windows.Application.Current.MainWindow };
         if (window.ShowDialog() == true)
-            await LoadAsync(_userId);
+            await LoadAsync();
     }
 
     private async Task DeactivateAsync()
@@ -129,7 +163,7 @@ public class OperatorCompanyListViewModel : ViewModelBase
         try
         {
             await _repository.DeactivateAsync(SelectedItem.Id);
-            await LoadAsync(_userId);
+            await LoadAsync();
         }
         catch (MySqlException sqlEx)
         {

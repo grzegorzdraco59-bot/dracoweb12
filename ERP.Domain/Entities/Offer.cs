@@ -3,7 +3,7 @@ using ERP.Domain.Enums;
 namespace ERP.Domain.Entities;
 
 /// <summary>
-/// Encja domenowa reprezentująca ofertę
+/// Encja domenowa reprezentująca ofertę (tabela aoferty, PK: id_oferta)
 /// </summary>
 public class Offer : BaseEntity
 {

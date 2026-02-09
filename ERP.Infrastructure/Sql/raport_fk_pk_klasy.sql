@@ -1,0 +1,55 @@
+-- =============================================================================
+-- RAPORT: Klasyfikacja tabel według FK i PK (tylko odczyt, bez zmian w DB)
+-- Schemat: DATABASE() (bieżąca baza)
+-- Uruchom: mysql -u user -p locbd < raport_fk_pk_klasy.sql
+-- Lub:    dotnet run --project SyncDatabase raport
+-- =============================================================================
+
+-- 1) Statystyki FK i PK dla każdej tabeli
+SELECT t.TABLE_NAME AS tabela,
+       COALESCE((SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS rc 
+                 WHERE rc.CONSTRAINT_SCHEMA = DATABASE() AND rc.REFERENCED_TABLE_NAME = t.TABLE_NAME), 0) AS incoming_fk,
+       COALESCE((SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS rc 
+                 WHERE rc.CONSTRAINT_SCHEMA = DATABASE() AND rc.TABLE_NAME = t.TABLE_NAME), 0) AS outgoing_fk,
+       COALESCE((SELECT GROUP_CONCAT(k.COLUMN_NAME ORDER BY k.ORDINAL_POSITION)
+                 FROM information_schema.KEY_COLUMN_USAGE k
+                 WHERE k.TABLE_SCHEMA = DATABASE() AND k.TABLE_NAME = t.TABLE_NAME AND k.CONSTRAINT_NAME = 'PRIMARY'), '(brak)') AS pk_kolumna
+FROM information_schema.TABLES t
+WHERE t.TABLE_SCHEMA = DATABASE() AND t.TABLE_TYPE = 'BASE TABLE'
+ORDER BY t.TABLE_NAME;
+
+-- 2a) A) IZOLOWANE (incoming=0, outgoing=0)
+SELECT t.TABLE_NAME AS tabela
+FROM information_schema.TABLES t
+WHERE t.TABLE_SCHEMA = DATABASE() AND t.TABLE_TYPE = 'BASE TABLE'
+  AND NOT EXISTS (SELECT 1 FROM information_schema.REFERENTIAL_CONSTRAINTS rc WHERE rc.CONSTRAINT_SCHEMA = DATABASE() AND rc.REFERENCED_TABLE_NAME = t.TABLE_NAME)
+  AND NOT EXISTS (SELECT 1 FROM information_schema.REFERENTIAL_CONSTRAINTS rc WHERE rc.CONSTRAINT_SCHEMA = DATABASE() AND rc.TABLE_NAME = t.TABLE_NAME)
+ORDER BY t.TABLE_NAME;
+
+-- 2b) B) DZIECI/LIŚCIE (incoming=0, outgoing>0)
+SELECT t.TABLE_NAME AS tabela
+FROM information_schema.TABLES t
+WHERE t.TABLE_SCHEMA = DATABASE() AND t.TABLE_TYPE = 'BASE TABLE'
+  AND NOT EXISTS (SELECT 1 FROM information_schema.REFERENTIAL_CONSTRAINTS rc WHERE rc.CONSTRAINT_SCHEMA = DATABASE() AND rc.REFERENCED_TABLE_NAME = t.TABLE_NAME)
+  AND EXISTS (SELECT 1 FROM information_schema.REFERENTIAL_CONSTRAINTS rc WHERE rc.CONSTRAINT_SCHEMA = DATABASE() AND rc.TABLE_NAME = t.TABLE_NAME)
+ORDER BY t.TABLE_NAME;
+
+-- 2c) C) RDZEŃ/RODZICE (incoming>0)
+SELECT DISTINCT REFERENCED_TABLE_NAME AS tabela
+FROM information_schema.REFERENTIAL_CONSTRAINTS
+WHERE CONSTRAINT_SCHEMA = DATABASE()
+ORDER BY REFERENCED_TABLE_NAME;
+
+-- 3) Tabele bez PRIMARY KEY
+SELECT t.TABLE_NAME AS tabela
+FROM information_schema.TABLES t
+LEFT JOIN (SELECT DISTINCT TABLE_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND CONSTRAINT_NAME = 'PRIMARY') pk ON t.TABLE_NAME = pk.TABLE_NAME
+WHERE t.TABLE_SCHEMA = DATABASE() AND t.TABLE_TYPE = 'BASE TABLE' AND pk.TABLE_NAME IS NULL
+ORDER BY t.TABLE_NAME;
+
+-- 4) Tabele ze złożonym PRIMARY KEY (composite)
+SELECT TABLE_NAME AS tabela, GROUP_CONCAT(COLUMN_NAME ORDER BY ORDINAL_POSITION) AS pk_kolumny
+FROM information_schema.KEY_COLUMN_USAGE
+WHERE TABLE_SCHEMA = DATABASE() AND CONSTRAINT_NAME = 'PRIMARY'
+GROUP BY TABLE_NAME HAVING COUNT(*) > 1
+ORDER BY TABLE_NAME;

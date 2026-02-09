@@ -2,6 +2,7 @@ using ERP.Application.Services;
 using ERP.Domain.Entities;
 using ERP.Domain.Repositories;
 using ERP.Infrastructure.Data;
+using ERP.Infrastructure.Services;
 using MySqlConnector;
 
 namespace ERP.Infrastructure.Repositories;
@@ -13,27 +14,29 @@ public class OfferPositionRepository : IOfferPositionRepository
 {
     private readonly DatabaseContext _context;
     private readonly IUserContext _userContext;
+    private readonly IIdGenerator _idGenerator;
 
-    public OfferPositionRepository(DatabaseContext context, IUserContext userContext)
+    public OfferPositionRepository(DatabaseContext context, IUserContext userContext, IIdGenerator idGenerator)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
+        _idGenerator = idGenerator ?? throw new ArgumentNullException(nameof(idGenerator));
     }
 
     public async Task<OfferPosition?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT p.id AS Id, p.oferta_id AS OfertaId, p.id_firmy, p.id_towaru, p.id_dostawcy, p.kod_towaru, " +
-            "p.Nazwa, p.Nazwa_ENG, p.jednostki, p.jednostki_en, p.ilosc, p.cena_netto, p.Rabat, p.Cena_po_rabacie, " +
-            "p.netto_poz, p.stawka_vat, p.vat_poz, p.brutto_poz, " +
+            "SELECT p.id, COALESCE(p.oferta_id, p.ID_oferta) AS OfertaId, p.id_firmy, p.id_towaru, p.id_dostawcy, p.kod_towaru, " +
+            "p.Nazwa, p.Nazwa_ENG, p.jednostki, p.jednostki_en, COALESCE(p.ilosc, p.Sztuki) AS ilosc, COALESCE(p.cena_netto, p.Cena) AS cena_netto, p.Rabat, p.Cena_po_rabacie, " +
+            "COALESCE(p.netto_poz, p.Cena_po_rabacie_i_sztukach) AS netto_poz, p.stawka_vat, COALESCE(p.vat_poz, p.vat) AS vat_poz, COALESCE(p.brutto_poz, p.cena_brutto) AS brutto_poz, " +
             "p.Uwagi_oferta, p.uwagi_faktura, p.inne1, p.nr_zespolu " +
-            "FROM ofertypozycje p WHERE p.id = @Id AND p.id_firmy = @CompanyId",
+            "FROM apozycjeoferty_V p WHERE p.id = @Id AND p.id_firmy = @CompanyId",
             connection);
         command.Parameters.AddWithValue("@Id", id);
         command.Parameters.AddWithValue("@CompanyId", GetCurrentCompanyId());
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
         {
             return MapToOfferPosition(reader);
@@ -52,17 +55,17 @@ public class OfferPositionRepository : IOfferPositionRepository
         var positions = new List<OfferPosition>();
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT p.id AS Id, p.oferta_id AS OfertaId, p.id_firmy, p.id_towaru, p.id_dostawcy, p.kod_towaru, " +
-            "p.Nazwa, p.Nazwa_ENG, p.jednostki, p.jednostki_en, p.ilosc, p.cena_netto, p.Rabat, p.Cena_po_rabacie, " +
-            "p.netto_poz, p.stawka_vat, p.vat_poz, p.brutto_poz, " +
+            "SELECT p.id, COALESCE(p.oferta_id, p.ID_oferta) AS OfertaId, p.id_firmy, p.id_towaru, p.id_dostawcy, p.kod_towaru, " +
+            "p.Nazwa, p.Nazwa_ENG, p.jednostki, p.jednostki_en, COALESCE(p.ilosc, p.Sztuki) AS ilosc, COALESCE(p.cena_netto, p.Cena) AS cena_netto, p.Rabat, p.Cena_po_rabacie, " +
+            "COALESCE(p.netto_poz, p.Cena_po_rabacie_i_sztukach) AS netto_poz, p.stawka_vat, COALESCE(p.vat_poz, p.vat) AS vat_poz, COALESCE(p.brutto_poz, p.cena_brutto) AS brutto_poz, " +
             "p.Uwagi_oferta, p.uwagi_faktura, p.inne1, p.nr_zespolu " +
-            "FROM ofertypozycje p WHERE p.oferta_id = @OfferId AND p.id_firmy = @CompanyId " +
+            "FROM apozycjeoferty_V p WHERE COALESCE(p.oferta_id, p.ID_oferta) = @OfferId AND p.id_firmy = @CompanyId " +
             "ORDER BY p.nr_zespolu, p.id",
             connection);
         command.Parameters.AddWithValue("@OfferId", offerId);
         command.Parameters.AddWithValue("@CompanyId", GetCurrentCompanyId());
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             positions.Add(MapToOfferPosition(reader));
@@ -76,16 +79,16 @@ public class OfferPositionRepository : IOfferPositionRepository
         var positions = new List<OfferPosition>();
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT p.id AS Id, p.oferta_id AS OfertaId, p.id_firmy, p.id_towaru, p.id_dostawcy, p.kod_towaru, " +
-            "p.Nazwa, p.Nazwa_ENG, p.jednostki, p.jednostki_en, p.ilosc, p.cena_netto, p.Rabat, p.Cena_po_rabacie, " +
-            "p.netto_poz, p.stawka_vat, p.vat_poz, p.brutto_poz, " +
+            "SELECT p.id, COALESCE(p.oferta_id, p.ID_oferta) AS OfertaId, p.id_firmy, p.id_towaru, p.id_dostawcy, p.kod_towaru, " +
+            "p.Nazwa, p.Nazwa_ENG, p.jednostki, p.jednostki_en, COALESCE(p.ilosc, p.Sztuki) AS ilosc, COALESCE(p.cena_netto, p.Cena) AS cena_netto, p.Rabat, p.Cena_po_rabacie, " +
+            "COALESCE(p.netto_poz, p.Cena_po_rabacie_i_sztukach) AS netto_poz, p.stawka_vat, COALESCE(p.vat_poz, p.vat) AS vat_poz, COALESCE(p.brutto_poz, p.cena_brutto) AS brutto_poz, " +
             "p.Uwagi_oferta, p.uwagi_faktura, p.inne1, p.nr_zespolu " +
-            "FROM ofertypozycje p WHERE p.id_firmy = @CompanyId " +
-            "ORDER BY p.oferta_id, p.nr_zespolu, p.id",
+            "FROM apozycjeoferty_V p WHERE p.id_firmy = @CompanyId " +
+            "ORDER BY COALESCE(p.oferta_id, p.ID_oferta), p.nr_zespolu, p.id",
             connection);
         command.Parameters.AddWithValue("@CompanyId", companyId);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             positions.Add(MapToOfferPosition(reader));
@@ -96,76 +99,111 @@ public class OfferPositionRepository : IOfferPositionRepository
 
     public async Task<int> AddAsync(OfferPosition offerPosition, CancellationToken cancellationToken = default)
     {
-        await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand(
-            "INSERT INTO ofertypozycje (id_firmy, oferta_id, id_towaru, id_dostawcy, kod_towaru, " +
-            "Nazwa, Nazwa_ENG, jednostki, jednostki_en, ilosc, cena_netto, Rabat, Cena_po_rabacie, " +
-            "netto_poz, stawka_vat, vat_poz, brutto_poz, Uwagi_oferta, uwagi_faktura, " +
-            "inne1, nr_zespolu) " +
-            "VALUES (@CompanyId, @OfferId, @ProductId, @SupplierId, @ProductCode, @Name, @NameEng, " +
-            "@Unit, @UnitEng, @Ilosc, @CenaNetto, @Discount, @PriceAfterDiscount, " +
-            "@NettoPoz, @VatRate, @VatPoz, @BruttoPoz, @OfferNotes, @InvoiceNotes, " +
-            "@Other1, @GroupNumber); " +
-            "SELECT LAST_INSERT_ID();",
-            connection);
-        
-        AddOfferPositionParameters(command, offerPosition);
-        
-        var result = await command.ExecuteScalarAsync(cancellationToken);
-        return Convert.ToInt32(result);
+        ValidatePositionForSave(offerPosition);
+
+        var connection = await _context.CreateConnectionAsync();
+        await using var _ = connection;
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            var newId = (int)await _idGenerator.GetNextIdAsync("apozycjeoferty", connection, transaction, cancellationToken);
+
+            // Mapowanie: oferta_id->ID_oferta, ilosc->Sztuki, cena_netto->Cena, vat_pozycji->vat, brutto_pozycji->cena_brutto, netto_pozycji->Cena_po_rabacie_i_sztukach
+            var command = new MySqlCommand(
+                "INSERT INTO apozycjeoferty (id_pozycja_oferty, id_firmy, ID_oferta, id_towaru, id_dostawcy, kod_towaru, " +
+                "Nazwa, Nazwa_ENG, jednostki, jednostki_en, Sztuki, Cena, Rabat, Cena_po_rabacie, " +
+                "Cena_po_rabacie_i_sztukach, stawka_vat, vat, cena_brutto, Uwagi_oferta, uwagi_faktura, " +
+                "inne1, nr_zespolu) " +
+                "VALUES (@Id, @CompanyId, @OfferId, @ProductId, @SupplierId, @ProductCode, @Name, @NameEng, " +
+                "@Unit, @UnitEng, @Sztuki, @Cena, @Discount, @PriceAfterDiscount, " +
+                "@Cena_po_rabacie_i_sztukach, @VatRate, @Vat, @Cena_brutto, @OfferNotes, @InvoiceNotes, " +
+                "@Other1, @GroupNumber)",
+                connection, transaction);
+            command.Parameters.AddWithValue("@Id", newId);
+            AddOfferPositionParameters(command, offerPosition);
+
+            await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return newId;
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     public async Task UpdateAsync(OfferPosition offerPosition, CancellationToken cancellationToken = default)
     {
+        ValidatePositionForSave(offerPosition);
+
         await using var connection = await _context.CreateConnectionAsync();
+        // Mapowanie: oferta_id->ID_oferta, ilosc->Sztuki, cena_netto->Cena, vat_pozycji->vat, brutto_pozycji->cena_brutto, netto_pozycji->Cena_po_rabacie_i_sztukach
         var command = new MySqlCommand(
-            "UPDATE ofertypozycje SET " +
-            "oferta_id = @OfferId, id_towaru = @ProductId, id_dostawcy = @SupplierId, kod_towaru = @ProductCode, " +
+            "UPDATE apozycjeoferty SET " +
+            "ID_oferta = @OfferId, id_towaru = @ProductId, id_dostawcy = @SupplierId, kod_towaru = @ProductCode, " +
             "Nazwa = @Name, Nazwa_ENG = @NameEng, jednostki = @Unit, jednostki_en = @UnitEng, " +
-            "ilosc = @Ilosc, cena_netto = @CenaNetto, Rabat = @Discount, Cena_po_rabacie = @PriceAfterDiscount, " +
-            "netto_poz = @NettoPoz, stawka_vat = @VatRate, " +
-            "vat_poz = @VatPoz, brutto_poz = @BruttoPoz, " +
+            "Sztuki = @Sztuki, Cena = @Cena, Rabat = @Discount, Cena_po_rabacie = @PriceAfterDiscount, " +
+            "Cena_po_rabacie_i_sztukach = @Cena_po_rabacie_i_sztukach, stawka_vat = @VatRate, " +
+            "vat = @Vat, cena_brutto = @Cena_brutto, " +
             "Uwagi_oferta = @OfferNotes, uwagi_faktura = @InvoiceNotes, inne1 = @Other1, nr_zespolu = @GroupNumber " +
-            "WHERE id = @Id AND id_firmy = @CompanyId",
+            "WHERE id_pozycja_oferty = @Id AND id_firmy = @CompanyId",
             connection);
-        
+
         command.Parameters.AddWithValue("@Id", offerPosition.Id);
         AddOfferPositionParameters(command, offerPosition);
-        
-        await command.ExecuteNonQueryAsync(cancellationToken);
+
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
+    }
+
+    /// <summary>Walidacja przed zapisem: id_oferty>0, sztuki/ilosc>0, cena>=0, vat>=0.</summary>
+    private static void ValidatePositionForSave(OfferPosition offerPosition)
+    {
+        if (offerPosition.OfferId <= 0)
+            throw new ArgumentException("ID oferty musi być większe od 0.", nameof(offerPosition));
+        var ilosc = offerPosition.Ilosc ?? 0m;
+        if (ilosc <= 0)
+            throw new ArgumentException("Ilość (sztuki) musi być większa od 0.", nameof(offerPosition));
+        var cena = offerPosition.CenaNetto ?? 0m;
+        if (cena < 0)
+            throw new ArgumentException("Cena nie może być ujemna.", nameof(offerPosition));
+        var vat = offerPosition.VatPoz ?? 0m;
+        if (vat < 0)
+            throw new ArgumentException("VAT pozycji nie może być ujemny.", nameof(offerPosition));
     }
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "DELETE FROM ofertypozycje WHERE id = @Id AND id_firmy = @CompanyId",
+            "DELETE FROM apozycjeoferty WHERE id_pozycja_oferty = @Id AND id_firmy = @CompanyId",
             connection);
         command.Parameters.AddWithValue("@Id", id);
         command.Parameters.AddWithValue("@CompanyId", GetCurrentCompanyId());
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
     }
 
     public async Task DeleteByOfferIdAsync(int offerId, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "DELETE FROM ofertypozycje WHERE oferta_id = @OfferId AND id_firmy = @CompanyId",
+            "DELETE FROM apozycjeoferty WHERE (oferta_id = @OfferId OR ID_oferta = @OfferId) AND id_firmy = @CompanyId",
             connection);
         command.Parameters.AddWithValue("@OfferId", offerId);
         command.Parameters.AddWithValue("@CompanyId", GetCurrentCompanyId());
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
     }
 
     public async Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT COUNT(1) FROM ofertypozycje WHERE id = @Id AND id_firmy = @CompanyId",
+            "SELECT COUNT(1) FROM apozycjeoferty WHERE id_pozycja_oferty = @Id AND id_firmy = @CompanyId",
             connection);
         command.Parameters.AddWithValue("@Id", id);
         command.Parameters.AddWithValue("@CompanyId", GetCurrentCompanyId());
-        var result = await command.ExecuteScalarAsync(cancellationToken);
+        var result = await command.ExecuteScalarWithDiagnosticsAsync(cancellationToken);
         return Convert.ToInt32(result) > 0;
     }
 
@@ -246,15 +284,15 @@ public class OfferPositionRepository : IOfferPositionRepository
         return reader.IsDBNull(ordinal) ? null : reader.GetDecimal(ordinal);
     }
 
-    /// <summary>Odczyt Id (alias p.id, ofertypozycje.id, BIGINT) jako int dla Entity.</summary>
+    /// <summary>Odczyt Id (widok apozycjeoferty_V: id = id_pozycja_oferty) jako int dla Entity.</summary>
     private static int GetIdFromReader(MySqlDataReader reader)
     {
-        var name = GetColumnName(reader, "Id", "id");
+        var name = GetColumnName(reader, "id", "Id");
         var ordinal = reader.GetOrdinal(name);
         return reader.IsDBNull(ordinal) ? 0 : (int)reader.GetInt64(ordinal);
     }
 
-    /// <summary>Odczyt OfertaId (alias p.oferta_id, ofertypozycje.oferta_id) jako int dla Entity.</summary>
+    /// <summary>Odczyt OfertaId (alias p.oferta_id, apozycjeoferty.oferta_id) jako int dla Entity.</summary>
     private static int GetOfferIdFromReader(MySqlDataReader reader)
     {
         var name = GetColumnName(reader, "OfertaId", "oferta_id");
@@ -270,13 +308,9 @@ public class OfferPositionRepository : IOfferPositionRepository
         return fallback;
     }
 
+    /// <summary>Jawny zapis: model.Ilosc->Sztuki, model.CenaNetto->Cena, model.NettoPoz->Cena_po_rabacie_i_sztukach, model.VatPoz->vat, model.BruttoPoz->cena_brutto.</summary>
     private static void AddOfferPositionParameters(MySqlCommand command, OfferPosition offerPosition)
     {
-        var ilosc = offerPosition.Ilosc ?? 0m;
-        var cenaNetto = offerPosition.CenaNetto ?? 0m;
-        var rabat = offerPosition.Discount ?? 0m;
-        var (nettoPoz, vatPoz, bruttoPoz) = ComputePositionAmounts(ilosc, cenaNetto, rabat, offerPosition.VatRate);
-
         command.Parameters.AddWithValue("@CompanyId", offerPosition.CompanyId);
         command.Parameters.AddWithValue("@OfferId", offerPosition.OfferId);
         command.Parameters.AddWithValue("@ProductId", offerPosition.ProductId ?? (object)DBNull.Value);
@@ -286,21 +320,21 @@ public class OfferPositionRepository : IOfferPositionRepository
         command.Parameters.AddWithValue("@NameEng", offerPosition.NameEng ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@Unit", offerPosition.Unit);
         command.Parameters.AddWithValue("@UnitEng", offerPosition.UnitEng ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Ilosc", offerPosition.Ilosc ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@CenaNetto", offerPosition.CenaNetto ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@Sztuki", offerPosition.Ilosc ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@Cena", offerPosition.CenaNetto ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@Discount", offerPosition.Discount ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@PriceAfterDiscount", offerPosition.PriceAfterDiscount ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@NettoPoz", nettoPoz);
+        command.Parameters.AddWithValue("@Cena_po_rabacie_i_sztukach", offerPosition.NettoPoz ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@VatRate", offerPosition.VatRate ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@VatPoz", vatPoz);
-        command.Parameters.AddWithValue("@BruttoPoz", bruttoPoz);
+        command.Parameters.AddWithValue("@Vat", offerPosition.VatPoz ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@Cena_brutto", offerPosition.BruttoPoz ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@OfferNotes", offerPosition.OfferNotes ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@InvoiceNotes", offerPosition.InvoiceNotes ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@Other1", offerPosition.Other1 ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@GroupNumber", offerPosition.GroupNumber ?? (object)DBNull.Value);
     }
 
-    /// <summary>Rabat w %. netto_poz = ROUND(ilosc * cena_netto * (1 - rabat/100), 2), vat_poz = ROUND(netto_poz * stawka_vat/100, 2), brutto_poz = netto_poz + vat_poz.</summary>
+    /// <summary>Rabat w %. Używane przez OfferTotalsService do przeliczania linii.</summary>
     private static (decimal nettoPoz, decimal vatPoz, decimal bruttoPoz) ComputePositionAmounts(decimal ilosc, decimal cenaNetto, decimal rabatPercent, string? stawkaVat)
     {
         var netto0 = ilosc * cenaNetto;

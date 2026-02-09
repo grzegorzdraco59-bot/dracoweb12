@@ -34,10 +34,10 @@
         <!-- Lista produktów -->
         <DataGrid Grid.Row="2" 
                   x:Name="ProductsDataGrid"
-                  ItemsSource="{Binding}"
+                  ItemsSource="{Binding FilteredProducts}"
+                  SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
-                  GridLinesVisibility="All"
                   HeadersVisibility="Column"
                   SelectionMode="Single"
                   SelectionChanged="ProductsDataGrid_SelectionChanged"
@@ -45,7 +45,7 @@
                   Margin="0,0,0,10">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60"/>
-                <DataGridTextColumn Header="Dostawca" Binding="{Binding SupplierName}" Width="150"/>
+                <DataGridTextColumn Header="Kontrahent" Binding="{Binding SupplierName}" Width="150"/>
                 <DataGridTextColumn Header="Nazwa PL" Binding="{Binding NamePl}" Width="*"/>
                 <DataGridTextColumn Header="Nazwa ENG" Binding="{Binding NameEng}" Width="*"/>
                 <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100"/>
@@ -53,12 +53,25 @@
         </DataGrid>
 
         <!-- Przyciski -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="Wybierz" x:Name="SelectButton" 
-                    Click="SelectButton_Click"
-                    Padding="20,5" Margin="0,0,10,0" MinWidth="100" IsDefault="True"/>
-            <Button Content="Anuluj" Click="CancelButton_Click" 
-                    Padding="20,5" MinWidth="100" IsCancel="True"/>
-        </StackPanel>
+        <GroupBox Grid.Row="3" Header="Akcje" Padding="8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Button Content="Insert" x:Name="InsertButton" Click="InsertButton_Click" Padding="12,5" Margin="0,0,8,0"/>
+                    <Button Content="Change" x:Name="ChangeButton" Click="ChangeButton_Click" Padding="12,5" Margin="0,0,8,0" IsEnabled="False"/>
+                    <Button Content="Delete" x:Name="DeleteButton" Click="DeleteButton_Click" Padding="12,5" IsEnabled="False"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Wybierz" x:Name="SelectButton"
+                            Click="SelectButton_Click"
+                            Padding="20,5" Margin="0,0,8,0" MinWidth="100" IsDefault="True"/>
+                    <Button Content="Anuluj" Click="CancelButton_Click"
+                            Padding="20,5" MinWidth="100" IsCancel="True"/>
+                </StackPanel>
+            </Grid>
+        </GroupBox>
     </Grid>
 </Window>

@@ -155,7 +155,7 @@ public class UserCompanyEditViewModel : ViewModelBase
                     {
                         var conn = transaction.Connection ?? throw new InvalidOperationException("DatabaseContext returned null connection.");
                         using (var cmdIns = new MySqlCommand(
-                            "INSERT INTO operatorfirma (id_operatora, id_firmy, rola) VALUES (@UserId, @CompanyId, @RoleId)",
+                            "INSERT INTO `operatorfirma` (id_operatora, id_firmy, rola) VALUES (@UserId, @CompanyId, @RoleId)",
                             conn, transaction))
                         {
                             cmdIns.Parameters.AddWithValue("@UserId", UserId);
@@ -175,13 +175,13 @@ public class UserCompanyEditViewModel : ViewModelBase
                     await _unitOfWork.ExecuteInTransactionAsync(async (transaction) =>
                     {
                         var conn = transaction.Connection ?? throw new InvalidOperationException("DatabaseContext returned null connection.");
-                        using (var cmdDel = new MySqlCommand("DELETE FROM operatorfirma WHERE id = @Id", conn, transaction))
+                        using (var cmdDel = new MySqlCommand("DELETE FROM `operatorfirma` WHERE id = @Id", conn, transaction))
                         {
                             cmdDel.Parameters.AddWithValue("@Id", _originalDto.Id);
                             await cmdDel.ExecuteNonQueryAsync();
                         }
                         using (var cmdIns = new MySqlCommand(
-                            "INSERT INTO operatorfirma (id_operatora, id_firmy, rola) VALUES (@UserId, @CompanyId, @RoleId)",
+                            "INSERT INTO `operatorfirma` (id_operatora, id_firmy, rola) VALUES (@UserId, @CompanyId, @RoleId)",
                             conn, transaction))
                         {
                             cmdIns.Parameters.AddWithValue("@UserId", UserId);

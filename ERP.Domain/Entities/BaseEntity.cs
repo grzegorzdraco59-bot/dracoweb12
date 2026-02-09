@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace ERP.Domain.Entities;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace ERP.Domain.Entities;
 /// </summary>
 public abstract class BaseEntity
 {
+    [Key]
     public int Id { get; protected set; }
     
     public DateTime CreatedAt { get; protected set; }

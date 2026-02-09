@@ -53,8 +53,8 @@
                     </Grid>
                 </GroupBox>
 
-                <!-- Informacje o dostawcy -->
-                <GroupBox Header="Dostawca" Margin="0,0,0,10" Padding="10">
+                <!-- Informacje o kontrahencie -->
+                <GroupBox Header="Kontrahent" Margin="0,0,0,10" Padding="10">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -65,13 +65,22 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="ID dostawcy:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="ID kontrahenta:" Margin="0,5" VerticalAlignment="Center"/>
                         <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SupplierId, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                                 Margin="5" Padding="5" IsReadOnly="True"/>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Nazwa dostawcy:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SupplierName, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Nazwa kontrahenta:" Margin="0,5" VerticalAlignment="Center"/>
+                        <Grid Grid.Row="1" Grid.Column="1" Margin="5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding SupplierName, UpdateSourceTrigger=PropertyChanged}" 
+                                     Padding="5" IsReadOnly="True"/>
+                            <Button Grid.Column="1" Content="Wybierz..."
+                                    Command="{Binding PickKontrahentCommand}"
+                                    Padding="10,5" MinWidth="90" Margin="6,0,0,0"/>
+                        </Grid>
                     </Grid>
                 </GroupBox>
 

@@ -15,4 +15,5 @@ public interface IOrderMainRepository
     Task UpdateAsync(OrderMainDto order, CancellationToken cancellationToken = default);
     Task DeleteAsync(int id, CancellationToken cancellationToken = default);
     Task SetStatusAsync(int id, OrderStatus status, CancellationToken cancellationToken = default);
+    Task RecalculateOrderTotalAsync(int orderId, CancellationToken cancellationToken = default);
 }

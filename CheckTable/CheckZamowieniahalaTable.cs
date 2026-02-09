@@ -33,7 +33,7 @@ try
     await reader.CloseAsync();
     
     // Pobierz przykładowy rekord
-    var sampleCommand = new MySqlCommand("SELECT * FROM zamowieniahala LIMIT 1", connection);
+    var sampleCommand = new MySqlCommand("SELECT * FROM zamowieniahala_v LIMIT 1", connection);
     using var sampleReader = await sampleCommand.ExecuteReaderAsync();
     
     if (await sampleReader.ReadAsync())

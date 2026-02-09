@@ -142,7 +142,7 @@ DELIMITER ;
 -- Krok 4: Widok do przeglądania użytkowników MySQL powiązanych z operatorami
 CREATE OR REPLACE VIEW v_operator_database_users AS
 SELECT 
-    o.id_operatora,
+    o.id AS id_operatora,
     o.imie_nazwisko,
     ol.login AS database_username,
     CASE 
@@ -153,7 +153,7 @@ SELECT
         ELSE 'NIE'
     END AS user_exists
 FROM operator o
-INNER JOIN operator_login ol ON o.id_operatora = ol.id_operatora;
+INNER JOIN operator_login ol ON o.id = ol.id_operatora;
 
 -- Przykładowe użycie:
 -- 1. Utworzenie użytkownika MySQL dla operatora (użyj login z tabeli operator_login)

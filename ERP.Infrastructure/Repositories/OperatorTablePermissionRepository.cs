@@ -6,7 +6,8 @@ using MySqlConnector;
 namespace ERP.Infrastructure.Repositories;
 
 /// <summary>
-/// Implementacja repozytorium OperatorTablePermission używająca MySqlConnector
+/// Implementacja repozytorium OperatorTablePermission używająca MySqlConnector.
+/// Tabela operator_table_permissions: id (PK), operator_id (FK → operator.id), table_name, can_*, CreatedAt, UpdatedAt.
 /// </summary>
 public class OperatorTablePermissionRepository : IOperatorTablePermissionRepository
 {
@@ -21,12 +22,12 @@ public class OperatorTablePermissionRepository : IOperatorTablePermissionReposit
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT id, id_operatora, table_name, can_select, can_insert, can_update, can_delete, CreatedAt, UpdatedAt " +
-            "FROM operator_table_permissions WHERE id = @Id",
+            "SELECT id, operator_id, table_name, can_select, can_insert, can_update, can_delete, CreatedAt, UpdatedAt " +
+            "FROM `operator_table_permissions` WHERE id = @Id",
             connection);
         command.Parameters.AddWithValue("@Id", id);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
         {
             return MapToPermission(reader);
@@ -39,13 +40,13 @@ public class OperatorTablePermissionRepository : IOperatorTablePermissionReposit
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT id, id_operatora, table_name, can_select, can_insert, can_update, can_delete, CreatedAt, UpdatedAt " +
-            "FROM operator_table_permissions WHERE id_operatora = @OperatorId AND table_name = @TableName",
+            "SELECT id, operator_id, table_name, can_select, can_insert, can_update, can_delete, CreatedAt, UpdatedAt " +
+            "FROM `operator_table_permissions` WHERE operator_id = @OperatorId AND table_name = @TableName",
             connection);
         command.Parameters.AddWithValue("@OperatorId", operatorId);
         command.Parameters.AddWithValue("@TableName", tableName);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
         {
             return MapToPermission(reader);
@@ -59,12 +60,12 @@ public class OperatorTablePermissionRepository : IOperatorTablePermissionReposit
         var permissions = new List<OperatorTablePermission>();
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT id, id_operatora, table_name, can_select, can_insert, can_update, can_delete, CreatedAt, UpdatedAt " +
-            "FROM operator_table_permissions WHERE id_operatora = @OperatorId ORDER BY table_name",
+            "SELECT id, operator_id, table_name, can_select, can_insert, can_update, can_delete, CreatedAt, UpdatedAt " +
+            "FROM `operator_table_permissions` WHERE operator_id = @OperatorId ORDER BY table_name",
             connection);
         command.Parameters.AddWithValue("@OperatorId", operatorId);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             permissions.Add(MapToPermission(reader));
@@ -78,12 +79,12 @@ public class OperatorTablePermissionRepository : IOperatorTablePermissionReposit
         var permissions = new List<OperatorTablePermission>();
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT id, id_operatora, table_name, can_select, can_insert, can_update, can_delete, CreatedAt, UpdatedAt " +
-            "FROM operator_table_permissions WHERE table_name = @TableName ORDER BY id_operatora",
+            "SELECT id, operator_id, table_name, can_select, can_insert, can_update, can_delete, CreatedAt, UpdatedAt " +
+            "FROM `operator_table_permissions` WHERE table_name = @TableName ORDER BY operator_id",
             connection);
         command.Parameters.AddWithValue("@TableName", tableName);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             permissions.Add(MapToPermission(reader));
@@ -94,16 +95,9 @@ public class OperatorTablePermissionRepository : IOperatorTablePermissionReposit
 
     public async Task<bool> HasPermissionAsync(int operatorId, string tableName, string permissionType, CancellationToken cancellationToken = default)
     {
-        await using var connection = await _context.CreateConnectionAsync();
-        
-        // Używamy bezpośredniego zapytania zamiast procedury składowanej, aby uniknąć problemów z parametrami wyjściowymi
         var permission = await GetByOperatorAndTableAsync(operatorId, tableName, cancellationToken);
-        
         if (permission == null)
-        {
-            // Jeśli nie ma rekordu uprawnień, domyślnie zwracamy false
             return false;
-        }
 
         return permissionType.ToUpper() switch
         {
@@ -117,11 +111,21 @@ public class OperatorTablePermissionRepository : IOperatorTablePermissionReposit
 
     public async Task<int> AddOrUpdateAsync(OperatorTablePermission permission, CancellationToken cancellationToken = default)
     {
+        if (permission.OperatorId <= 0)
+            throw new ArgumentException("Id operatora musi być większe od zera.", nameof(permission));
+
+        if (string.IsNullOrWhiteSpace(permission.TableName))
+            throw new ArgumentException("Nazwa tabeli nie może być pusta.", nameof(permission));
+
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "CALL sp_SetOperatorTablePermission(@OperatorId, @TableName, @CanSelect, @CanInsert, @CanUpdate, @CanDelete)",
+            "INSERT INTO `operator_table_permissions` " +
+            "(operator_id, table_name, can_select, can_insert, can_update, can_delete) " +
+            "VALUES (@OperatorId, @TableName, @CanSelect, @CanInsert, @CanUpdate, @CanDelete) " +
+            "ON DUPLICATE KEY UPDATE " +
+            "can_select = @CanSelect, can_insert = @CanInsert, can_update = @CanUpdate, can_delete = @CanDelete, UpdatedAt = CURRENT_TIMESTAMP",
             connection);
-        
+
         command.Parameters.AddWithValue("@OperatorId", permission.OperatorId);
         command.Parameters.AddWithValue("@TableName", permission.TableName);
         command.Parameters.AddWithValue("@CanSelect", permission.CanSelect ? 1 : 0);
@@ -129,18 +133,20 @@ public class OperatorTablePermissionRepository : IOperatorTablePermissionReposit
         command.Parameters.AddWithValue("@CanUpdate", permission.CanUpdate ? 1 : 0);
         command.Parameters.AddWithValue("@CanDelete", permission.CanDelete ? 1 : 0);
 
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
 
-        // Pobierz ID zaktualizowanego lub nowego rekordu
         var existing = await GetByOperatorAndTableAsync(permission.OperatorId, permission.TableName, cancellationToken);
         return existing?.Id ?? 0;
     }
 
     public async Task UpdateAsync(OperatorTablePermission permission, CancellationToken cancellationToken = default)
     {
+        if (permission.OperatorId <= 0)
+            throw new ArgumentException("Id operatora musi być większe od zera.", nameof(permission));
+
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "UPDATE operator_table_permissions SET " +
+            "UPDATE `operator_table_permissions` SET " +
             "can_select = @CanSelect, can_insert = @CanInsert, can_update = @CanUpdate, can_delete = @CanDelete " +
             "WHERE id = @Id",
             connection);
@@ -151,42 +157,42 @@ public class OperatorTablePermissionRepository : IOperatorTablePermissionReposit
         command.Parameters.AddWithValue("@CanUpdate", permission.CanUpdate ? 1 : 0);
         command.Parameters.AddWithValue("@CanDelete", permission.CanDelete ? 1 : 0);
 
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
     }
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "DELETE FROM operator_table_permissions WHERE id = @Id",
+            "DELETE FROM `operator_table_permissions` WHERE id = @Id",
             connection);
         command.Parameters.AddWithValue("@Id", id);
 
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
     }
 
     public async Task DeleteByOperatorAndTableAsync(int operatorId, string tableName, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "CALL sp_RemoveOperatorTablePermission(@OperatorId, @TableName)",
+            "DELETE FROM `operator_table_permissions` WHERE operator_id = @OperatorId AND table_name = @TableName",
             connection);
         command.Parameters.AddWithValue("@OperatorId", operatorId);
         command.Parameters.AddWithValue("@TableName", tableName);
 
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
     }
 
     public async Task<bool> ExistsAsync(int operatorId, string tableName, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT COUNT(1) FROM operator_table_permissions WHERE id_operatora = @OperatorId AND table_name = @TableName",
+            "SELECT COUNT(1) FROM `operator_table_permissions` WHERE operator_id = @OperatorId AND table_name = @TableName",
             connection);
         command.Parameters.AddWithValue("@OperatorId", operatorId);
         command.Parameters.AddWithValue("@TableName", tableName);
-        
-        var result = await command.ExecuteScalarAsync(cancellationToken);
+
+        var result = await command.ExecuteScalarWithDiagnosticsAsync(cancellationToken);
         return Convert.ToInt32(result) > 0;
     }
 
@@ -201,7 +207,7 @@ public class OperatorTablePermissionRepository : IOperatorTablePermissionReposit
             "ORDER BY TABLE_NAME",
             connection);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             tables.Add(reader.GetString(0));
@@ -213,7 +219,7 @@ public class OperatorTablePermissionRepository : IOperatorTablePermissionReposit
     private static OperatorTablePermission MapToPermission(MySqlDataReader reader)
     {
         var id = reader.GetInt32(reader.GetOrdinal("id"));
-        var operatorId = reader.GetInt32(reader.GetOrdinal("id_operatora"));
+        var operatorId = reader.GetInt32(reader.GetOrdinal("operator_id"));
         var tableName = reader.GetString(reader.GetOrdinal("table_name"));
         var canSelect = reader.GetInt32(reader.GetOrdinal("can_select")) == 1;
         var canInsert = reader.GetInt32(reader.GetOrdinal("can_insert")) == 1;
@@ -221,17 +227,14 @@ public class OperatorTablePermissionRepository : IOperatorTablePermissionReposit
         var canDelete = reader.GetInt32(reader.GetOrdinal("can_delete")) == 1;
 
         var permission = new OperatorTablePermission(operatorId, tableName, canSelect, canInsert, canUpdate, canDelete);
-        
-        // Ustawiamy Id używając refleksji
+
         var idProperty = typeof(BaseEntity).GetProperty("Id", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
         idProperty.SetValue(permission, id);
 
-        // Ustawiamy CreatedAt i UpdatedAt
         var createdAtProperty = typeof(BaseEntity).GetProperty("CreatedAt", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
         var updatedAtProperty = typeof(BaseEntity).GetProperty("UpdatedAt", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
-        
+
         createdAtProperty.SetValue(permission, reader.GetDateTime(reader.GetOrdinal("CreatedAt")));
-        
         if (!reader.IsDBNull(reader.GetOrdinal("UpdatedAt")))
         {
             updatedAtProperty.SetValue(permission, reader.GetDateTime(reader.GetOrdinal("UpdatedAt")));

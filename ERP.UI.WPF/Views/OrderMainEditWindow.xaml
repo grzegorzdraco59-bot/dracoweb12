@@ -1,0 +1,184 @@
+<Window x:Class="ERP.UI.WPF.Views.OrderMainEditWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="clr-namespace:ERP.UI.WPF.Views"
+        mc:Ignorable="d"
+        Title="{Binding WindowTitle}" Height="580" Width="750"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="1) Update Zamówienia" 
+                   FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Rząd 1: data zam, nr zam, dostawca, id dostawcy, data dostawy, status zam, status płatności, wartość -->
+                <GroupBox Header="Zamówienie" Margin="0,0,0,8" Padding="10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="data zam:" Margin="0,5" VerticalAlignment="Center"/>
+                        <DatePicker Grid.Row="0" Grid.Column="1" SelectedDate="{Binding OrderDate}" Margin="4" Padding="4"/>
+
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="nr zam:" Margin="8,5,0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding OrderNumber, UpdateSourceTrigger=PropertyChanged}" Margin="4" Padding="4"/>
+
+                        <TextBlock Grid.Row="0" Grid.Column="4" Text="kontrahent:" Margin="8,5,0,5" VerticalAlignment="Center"/>
+                        <Grid Grid.Row="0" Grid.Column="5" Margin="4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding SelectedKontrahentNazwa, UpdateSourceTrigger=PropertyChanged}"
+                                     IsReadOnly="True"
+                                     Padding="4"/>
+                            <Button Grid.Column="1"
+                                    Content="Wybierz..."
+                                    Command="{Binding PickKontrahentCommand}"
+                                    Margin="6,0,0,0" Padding="10,4"/>
+                        </Grid>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="id kontrahenta:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SupplierId, Mode=OneWay}" Margin="4" Padding="4" IsReadOnly="True" Background="#F0F0F0"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="data dostawy:" Margin="8,5,0,5" VerticalAlignment="Center"/>
+                        <DatePicker Grid.Row="1" Grid.Column="3" SelectedDate="{Binding DataDostawy}" Margin="4" Padding="4"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="4" Text="status zamowienia:" Margin="8,5,0,5" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Row="1" Grid.Column="5" Text="{Binding StatusZamowienia, UpdateSourceTrigger=PropertyChanged}" 
+                                  IsEditable="True" Margin="4" Padding="4">
+                            <ComboBoxItem Content="oczekiwanie na dostawę"/>
+                            <ComboBoxItem Content="wybrane do zamówień"/>
+                            <ComboBoxItem Content="zamówienia edytowane"/>
+                            <ComboBoxItem Content="dostarczone"/>
+                        </ComboBox>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="status platnosci:" Margin="0,5" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Row="2" Grid.Column="1" Text="{Binding StatusPlatnosci, UpdateSourceTrigger=PropertyChanged}" 
+                                  IsEditable="True" Margin="4" Padding="4"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="2" Text="wartosc:" Margin="8,5,0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding Wartosc, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" Margin="4" Padding="4"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="4" Text="mod Data Zam:" Margin="8,5,0,5" VerticalAlignment="Center"/>
+                        <DatePicker Grid.Row="2" Grid.Column="5" SelectedDate="{Binding OrderDate}" IsEnabled="False" Margin="4" Padding="4" Opacity="0.8"/>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Rząd 2: Znaleziony Numer, nr faktury, data platnosci; dostawca mail, Data Faktury -->
+                <GroupBox Header="Faktura i dostawca" Margin="0,0,0,8" Padding="10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Znaleziony Numer:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding OrderNumber, Mode=OneWay}" IsReadOnly="True" Margin="4" Padding="4" Background="#F0F0F0"/>
+
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="nr faktury:" Margin="8,5,0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding NrFaktury, UpdateSourceTrigger=PropertyChanged}" Margin="4" Padding="4"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="data platnosci:" Margin="0,5" VerticalAlignment="Center"/>
+                        <DatePicker Grid.Row="1" Grid.Column="1" SelectedDate="{Binding DataPlatnosci}" Margin="4" Padding="4"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="kontrahent mail:" Margin="8,5,0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding SupplierEmail, UpdateSourceTrigger=PropertyChanged}" Margin="4" Padding="4"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Data Faktury:" Margin="0,5" VerticalAlignment="Center"/>
+                        <DatePicker Grid.Row="2" Grid.Column="1" SelectedDate="{Binding DataFaktury}" Margin="4" Padding="4"/>
+                    </Grid>
+                </GroupBox>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <!-- Lewa kolumna: uwagi, dla kogo -->
+                    <GroupBox Grid.Column="0" Header="Uwagi i dla kogo" Margin="0,0,8,8" Padding="10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="uwagi:" Margin="0,0,0,4"/>
+                            <TextBox Grid.Row="1" Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" 
+                                     TextWrapping="Wrap" AcceptsReturn="True" MinHeight="60" Padding="4" Margin="0,0,0,8"/>
+                            <TextBlock Grid.Row="2" Text="dla kogo:" Margin="0,0,0,4"/>
+                            <TextBox Grid.Row="3" Text="{Binding DlaKogo, UpdateSourceTrigger=PropertyChanged}" 
+                                     TextWrapping="Wrap" AcceptsReturn="True" MinHeight="40" Padding="4"/>
+                        </Grid>
+                    </GroupBox>
+                    <!-- Prawa kolumna: waluta, NBP, kurs -->
+                    <GroupBox Grid.Column="1" Header="Waluta i NBP" Margin="0,0,0,8" Padding="10">
+                        <StackPanel>
+                            <TextBlock Text="waluta:" Margin="0,5"/>
+                            <ComboBox Text="{Binding Waluta, UpdateSourceTrigger=PropertyChanged}" 
+                                      IsEditable="True" Margin="0,0,0,8" Padding="4">
+                                <ComboBoxItem Content="PLN"/>
+                                <ComboBoxItem Content="EUR"/>
+                                <ComboBoxItem Content="USD"/>
+                            </ComboBox>
+                            <Button Content="pobierz nbp" Command="{Binding PobierzNbpCommand}" 
+                                    Padding="8,4" Margin="0,0,0,8" HorizontalAlignment="Left"/>
+                            <TextBlock Text="tabela nbp:" Margin="0,5"/>
+                            <TextBox Text="{Binding TabelaNbp, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" Padding="4"/>
+                            <TextBlock Text="data tabeli nbp:" Margin="0,5"/>
+                            <TextBox Text="{Binding DataTabeliNbp, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" Padding="4"/>
+                            <TextBlock Text="kurs waluty:" Margin="0,5"/>
+                            <TextBox Text="{Binding Kurs, UpdateSourceTrigger=PropertyChanged, StringFormat=N4}" Padding="4"/>
+                        </StackPanel>
+                    </GroupBox>
+                </Grid>
+
+                <!-- Checkboxy: skopiowano niedostarczone, skopiowano do magazynu -->
+                <GroupBox Header="Flagi" Margin="0,0,0,8" Padding="10">
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox Content="skopiowano niedostarczone" IsChecked="{Binding SkopiowanoNiedostarczone}" Margin="0,0,20,0"/>
+                        <CheckBox Content="skopiowano do magazynu" IsChecked="{Binding SkopiowanoDoMagazynu}" Margin="0,0,20,0"/>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Przyciski OK / Cancel / Help -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+            <Button Content="OK" Command="{Binding SaveCommand}" 
+                    Padding="20,6" Margin="0,0,10,0" MinWidth="90"/>
+            <Button Content="Cancel" Command="{Binding CancelCommand}" 
+                    Padding="20,6" Margin="0,0,10,0" MinWidth="90" IsCancel="True"/>
+            <Button Content="Help" Padding="20,6" MinWidth="90" IsEnabled="False"/>
+        </StackPanel>
+    </Grid>
+</Window>

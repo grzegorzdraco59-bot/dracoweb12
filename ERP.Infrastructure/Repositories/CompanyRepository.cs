@@ -1,3 +1,5 @@
+using ERP.Application.DTOs;
+using ERP.Application.Repositories;
 using ERP.Domain.Entities;
 using ERP.Domain.Repositories;
 using ERP.Infrastructure.Data;
@@ -8,7 +10,7 @@ namespace ERP.Infrastructure.Repositories;
 /// <summary>
 /// Implementacja repozytorium Company (firmy) używająca MySqlConnector
 /// </summary>
-public class CompanyRepository : ICompanyRepository
+public class CompanyRepository : ICompanyRepository, ICompanyQueryRepository
 {
     private readonly DatabaseContext _context;
 
@@ -21,14 +23,14 @@ public class CompanyRepository : ICompanyRepository
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT id, NAZWA, NAGLOWEK1, NAGLOWEK2, ULICA_NR, KOD_POCZTOWY, MIASTO, PANSTWO, " +
+            "SELECT id_firmy AS id, NAZWA, NAGLOWEK1, NAGLOWEK2, ULICA_NR, KOD_POCZTOWY, MIASTO, PANSTWO, " +
             "NIP, REGON, krs, TEL1, MAIL, Numeracja_FV_r_m, Numeracja_FPF_r_m, " +
             "smtp_host, smtp_port, smtp_user, smtp_pass, smtp_ssl, smtp_from_email, smtp_from_name " +
-            "FROM firmy WHERE id = @Id",
+            "FROM firmy WHERE id_firmy = @Id",
             connection);
         command.Parameters.AddWithValue("@Id", id);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
         {
             return MapToCompany(reader);
@@ -42,13 +44,13 @@ public class CompanyRepository : ICompanyRepository
         var companies = new List<Company>();
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT id, NAZWA, NAGLOWEK1, NAGLOWEK2, ULICA_NR, KOD_POCZTOWY, MIASTO, PANSTWO, " +
+            "SELECT id_firmy AS id, NAZWA, NAGLOWEK1, NAGLOWEK2, ULICA_NR, KOD_POCZTOWY, MIASTO, PANSTWO, " +
             "NIP, REGON, krs, TEL1, MAIL, Numeracja_FV_r_m, Numeracja_FPF_r_m, " +
             "smtp_host, smtp_port, smtp_user, smtp_pass, smtp_ssl, smtp_from_email, smtp_from_name " +
             "FROM firmy ORDER BY NAZWA",
             connection);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             companies.Add(MapToCompany(reader));
@@ -62,20 +64,65 @@ public class CompanyRepository : ICompanyRepository
         var companies = new List<Company>();
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT DISTINCT f.id, f.NAZWA, f.NAGLOWEK1, f.NAGLOWEK2, f.ULICA_NR, f.KOD_POCZTOWY, " +
+            "SELECT DISTINCT f.id_firmy AS id, f.NAZWA, f.NAGLOWEK1, f.NAGLOWEK2, f.ULICA_NR, f.KOD_POCZTOWY, " +
             "f.MIASTO, f.PANSTWO, f.NIP, f.REGON, f.krs, f.TEL1, f.MAIL, f.Numeracja_FV_r_m, f.Numeracja_FPF_r_m, " +
             "f.smtp_host, f.smtp_port, f.smtp_user, f.smtp_pass, f.smtp_ssl, f.smtp_from_email, f.smtp_from_name " +
             "FROM firmy f " +
-            "INNER JOIN operatorfirma of ON f.id = of.id_firmy " +
+            "INNER JOIN `operatorfirma` of ON f.id_firmy = of.id_firmy " +
             "WHERE of.id_operatora = @UserId " +
             "ORDER BY f.NAZWA",
             connection);
         command.Parameters.AddWithValue("@UserId", userId);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             companies.Add(MapToCompany(reader));
+        }
+
+        return companies;
+    }
+
+    /// <summary>
+    /// Walidacja: SELECT COUNT(*) FROM operatorfirma WHERE id_operatora = @UserId.
+    /// Bez LIMIT 1, bez IsActive, bez warunków po operatorfirma.id.
+    /// </summary>
+    public async Task<int> GetCompanyCountByUserIdAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _context.CreateConnectionAsync();
+        var command = new MySqlCommand(
+            "SELECT COUNT(*) FROM `operatorfirma` WHERE id_operatora = @UserId",
+            connection);
+        command.Parameters.AddWithValue("@UserId", userId);
+        var result = await command.ExecuteScalarWithDiagnosticsAsync(cancellationToken);
+        return Convert.ToInt32(result);
+    }
+
+    /// <summary>
+    /// Pobiera firmy użytkownika z rolami (ta sama logika: id_operatora = @UserId).
+    /// WHERE operatorfirma.id_operatora = @UserId. Bez LIMIT 1, bez IsActive, bez warunków po operatorfirma.id.
+    /// </summary>
+    public async Task<IEnumerable<CompanyDto>> GetCompanyDtosByUserIdAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        var companies = new List<CompanyDto>();
+        await using var connection = await _context.CreateConnectionAsync();
+        var command = new MySqlCommand(
+            "SELECT f.id_firmy AS id, f.NAZWA, f.NAGLOWEK1, f.NAGLOWEK2, f.ULICA_NR, f.KOD_POCZTOWY, " +
+            "f.MIASTO, f.PANSTWO, f.NIP, f.REGON, f.krs, f.TEL1, f.MAIL, f.Numeracja_FV_r_m, f.Numeracja_FPF_r_m, " +
+            "f.smtp_host, f.smtp_port, f.smtp_user, f.smtp_pass, f.smtp_ssl, f.smtp_from_email, f.smtp_from_name, " +
+            "of.rola AS RoleId, o.id_firmy AS DefaultCompanyId " +
+            "FROM firmy f " +
+            "INNER JOIN `operatorfirma` of ON f.id_firmy = of.id_firmy " +
+            "LEFT JOIN `operator` o ON o.id = of.id_operatora " +
+            "WHERE of.id_operatora = @UserId " +
+            "ORDER BY f.NAZWA",
+            connection);
+        command.Parameters.AddWithValue("@UserId", userId);
+
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            companies.Add(MapToCompanyDto(reader));
         }
 
         return companies;
@@ -93,8 +140,8 @@ public class CompanyRepository : ICompanyRepository
             connection);
 
         AddCompanyParameters(command, company);
-        var result = await command.ExecuteScalarAsync(cancellationToken);
-        return Convert.ToInt32(result);
+        var newId = await command.ExecuteInsertAndGetIdAsync(cancellationToken);
+        return (int)newId;
     }
 
     public async Task UpdateAsync(Company company, CancellationToken cancellationToken = default)
@@ -105,21 +152,21 @@ public class CompanyRepository : ICompanyRepository
             "ULICA_NR = @Street, KOD_POCZTOWY = @PostalCode, MIASTO = @City, PANSTWO = @Country, " +
             "NIP = @Nip, REGON = @Regon, krs = @Krs, TEL1 = @Phone1, MAIL = @Email, " +
             "Numeracja_FV_r_m = @InvoiceNumberingPerMonth, Numeracja_FPF_r_m = @ProformaInvoiceNumberingPerMonth " +
-            "WHERE id = @Id",
+            "WHERE id_firmy = @Id",
             connection);
 
         command.Parameters.AddWithValue("@Id", company.Id);
         AddCompanyParameters(command, company);
 
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
     }
 
     public async Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand("SELECT COUNT(1) FROM firmy WHERE id = @Id", connection);
+        var command = new MySqlCommand("SELECT COUNT(1) FROM firmy WHERE id_firmy = @Id", connection);
         command.Parameters.AddWithValue("@Id", id);
-        var result = await command.ExecuteScalarAsync(cancellationToken);
+        var result = await command.ExecuteScalarWithDiagnosticsAsync(cancellationToken);
         return Convert.ToInt32(result) > 0;
     }
 
@@ -166,6 +213,40 @@ public class CompanyRepository : ICompanyRepository
         company.SetSmtpSettings(smtpHost, smtpPort, smtpUser, smtpPass, smtpSsl, smtpFromEmail, smtpFromName);
 
         return company;
+    }
+
+    private static CompanyDto MapToCompanyDto(MySqlDataReader reader)
+    {
+        var id = reader.GetInt32(reader.GetOrdinal("id"));
+        var name = reader.IsDBNull(reader.GetOrdinal("NAZWA")) ? string.Empty : reader.GetString(reader.GetOrdinal("NAZWA"));
+        var defaultCompanyId = GetNullableInt(reader, "DefaultCompanyId");
+        var roleId = GetNullableInt(reader, "RoleId");
+
+        return new CompanyDto
+        {
+            Id = id,
+            Name = name,
+            Header1 = GetNullableString(reader, "NAGLOWEK1"),
+            Header2 = GetNullableString(reader, "NAGLOWEK2"),
+            Street = GetNullableString(reader, "ULICA_NR"),
+            PostalCode = GetNullableString(reader, "KOD_POCZTOWY"),
+            City = GetNullableString(reader, "MIASTO"),
+            Country = GetNullableString(reader, "PANSTWO"),
+            Nip = GetNullableString(reader, "NIP"),
+            Regon = GetNullableString(reader, "REGON"),
+            Krs = GetNullableString(reader, "krs"),
+            Phone1 = GetNullableString(reader, "TEL1"),
+            Email = GetNullableString(reader, "MAIL"),
+            RoleId = roleId,
+            IsDefault = defaultCompanyId.HasValue && defaultCompanyId.Value == id,
+            SmtpHost = GetNullableString(reader, "smtp_host"),
+            SmtpPort = GetNullableInt(reader, "smtp_port"),
+            SmtpUser = GetNullableString(reader, "smtp_user"),
+            SmtpPass = GetNullableString(reader, "smtp_pass"),
+            SmtpSsl = GetNullableBool(reader, "smtp_ssl"),
+            SmtpFromEmail = GetNullableString(reader, "smtp_from_email"),
+            SmtpFromName = GetNullableString(reader, "smtp_from_name")
+        };
     }
 
     private static string? GetNullableString(MySqlDataReader reader, string columnName)

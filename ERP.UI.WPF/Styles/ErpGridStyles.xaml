@@ -1,0 +1,51 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Linie siatki: GlobalTableStyles.xaml (ciemnoszary, pionowe+poziome) -->
+
+    <!-- Kolor nieaktywnej selekcji = ten sam co aktywna (#0078D7) – stabilne podświetlenie przy fokusie w TextBox/ComboBox -->
+    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#0078D7"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="White"/>
+
+    <!-- Wspólny styl zaznaczenia wiersza: niebieski #0078D7, biały tekst – spójnie w całej aplikacji -->
+    <Style x:Key="DataGridRowSelectionStyle" TargetType="DataGridRow">
+        <Style.Triggers>
+            <!-- ActiveItem (SelectedItem): klik w wiersz -->
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="#0078D7"/>
+                <Setter Property="Foreground" Value="White"/>
+            </Trigger>
+            <!-- Marker checkboxa IsSelected (operacje masowe): lewy borderek, bez zmiany tła -->
+            <DataTrigger Binding="{Binding DataContext.IsSelected, RelativeSource={RelativeSource Self}}" Value="True">
+                <Setter Property="BorderThickness" Value="3,0,0,0"/>
+                <Setter Property="BorderBrush" Value="#FFA500"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- DataGridRow z naprzemiennymi wierszami (biały/szary) + IsSelected nadpisuje -->
+    <Style x:Key="ErpDataGridRowStyle" TargetType="DataGridRow" BasedOn="{StaticResource DataGridRowSelectionStyle}">
+        <Setter Property="Background" Value="White"/>
+        <Style.Triggers>
+            <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                <Setter Property="Background" Value="#F2F2F2"/>
+            </Trigger>
+            <!-- IsSelected musi być PO AlternationIndex, żeby niebieskie tło nie było nadpisywane -->
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="#0078D7"/>
+                <Setter Property="Foreground" Value="White"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Nagłówki kolumn DataGrid: pomarańczowe tło, bold, ciemny tekst (jak Oferty/Faktury) -->
+    <Style x:Key="FakturyOrangeColumnHeaderStyle" TargetType="DataGridColumnHeader">
+        <Setter Property="Background" Value="#FFA500"/>
+        <Setter Property="Foreground" Value="Black"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Padding" Value="8,5"/>
+    </Style>
+
+    <!-- Tło nagłówka szczegółów (jak w Ofertach: jasnopomarańczowe pastel) -->
+    <SolidColorBrush x:Key="ErpHeaderBackground" Color="#FFF3E0"/>
+</ResourceDictionary>

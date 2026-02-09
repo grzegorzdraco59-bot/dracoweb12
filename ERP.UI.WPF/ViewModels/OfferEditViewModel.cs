@@ -1,11 +1,11 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using ERP.Application.DTOs;
+using ERP.Application.Repositories;
+using ERP.Domain.Enums;
 using ERP.Application.Services;
 using ERP.Domain.Entities;
 using IUserContext = ERP.UI.WPF.Services.IUserContext;
-using ERP.Domain.Repositories;
-using ERP.Infrastructure.Repositories;
 using ERP.UI.WPF.Views;
 using ERP.UI.WPF.Services;
 
@@ -17,32 +17,32 @@ namespace ERP.UI.WPF.ViewModels;
 public class OfferEditViewModel : ViewModelBase
 {
     private readonly IOfferService _offerService;
-    private readonly ICustomerRepository _customerRepository;
+    private readonly IKontrahenciQueryRepository _kontrahenciRepository;
     private readonly IUserContext _userContext;
     private readonly OfferDto _originalOffer;
     private OfferDto _offer;
-    private ObservableCollection<CustomerDto> _allCustomers = new();
+    private ObservableCollection<KontrahentLookupDto> _allKontrahenci = new();
 
     public OfferEditViewModel(
         IOfferService offerService, 
-        ICustomerRepository customerRepository, 
+        IKontrahenciQueryRepository kontrahenciRepository, 
         OfferDto offer,
         IUserContext userContext)
     {
         _offerService = offerService ?? throw new ArgumentNullException(nameof(offerService));
-        _customerRepository = customerRepository ?? throw new ArgumentNullException(nameof(customerRepository));
+        _kontrahenciRepository = kontrahenciRepository ?? throw new ArgumentNullException(nameof(kontrahenciRepository));
         _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
         _originalOffer = offer ?? throw new ArgumentNullException(nameof(offer));
         
-        // Tworzymy kopię do edycji
+        // Tworzymy kopię do edycji – wartości domyślne dla null (spójność z DB NOT NULL, UI „Ceny”)
         _offer = new OfferDto
         {
             Id = offer.Id,
             CompanyId = offer.CompanyId,
-            ForProforma = offer.ForProforma,
-            ForOrder = offer.ForOrder,
+            ForProforma = offer.ForProforma ?? false,
+            ForOrder = offer.ForOrder ?? false,
             OfferDate = offer.OfferDate,
-            FormattedOfferDate = offer.FormattedOfferDate,
+            FormattedOfferDate = offer.FormattedOfferDate ?? DateTime.Today.ToString("dd/MM/yyyy"),
             OfferNumber = offer.OfferNumber,
             CustomerId = offer.CustomerId,
             CustomerName = offer.CustomerName,
@@ -53,17 +53,19 @@ public class OfferEditViewModel : ViewModelBase
             CustomerNip = offer.CustomerNip,
             CustomerEmail = offer.CustomerEmail,
             RecipientName = offer.RecipientName,
-            Currency = offer.Currency,
-            TotalPrice = offer.TotalPrice,
-            VatRate = offer.VatRate,
-            TotalVat = offer.TotalVat,
-            TotalBrutto = offer.TotalBrutto,
+            Currency = offer.Currency ?? "PLN",
+            TotalPrice = offer.TotalPrice ?? 0m,
+            VatRate = offer.VatRate ?? 23m,
+            TotalVat = offer.TotalVat ?? 0m,
+            TotalBrutto = offer.TotalBrutto ?? 0m,
+            SumBrutto = offer.SumBrutto ?? 0m,
             OfferNotes = offer.OfferNotes,
             AdditionalData = offer.AdditionalData,
-            Operator = offer.Operator,
-            TradeNotes = offer.TradeNotes,
+            Operator = offer.Operator ?? "",
+            TradeNotes = offer.TradeNotes ?? "",
             ForInvoice = offer.ForInvoice,
-            History = offer.History,
+            History = offer.History ?? "",
+            Status = offer.Status ?? "Draft",
             CreatedAt = offer.CreatedAt,
             UpdatedAt = offer.UpdatedAt
         };
@@ -71,8 +73,9 @@ public class OfferEditViewModel : ViewModelBase
         SaveCommand = new RelayCommand(async () => await SaveAsync(), () => CanSave());
         CancelCommand = new RelayCommand(() => OnCancelled());
         SelectRecipientCommand = new RelayCommand(async () => await SelectRecipientAsync());
+        PickKontrahentCommand = new RelayCommand(PickKontrahent);
         
-        _ = LoadCustomersAsync();
+        _ = LoadKontrahenciAsync();
     }
 
     public event EventHandler? Saved;
@@ -192,6 +195,19 @@ public class OfferEditViewModel : ViewModelBase
         }
     }
 
+    /// <summary>Lista statusów oferty dla ComboBox.</summary>
+    public string[] OfferStatuses { get; } = Enum.GetNames(typeof(OfferStatus));
+
+    public string? Status
+    {
+        get => _offer.Status;
+        set
+        {
+            _offer.Status = value;
+            OnPropertyChanged();
+        }
+    }
+
     public int? CustomerId
     {
         get => _offer.CustomerId;
@@ -199,6 +215,17 @@ public class OfferEditViewModel : ViewModelBase
         {
             _offer.CustomerId = value;
             OnPropertyChanged();
+        }
+    }
+
+    public int? SelectedKontrahentId
+    {
+        get => _offer.CustomerId;
+        set
+        {
+            _offer.CustomerId = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CustomerId));
         }
     }
 
@@ -272,6 +299,41 @@ public class OfferEditViewModel : ViewModelBase
         }
     }
 
+    public string? SelectedKontrahentNazwa
+    {
+        get => _offer.RecipientName ?? _offer.CustomerName;
+        set
+        {
+            _offer.RecipientName = value;
+            _offer.CustomerName = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(RecipientName));
+            OnPropertyChanged(nameof(CustomerName));
+        }
+    }
+
+    public string? SelectedKontrahentEmail
+    {
+        get => _offer.CustomerEmail;
+        set
+        {
+            _offer.CustomerEmail = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CustomerEmail));
+        }
+    }
+
+    public string? SelectedKontrahentWaluta
+    {
+        get => _offer.Currency;
+        set
+        {
+            _offer.Currency = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Currency));
+        }
+    }
+
     public decimal? TotalPrice
     {
         get => _offer.TotalPrice;
@@ -325,6 +387,7 @@ public class OfferEditViewModel : ViewModelBase
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
     public ICommand SelectRecipientCommand { get; }
+    public ICommand PickKontrahentCommand { get; }
 
     private bool CanSave()
     {
@@ -378,6 +441,8 @@ public class OfferEditViewModel : ViewModelBase
             offer.UpdateFlags(_offer.ForProforma, _offer.ForOrder, _offer.ForInvoice);
             offer.UpdateNotes(_offer.OfferNotes, _offer.AdditionalData, _offer.TradeNotes);
             offer.UpdateHistory(_offer.History);
+            var newStatus = OfferStatusMapping.FromDb(_offer.Status);
+            offer.UpdateStatus(newStatus);
 
             await _offerService.UpdateAsync(offer);
             
@@ -414,7 +479,7 @@ public class OfferEditViewModel : ViewModelBase
         Cancelled?.Invoke(this, EventArgs.Empty);
     }
 
-    private async Task LoadCustomersAsync()
+    private async Task LoadKontrahenciAsync()
     {
         try
         {
@@ -428,48 +493,17 @@ public class OfferEditViewModel : ViewModelBase
                 return;
             }
 
-            var customers = await _customerRepository.GetByCompanyIdAsync(_userContext.CompanyId.Value);
-            _allCustomers.Clear();
-            foreach (var customer in customers)
+            var kontrahenci = await _kontrahenciRepository.GetAllForCompanyAsync(_userContext.CompanyId.Value);
+            _allKontrahenci.Clear();
+            foreach (var kontrahent in kontrahenci)
             {
-                _allCustomers.Add(new CustomerDto
-                {
-                    Id = customer.Id,
-                    CompanyId = customer.CompanyId,
-                    Name = customer.Name,
-                    Surname = customer.Surname,
-                    FirstName = customer.FirstName,
-                    Notes = customer.Notes,
-                    Phone1 = customer.Phone1,
-                    Phone2 = customer.Phone2,
-                    Nip = customer.Nip,
-                    Street = customer.Street,
-                    PostalCode = customer.PostalCode,
-                    City = customer.City,
-                    Country = customer.Country,
-                    ShippingStreet = customer.ShippingStreet,
-                    ShippingPostalCode = customer.ShippingPostalCode,
-                    ShippingCity = customer.ShippingCity,
-                    ShippingCountry = customer.ShippingCountry,
-                    Email1 = customer.Email1,
-                    Email2 = customer.Email2,
-                    Code = customer.Code,
-                    Status = customer.Status,
-                    Currency = customer.Currency,
-                    CustomerType = customer.CustomerType,
-                    OfferEnabled = customer.OfferEnabled,
-                    VatStatus = customer.VatStatus,
-                    Regon = customer.Regon,
-                    FullAddress = customer.FullAddress,
-                    CreatedAt = customer.CreatedAt,
-                    UpdatedAt = customer.UpdatedAt
-                });
+                _allKontrahenci.Add(kontrahent);
             }
         }
         catch (Exception ex)
         {
             System.Windows.MessageBox.Show(
-                $"Błąd podczas ładowania odbiorców: {ex.Message}",
+                $"Błąd podczas ładowania kontrahentów: {ex.Message}",
                 "Błąd",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Error);
@@ -480,35 +514,57 @@ public class OfferEditViewModel : ViewModelBase
     {
         try
         {
-            var selectionWindow = new CustomerSelectionWindow(_allCustomers)
+            var selectionWindow = new CustomerSelectionWindow(_allKontrahenci)
             {
                 Owner = System.Windows.Application.Current.MainWindow
             };
 
-            if (selectionWindow.ShowDialog() == true && selectionWindow.SelectedCustomer != null)
+            if (selectionWindow.ShowDialog() == true && selectionWindow.SelectedKontrahent != null)
             {
-                var selectedCustomer = selectionWindow.SelectedCustomer;
+                var selectedCustomer = selectionWindow.SelectedKontrahent;
                 
-                // Przepisujemy nazwę odbiorcy
-                RecipientName = selectedCustomer.Name;
+                // Przepisujemy nazwę kontrahenta
+                RecipientName = selectedCustomer.Nazwa;
                 
-                // Przepisujemy możliwe pola do danych klienta
+                // Przepisujemy możliwe pola do danych kontrahenta
                 CustomerId = selectedCustomer.Id;
-                CustomerStreet = selectedCustomer.Street;
-                CustomerPostalCode = selectedCustomer.PostalCode;
-                CustomerCity = selectedCustomer.City;
-                CustomerCountry = selectedCustomer.Country;
-                CustomerNip = selectedCustomer.Nip;
-                CustomerEmail = selectedCustomer.Email1;
+                CustomerCity = selectedCustomer.Miasto;
+                CustomerEmail = selectedCustomer.Email;
+                SelectedKontrahentWaluta = selectedCustomer.Waluta;
             }
         }
         catch (Exception ex)
         {
             System.Windows.MessageBox.Show(
-                $"Błąd podczas wyboru odbiorcy: {ex.Message}",
+                $"Błąd podczas wyboru kontrahenta: {ex.Message}",
                 "Błąd",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Error);
+        }
+    }
+
+    private void PickKontrahent()
+    {
+        if (System.Windows.Application.Current is not App app)
+            return;
+        var viewModel = app.GetService<KontrahenciViewModel>();
+        var window = new KontrahenciPickerWindow(viewModel)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+        if (window.ShowDialog() == true && window.SelectedKontrahent != null)
+        {
+            var selected = window.SelectedKontrahent;
+            SelectedKontrahentNazwa = selected.Nazwa;
+            SelectedKontrahentEmail = selected.Email;
+            SelectedKontrahentWaluta = selected.Waluta;
+            CustomerId = selected.Id;
+            CustomerStreet = selected.UlicaINr;
+            CustomerPostalCode = selected.KodPocztowy;
+            CustomerCity = selected.Miasto;
+            CustomerCountry = selected.Panstwo;
+            CustomerNip = selected.Nip;
+            CustomerEmail = selected.Email;
         }
     }
 }

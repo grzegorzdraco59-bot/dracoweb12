@@ -1,12 +1,12 @@
-@model IEnumerable<ERP.Application.DTOs.CustomerDto>
+@model IEnumerable<ERP.Application.DTOs.KontrahentLookupDto>
 @{
-    ViewData["Title"] = "Odbiorcy";
+    ViewData["Title"] = "Kontrahenci";
 }
 
 <div class="container-fluid p-0 d-flex flex-column customers-fullscreen">
-    <!-- Nagłówek Odbiorcy -->
+    <!-- Nagłówek Kontrahenci -->
     <div class="p-3 border-bottom bg-light flex-shrink-0">
-        <h2 class="mb-0">9. Odbiorcy</h2>
+        <h2 class="mb-0">9. Kontrahenci</h2>
     </div>
 
     <!-- Pole wyszukiwania – natychmiastowe -->
@@ -23,10 +23,10 @@
         </div>
     </div>
 
-    <!-- Panel: Browse Odbiorców (bez dolnego browse) -->
+    <!-- Panel: Browse Kontrahentów (bez dolnego browse) -->
     <div class="d-flex flex-column flex-grow-1 customers-panel overflow-hidden">
         <div class="flex-grow-1 p-3 overflow-auto customers-scroll-area">
-            <h5 class="mb-2">Odbiorcy</h5>
+            <h5 class="mb-2">Kontrahenci</h5>
             @if (Model != null && Model.Any())
             {
                 <div class="table-responsive" style="max-height: 100%;">
@@ -39,58 +39,38 @@
                                 <th class="sortable" data-column="name" style="max-width: 220px; width: 20%; white-space: nowrap; cursor: pointer; user-select: none;">
                                     Nazwa <span class="sort-indicator">↕</span>
                                 </th>
-                                <th class="sortable" data-column="code" style="width: 90px; white-space: nowrap; cursor: pointer; user-select: none;">
-                                    Kod <span class="sort-indicator">↕</span>
-                                </th>
-                                <th class="sortable" data-column="city" style="width: 120px; white-space: nowrap; cursor: pointer; user-select: none;">
-                                    Miasto <span class="sort-indicator">↕</span>
-                                </th>
-                                <th class="sortable" data-column="country" style="width: 90px; white-space: nowrap; cursor: pointer; user-select: none;">
-                                    Kraj <span class="sort-indicator">↕</span>
-                                </th>
-                                <th class="sortable" data-column="nip" style="width: 110px; white-space: nowrap; cursor: pointer; user-select: none;">
-                                    NIP <span class="sort-indicator">↕</span>
-                                </th>
-                                <th class="sortable" data-column="phone" style="width: 110px; white-space: nowrap; cursor: pointer; user-select: none;">
-                                    Tel <span class="sort-indicator">↕</span>
-                                </th>
-                                <th class="sortable" data-column="email" style="max-width: 180px; white-space: nowrap; cursor: pointer; user-select: none;">
+                                <th class="sortable" data-column="email" style="max-width: 200px; white-space: nowrap; cursor: pointer; user-select: none;">
                                     Email <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="phone" style="width: 140px; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Telefon <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-column="city" style="width: 140px; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Miasto <span class="sort-indicator">↕</span>
                                 </th>
                                 <th class="sortable" data-column="currency" style="width: 70px; white-space: nowrap; cursor: pointer; user-select: none;">
                                     Waluta <span class="sort-indicator">↕</span>
-                                </th>
-                                <th class="sortable" data-column="status" style="width: 80px; white-space: nowrap; cursor: pointer; user-select: none;">
-                                    Status <span class="sort-indicator">↕</span>
                                 </th>
                             </tr>
                         </thead>
                         <tbody id="customers-tbody">
                             @foreach (var c in Model)
                             {
-                                var rowData = $"{c.Id}|{c.Name ?? ""}|{c.Code ?? ""}|{c.City ?? ""}|{c.Country ?? ""}|{c.Nip ?? ""}|{c.Phone1 ?? ""}|{c.Email1 ?? ""}|{c.Currency ?? ""}|{c.Status ?? ""}";
+                                var rowData = $"{c.Id}|{c.Nazwa ?? ""}|{c.Email ?? ""}|{c.Telefon ?? ""}|{c.Miasto ?? ""}|{c.Waluta ?? ""}";
                                 <tr class="customer-row" data-customer-id="@c.Id" style="cursor: pointer;"
                                     data-customer-data="@rowData"
                                     data-customer-id-value="@c.Id"
-                                    data-customer-name-value="@(c.Name ?? "")"
-                                    data-customer-code-value="@(c.Code ?? "")"
-                                    data-customer-city-value="@(c.City ?? "")"
-                                    data-customer-country-value="@(c.Country ?? "")"
-                                    data-customer-nip-value="@(c.Nip ?? "")"
-                                    data-customer-phone-value="@(c.Phone1 ?? "")"
-                                    data-customer-email-value="@(c.Email1 ?? "")"
-                                    data-customer-currency-value="@(c.Currency ?? "")"
-                                    data-customer-status-value="@(c.Status ?? "")">
+                                    data-customer-name-value="@(c.Nazwa ?? "")"
+                                    data-customer-email-value="@(c.Email ?? "")"
+                                    data-customer-phone-value="@(c.Telefon ?? "")"
+                                    data-customer-city-value="@(c.Miasto ?? "")"
+                                    data-customer-currency-value="@(c.Waluta ?? "")">
                                     <td style="white-space: nowrap;">@c.Id</td>
-                                    <td style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(c.Name ?? "-")</td>
-                                    <td style="white-space: nowrap;">@(c.Code ?? "-")</td>
-                                    <td style="white-space: nowrap;">@(c.City ?? "-")</td>
-                                    <td style="white-space: nowrap;">@(c.Country ?? "-")</td>
-                                    <td style="white-space: nowrap;">@(c.Nip ?? "-")</td>
-                                    <td style="white-space: nowrap;">@(c.Phone1 ?? "-")</td>
-                                    <td style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(c.Email1 ?? "-")</td>
-                                    <td style="white-space: nowrap;">@(c.Currency ?? "-")</td>
-                                    <td style="white-space: nowrap;">@(c.Status ?? "-")</td>
+                                    <td style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(c.Nazwa ?? "-")</td>
+                                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(c.Email ?? "-")</td>
+                                    <td style="white-space: nowrap;">@(c.Telefon ?? "-")</td>
+                                    <td style="white-space: nowrap;">@(c.Miasto ?? "-")</td>
+                                    <td style="white-space: nowrap;">@(c.Waluta ?? "-")</td>
                                 </tr>
                             }
                         </tbody>
@@ -100,8 +80,8 @@
             else
             {
                 <div class="alert alert-info">
-                    <h5>Brak odbiorców</h5>
-                    <p class="mb-0">Nie znaleziono odbiorców dla wybranej firmy.</p>
+                    <h5>Brak kontrahentów</h5>
+                    <p class="mb-0">Nie znaleziono kontrahentów dla wybranej firmy.</p>
                 </div>
             }
         </div>
@@ -109,9 +89,9 @@
         <!-- Przyciski edycji (jak w Ofertach, bez pozycji) -->
         <div class="p-3 border-top bg-light flex-shrink-0">
             <div class="d-flex gap-2">
-                <button type="button" class="btn btn-primary btn-sm" onclick="addCustomer()">Dodaj odbiorcę</button>
-                <button type="button" class="btn btn-secondary btn-sm" id="editCustomerBtn" onclick="editCustomer()" disabled>Edytuj odbiorcę</button>
-                <button type="button" class="btn btn-danger btn-sm" id="deleteCustomerBtn" onclick="deleteCustomer()" disabled>Usuń odbiorcę</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="addCustomer()">Dodaj kontrahenta</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="editCustomerBtn" onclick="editCustomer()" disabled>Edytuj kontrahenta</button>
+                <button type="button" class="btn btn-danger btn-sm" id="deleteCustomerBtn" onclick="deleteCustomer()" disabled>Usuń kontrahenta</button>
                 <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm">Odśwież</a>
             </div>
         </div>
@@ -119,7 +99,7 @@
 </div>
 
 <style>
-    /* Okno odbiorców – jak Oferty, bez dolnego browse */
+    /* Okno kontrahentów – jak Oferty, bez dolnego browse */
     .customers-fullscreen {
         height: calc(100vh - 215px);
         height: calc(100dvh - 215px);
@@ -293,16 +273,16 @@
     });
 
     function addCustomer() {
-        alert('Dodaj odbiorcę – funkcjonalność w przygotowaniu');
+        alert('Dodaj kontrahenta – funkcjonalność w przygotowaniu');
     }
     function editCustomer() {
-        if (!selectedCustomerId) { alert('Wybierz odbiorcę do edycji'); return; }
-        alert('Edytuj odbiorcę ID: ' + selectedCustomerId + ' – funkcjonalność w przygotowaniu');
+        if (!selectedCustomerId) { alert('Wybierz kontrahenta do edycji'); return; }
+        alert('Edytuj kontrahenta ID: ' + selectedCustomerId + ' – funkcjonalność w przygotowaniu');
     }
     function deleteCustomer() {
-        if (!selectedCustomerId) { alert('Wybierz odbiorcę do usunięcia'); return; }
-        if (confirm('Czy na pewno chcesz usunąć odbiorcę ID: ' + selectedCustomerId + '?')) {
-            alert('Usuń odbiorcę – funkcjonalność w przygotowaniu');
+        if (!selectedCustomerId) { alert('Wybierz kontrahenta do usunięcia'); return; }
+        if (confirm('Czy na pewno chcesz usunąć kontrahenta ID: ' + selectedCustomerId + '?')) {
+            alert('Usuń kontrahenta – funkcjonalność w przygotowaniu');
         }
     }
 </script>

@@ -22,11 +22,11 @@ public class UserLoginRepository : IUserLoginRepository
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
             "SELECT id, id_operatora, login, haslohash " +
-            "FROM operator_login WHERE id = @Id",
+            "FROM `operator_login` WHERE id = @Id",
             connection);
         command.Parameters.AddWithValue("@Id", id);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
         {
             return MapToUserLogin(reader);
@@ -39,12 +39,12 @@ public class UserLoginRepository : IUserLoginRepository
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT id, id_operatora, login, haslohash " +
-            "FROM operator_login WHERE login = @Login LIMIT 1",
+            "SELECT id, id AS id_operatora, login, haslohash " +
+            "FROM `operator_login` WHERE login = @Login LIMIT 1",
             connection);
         command.Parameters.AddWithValue("@Login", login);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
         {
             return MapToUserLogin(reader);
@@ -58,11 +58,11 @@ public class UserLoginRepository : IUserLoginRepository
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
             "SELECT id, id_operatora, login, haslohash " +
-            "FROM operator_login WHERE id_operatora = @UserId LIMIT 1",
+            "FROM `operator_login` WHERE id_operatora = @UserId LIMIT 1",
             connection);
         command.Parameters.AddWithValue("@UserId", userId);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
         {
             return MapToUserLogin(reader);
@@ -75,7 +75,7 @@ public class UserLoginRepository : IUserLoginRepository
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "INSERT INTO operator_login (id_operatora, login, haslohash) " +
+            "INSERT INTO `operator_login` (id_operatora, login, haslohash) " +
             "VALUES (@UserId, @Login, @PasswordHash); " +
             "SELECT LAST_INSERT_ID();",
             connection);
@@ -84,17 +84,17 @@ public class UserLoginRepository : IUserLoginRepository
         command.Parameters.AddWithValue("@Login", userLogin.Login);
         command.Parameters.AddWithValue("@PasswordHash", userLogin.PasswordHash);
 
-        var result = await command.ExecuteScalarAsync(cancellationToken);
-        if (result == null || result == DBNull.Value)
+        var newId = await command.ExecuteInsertAndGetIdAsync(cancellationToken);
+        if (newId == 0)
             throw new InvalidOperationException("Nie udało się pobrać ID nowo utworzonego rekordu operator_login.");
-        return Convert.ToInt32(result);
+        return (int)newId;
     }
 
     public async Task UpdateAsync(UserLogin userLogin, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "UPDATE operator_login SET id_operatora = @UserId, login = @Login, haslohash = @PasswordHash " +
+            "UPDATE `operator_login` SET id_operatora = @UserId, login = @Login, haslohash = @PasswordHash " +
             "WHERE id = @Id",
             connection);
 
@@ -103,23 +103,23 @@ public class UserLoginRepository : IUserLoginRepository
         command.Parameters.AddWithValue("@Login", userLogin.Login);
         command.Parameters.AddWithValue("@PasswordHash", userLogin.PasswordHash);
 
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
     }
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand("DELETE FROM operator_login WHERE id = @Id", connection);
+        var command = new MySqlCommand("DELETE FROM `operator_login` WHERE id = @Id", connection);
         command.Parameters.AddWithValue("@Id", id);
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
     }
 
     public async Task<bool> ExistsAsync(string login, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
-        var command = new MySqlCommand("SELECT COUNT(1) FROM operator_login WHERE login = @Login", connection);
+        var command = new MySqlCommand("SELECT COUNT(1) FROM `operator_login` WHERE login = @Login", connection);
         command.Parameters.AddWithValue("@Login", login);
-        var result = await command.ExecuteScalarAsync(cancellationToken);
+        var result = await command.ExecuteScalarWithDiagnosticsAsync(cancellationToken);
         if (result == null || result == DBNull.Value)
             return false;
         return Convert.ToInt32(result) > 0;

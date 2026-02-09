@@ -1,10 +1,12 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows.Data;
 using System.Windows.Input;
 using ERP.Application.DTOs;
 using ERP.Infrastructure.Repositories;
 using ERP.UI.WPF.Views;
+using IUserContext = ERP.UI.WPF.Services.IUserContext;
 
 namespace ERP.UI.WPF.ViewModels;
 
@@ -15,15 +17,18 @@ public class ProductsViewModel : ViewModelBase
 {
     private readonly ProductRepository _productRepository;
     private readonly WarehouseRepository _warehouseRepository;
+    private readonly IUserContext _userContext;
     private string _searchText = string.Empty;
     private CollectionViewSource _productsViewSource;
     private CollectionViewSource _warehouseViewSource;
     private ProductDto? _selectedProduct;
-    
-    public ProductsViewModel(ProductRepository productRepository, WarehouseRepository warehouseRepository)
+    private WarehouseItemDto? _selectedWarehouseItem;
+
+    public ProductsViewModel(ProductRepository productRepository, WarehouseRepository warehouseRepository, IUserContext userContext)
     {
         _productRepository = productRepository ?? throw new ArgumentNullException(nameof(productRepository));
         _warehouseRepository = warehouseRepository ?? throw new ArgumentNullException(nameof(warehouseRepository));
+        _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
         
         Products = new ObservableCollection<ProductDto>();
         WarehouseItems = new ObservableCollection<WarehouseItemDto>();
@@ -36,9 +41,7 @@ public class ProductsViewModel : ViewModelBase
         
         LoadProductsCommand = new RelayCommand(async () => await LoadProductsAsync());
         
-        AddProductCommand = new RelayCommand(() => 
-            System.Windows.MessageBox.Show("Funkcjonalność dodawania towaru - w przygotowaniu", "Info", 
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information));
+        AddProductCommand = new RelayCommand(() => AddProduct());
         EditProductCommand = new RelayCommand(() => EditProduct(), 
             () => SelectedProduct != null);
         DeleteProductCommand = new RelayCommand(() => 
@@ -87,7 +90,22 @@ public class ProductsViewModel : ViewModelBase
         }
     }
     
-    public WarehouseItemDto? SelectedWarehouseItem { get; set; }
+    public WarehouseItemDto? SelectedWarehouseItem
+    {
+        get => _selectedWarehouseItem;
+        set
+        {
+            if (_selectedWarehouseItem != value)
+            {
+                _selectedWarehouseItem = value;
+                OnPropertyChanged();
+                if (EditWarehouseCommand is RelayCommand editCmd)
+                    editCmd.RaiseCanExecuteChanged();
+                if (DeleteWarehouseCommand is RelayCommand deleteCmd)
+                    deleteCmd.RaiseCanExecuteChanged();
+            }
+        }
+    }
     
     public string SearchText
     {
@@ -141,7 +159,14 @@ public class ProductsViewModel : ViewModelBase
             {
                 Products.Add(product);
             }
-            
+
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var first = FilteredProducts.OfType<ProductDto>().FirstOrDefault();
+                if (first != null)
+                    SelectedProduct = first;
+            });
+
             // Załaduj również magazyn
             await LoadWarehouseAsync();
         }
@@ -163,6 +188,13 @@ public class ProductsViewModel : ViewModelBase
                 WarehouseItems.Add(item);
             }
             FilteredWarehouseItems.Refresh();
+
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var first = FilteredWarehouseItems.OfType<WarehouseItemDto>().FirstOrDefault();
+                if (first != null)
+                    SelectedWarehouseItem = first;
+            });
         }
         catch (Exception ex)
         {
@@ -186,13 +218,28 @@ public class ProductsViewModel : ViewModelBase
         return true;
     }
 
+    private void AddProduct()
+    {
+        if (!_userContext.CompanyId.HasValue)
+        {
+            System.Windows.MessageBox.Show("Wybierz firmę przed dodaniem towaru.", "Info", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+        OpenProductEdit(new ProductDto { Id = 0, CompanyId = _userContext.CompanyId.Value });
+    }
+
     private void EditProduct()
     {
         if (SelectedProduct == null) return;
+        OpenProductEdit(SelectedProduct);
+    }
 
+    private void OpenProductEdit(ProductDto product)
+    {
         try
         {
-            var editViewModel = new ProductEditViewModel(_productRepository, SelectedProduct);
+            var companyId = product.CompanyId ?? _userContext.CompanyId ?? 0;
+            var editViewModel = new ProductEditViewModel(_productRepository, product, companyId);
             var editWindow = new ProductEditWindow(editViewModel)
             {
                 Owner = System.Windows.Application.Current.MainWindow
@@ -200,7 +247,6 @@ public class ProductsViewModel : ViewModelBase
 
             if (editWindow.ShowDialog() == true)
             {
-                // Odświeżamy listę, aby pokazać zaktualizowane dane
                 _ = LoadProductsAsync();
             }
         }

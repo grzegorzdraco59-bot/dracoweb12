@@ -2,6 +2,7 @@ using ERP.Application.Services;
 using ERP.Domain.Entities;
 using ERP.Domain.Repositories;
 using ERP.Infrastructure.Data;
+using ERP.Infrastructure.Services;
 using MySqlConnector;
 
 namespace ERP.Infrastructure.Repositories;
@@ -13,27 +14,29 @@ public class OrderRepository : IOrderRepository
 {
     private readonly DatabaseContext _context;
     private readonly IUserContext _userContext;
+    private readonly IIdGenerator _idGenerator;
 
-    public OrderRepository(DatabaseContext context, IUserContext userContext)
+    public OrderRepository(DatabaseContext context, IUserContext userContext, IIdGenerator idGenerator)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
+        _idGenerator = idGenerator ?? throw new ArgumentNullException(nameof(idGenerator));
     }
 
     public async Task<Order?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
         var command = new MySqlCommand(
-            "SELECT id_zamowienia_hala, id_firmy, id_zamowienia, data_zamowienia, id_dostawcy, " +
+            "SELECT id, id_firmy, id_zamowienia, data_zamowienia, id_dostawcy, " +
             "dostawca, dostawca_mail, dostawca_waluta, id_towaru, nazwa_towaru_draco, " +
             "nazwa_towaru, status_towaru, jednostki_zakupu, jednostki_sprzedazy, cena_zakupu, " +
             "przelicznik_m_kg, ilosc, uwagi, zaznacz_do_zamowienia, wyslano_do_zamowienia, " +
             "dostarczono, ilosc_w_opakowaniu, stawka_vat, operator, nr_zam_skaner " +
-            "FROM zamowieniahala WHERE id_zamowienia_hala = @Id",
+            "FROM zamowieniahala_v WHERE id = @Id",
             connection);
         command.Parameters.AddWithValue("@Id", id);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
         {
             return MapToOrder(reader);
@@ -49,20 +52,20 @@ public class OrderRepository : IOrderRepository
         {
             await using var connection = await _context.CreateConnectionAsync();
             
-            // Pobierz dane z tabeli zamowieniahala - wszystkie pola
+            // Pobierz dane z widoku zamowieniahala_v (ma kolumnę id jako alias PK)
             var command = new MySqlCommand(
-                "SELECT id_zamowienia_hala, id_firmy, id_zamowienia, data_zamowienia, id_dostawcy, " +
+                "SELECT id, id_firmy, id_zamowienia, data_zamowienia, id_dostawcy, " +
                 "dostawca, dostawca_mail, dostawca_waluta, id_towaru, nazwa_towaru_draco, " +
                 "nazwa_towaru, status_towaru, jednostki_zakupu, jednostki_sprzedazy, cena_zakupu, " +
                 "przelicznik_m_kg, ilosc, uwagi, zaznacz_do_zamowienia, wyslano_do_zamowienia, " +
                 "dostarczono, ilosc_w_opakowaniu, stawka_vat, operator, nr_zam_skaner " +
-                "FROM zamowieniahala " +
+                "FROM zamowieniahala_v " +
                 "WHERE id_firmy = @CompanyId " +
-                "ORDER BY data_zamowienia DESC, id_zamowienia_hala DESC",
+                "ORDER BY data_zamowienia DESC, id DESC",
                 connection);
             command.Parameters.AddWithValue("@CompanyId", GetCurrentCompanyId());
 
-            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
                 try
@@ -90,18 +93,18 @@ public class OrderRepository : IOrderRepository
         await using var connection = await _context.CreateConnectionAsync();
         
         var command = new MySqlCommand(
-            "SELECT id_zamowienia_hala, id_firmy, id_zamowienia, data_zamowienia, id_dostawcy, " +
+            "SELECT id, id_firmy, id_zamowienia, data_zamowienia, id_dostawcy, " +
             "dostawca, dostawca_mail, dostawca_waluta, id_towaru, nazwa_towaru_draco, " +
             "nazwa_towaru, status_towaru, jednostki_zakupu, jednostki_sprzedazy, cena_zakupu, " +
             "przelicznik_m_kg, ilosc, uwagi, zaznacz_do_zamowienia, wyslano_do_zamowienia, " +
             "dostarczono, ilosc_w_opakowaniu, stawka_vat, operator, nr_zam_skaner " +
-            "FROM zamowieniahala " +
+            "FROM zamowieniahala_v " +
             "WHERE id_firmy = @CompanyId " +
-            "ORDER BY data_zamowienia DESC, id_zamowienia_hala DESC",
+            "ORDER BY data_zamowienia DESC, id DESC",
             connection);
         command.Parameters.AddWithValue("@CompanyId", companyId);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             orders.Add(MapToOrder(reader));
@@ -113,23 +116,28 @@ public class OrderRepository : IOrderRepository
     public async Task<int> AddAsync(Order order, CancellationToken cancellationToken = default)
     {
         await using var connection = await _context.CreateConnectionAsync();
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        var newId = await _idGenerator.GetNextIdAsync("zamowieniahala", connection, transaction, cancellationToken);
+
         var command = new MySqlCommand(
-            "INSERT INTO zamowieniahala (id_firmy, id_zamowienia, data_zamowienia, id_dostawcy, dostawca, " +
+            "INSERT INTO zamowieniahala (id_zamowienia_hala, id_firmy, id_zamowienia, data_zamowienia, id_dostawcy, dostawca, " +
             "dostawca_mail, dostawca_waluta, id_towaru, nazwa_towaru_draco, nazwa_towaru, status_towaru, " +
             "jednostki_zakupu, jednostki_sprzedazy, cena_zakupu, przelicznik_m_kg, ilosc, uwagi, " +
             "zaznacz_do_zamowienia, wyslano_do_zamowienia, dostarczono, ilosc_w_opakowaniu, stawka_vat, " +
             "operator, nr_zam_skaner) " +
-            "VALUES (@CompanyId, @OrderNumber, @OrderDate, @SupplierId, @SupplierName, @SupplierEmail, " +
+            "VALUES (@Id, @CompanyId, @OrderNumber, @OrderDate, @SupplierId, @SupplierName, @SupplierEmail, " +
             "@SupplierCurrency, @ProductId, @ProductNameDraco, @ProductName, @ProductStatus, @PurchaseUnit, " +
             "@SalesUnit, @PurchasePrice, @ConversionFactor, @Quantity, @Notes, @Status, @SentToOrder, " +
-            "@Delivered, @QuantityInPackage, @VatRate, @Operator, @ScannerOrderNumber); " +
-            "SELECT LAST_INSERT_ID();",
-            connection);
-        
+            "@Delivered, @QuantityInPackage, @VatRate, @Operator, @ScannerOrderNumber)",
+            connection, transaction);
+
+        command.Parameters.AddWithValue("@Id", newId);
         AddOrderParameters(command, order);
 
-        var result = await command.ExecuteScalarAsync(cancellationToken);
-        return Convert.ToInt32(result);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return (int)newId;
     }
 
     public async Task UpdateAsync(Order order, CancellationToken cancellationToken = default)
@@ -151,7 +159,7 @@ public class OrderRepository : IOrderRepository
         command.Parameters.AddWithValue("@Id", order.Id);
         AddOrderParameters(command, order);
 
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
     }
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
@@ -162,12 +170,12 @@ public class OrderRepository : IOrderRepository
             connection);
         command.Parameters.AddWithValue("@Id", id);
 
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
     }
 
     private static Order MapToOrder(MySqlDataReader reader)
     {
-        var id = reader.GetInt32(reader.GetOrdinal("id_zamowienia_hala"));
+        var id = reader.GetInt32(reader.GetOrdinal("id"));
         var companyId = GetNullableInt(reader, "id_firmy") ?? 0;
         var orderNumberInt = GetNullableInt(reader, "id_zamowienia");
         var dataZamowieniaInt = GetNullableInt(reader, "data_zamowienia");

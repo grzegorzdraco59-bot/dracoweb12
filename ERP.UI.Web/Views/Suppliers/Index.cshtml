@@ -1,12 +1,12 @@
-@model IEnumerable<ERP.Application.DTOs.SupplierDto>
+@model IEnumerable<ERP.Application.DTOs.KontrahentLookupDto>
 @{
-    ViewData["Title"] = "Dostawcy";
+    ViewData["Title"] = "Kontrahenci";
 }
 
 <div class="container-fluid p-0 d-flex flex-column suppliers-fullscreen">
-    <!-- Nagłówek Dostawcy -->
+    <!-- Nagłówek Kontrahenci -->
     <div class="p-3 border-bottom bg-light flex-shrink-0">
-        <h2 class="mb-0">8. Dostawcy</h2>
+        <h2 class="mb-0">8. Kontrahenci</h2>
     </div>
 
     <!-- Pole wyszukiwania – natychmiastowe -->
@@ -23,10 +23,10 @@
         </div>
     </div>
 
-    <!-- Panel: Browse Dostawców (bez dolnego browse) -->
+    <!-- Panel: Browse Kontrahentów (bez dolnego browse) -->
     <div class="d-flex flex-column flex-grow-1 suppliers-panel overflow-hidden">
         <div class="flex-grow-1 p-3 overflow-auto suppliers-scroll-area">
-            <h5 class="mb-2">Dostawcy</h5>
+            <h5 class="mb-2">Kontrahenci</h5>
             @if (Model != null && Model.Any())
             {
                 <div class="table-responsive" style="max-height: 100%;">
@@ -39,35 +39,38 @@
                                 <th class="sortable" data-column="name" style="max-width: 220px; width: 20%; white-space: nowrap; cursor: pointer; user-select: none;">
                                     Nazwa <span class="sort-indicator">↕</span>
                                 </th>
+                                <th class="sortable" data-column="email" style="max-width: 200px; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Email <span class="sort-indicator">↕</span>
+                                </th>
                                 <th class="sortable" data-column="phone" style="width: 150px; white-space: nowrap; cursor: pointer; user-select: none;">
                                     Telefon <span class="sort-indicator">↕</span>
                                 </th>
-                                <th class="sortable" data-column="email" style="max-width: 200px; white-space: nowrap; cursor: pointer; user-select: none;">
-                                    Email <span class="sort-indicator">↕</span>
+                                <th class="sortable" data-column="city" style="width: 140px; white-space: nowrap; cursor: pointer; user-select: none;">
+                                    Miasto <span class="sort-indicator">↕</span>
                                 </th>
                                 <th class="sortable" data-column="currency" style="width: 70px; white-space: nowrap; cursor: pointer; user-select: none;">
                                     Waluta <span class="sort-indicator">↕</span>
                                 </th>
-                                <th style="max-width: 300px; white-space: nowrap;">Uwagi</th>
                             </tr>
                         </thead>
                         <tbody id="suppliers-tbody">
                             @foreach (var s in Model)
                             {
-                                var rowData = $"{s.Id}|{s.Name ?? ""}|{s.Phone ?? ""}|{s.Email ?? ""}|{s.Currency ?? ""}|{s.Notes ?? ""}";
+                                var rowData = $"{s.Id}|{s.Nazwa ?? ""}|{s.Email ?? ""}|{s.Telefon ?? ""}|{s.Miasto ?? ""}|{s.Waluta ?? ""}";
                                 <tr class="supplier-row" data-supplier-id="@s.Id" style="cursor: pointer;"
                                     data-supplier-data="@rowData"
                                     data-supplier-id-value="@s.Id"
-                                    data-supplier-name-value="@(s.Name ?? "")"
-                                    data-supplier-phone-value="@(s.Phone ?? "")"
+                                    data-supplier-name-value="@(s.Nazwa ?? "")"
                                     data-supplier-email-value="@(s.Email ?? "")"
-                                    data-supplier-currency-value="@(s.Currency ?? "")">
+                                    data-supplier-phone-value="@(s.Telefon ?? "")"
+                                    data-supplier-city-value="@(s.Miasto ?? "")"
+                                    data-supplier-currency-value="@(s.Waluta ?? "")">
                                     <td style="white-space: nowrap;">@s.Id</td>
-                                    <td style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(s.Name ?? "-")</td>
-                                    <td style="white-space: nowrap;">@(s.Phone ?? "-")</td>
+                                    <td style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(s.Nazwa ?? "-")</td>
                                     <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(s.Email ?? "-")</td>
-                                    <td style="white-space: nowrap;">@(s.Currency ?? "-")</td>
-                                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(s.Notes ?? "-")</td>
+                                    <td style="white-space: nowrap;">@(s.Telefon ?? "-")</td>
+                                    <td style="white-space: nowrap;">@(s.Miasto ?? "-")</td>
+                                    <td style="white-space: nowrap;">@(s.Waluta ?? "-")</td>
                                 </tr>
                             }
                         </tbody>
@@ -77,8 +80,8 @@
             else
             {
                 <div class="alert alert-info">
-                    <h5>Brak dostawców</h5>
-                    <p class="mb-0">Nie znaleziono dostawców dla wybranej firmy.</p>
+                    <h5>Brak kontrahentów</h5>
+                    <p class="mb-0">Nie znaleziono kontrahentów dla wybranej firmy.</p>
                 </div>
             }
         </div>
@@ -86,9 +89,9 @@
         <!-- Przyciski edycji (jak w Ofertach, bez pozycji) -->
         <div class="p-3 border-top bg-light flex-shrink-0">
             <div class="d-flex gap-2">
-                <button type="button" class="btn btn-primary btn-sm" onclick="addSupplier()">Dodaj dostawcę</button>
-                <button type="button" class="btn btn-secondary btn-sm" id="editSupplierBtn" onclick="editSupplier()" disabled>Edytuj dostawcę</button>
-                <button type="button" class="btn btn-danger btn-sm" id="deleteSupplierBtn" onclick="deleteSupplier()" disabled>Usuń dostawcę</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="addSupplier()">Dodaj kontrahenta</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="editSupplierBtn" onclick="editSupplier()" disabled>Edytuj kontrahenta</button>
+                <button type="button" class="btn btn-danger btn-sm" id="deleteSupplierBtn" onclick="deleteSupplier()" disabled>Usuń kontrahenta</button>
                 <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm">Odśwież</a>
             </div>
         </div>
@@ -96,7 +99,7 @@
 </div>
 
 <style>
-    /* Okno dostawców – jak Oferty, bez dolnego browse */
+    /* Okno kontrahentów – jak Oferty, bez dolnego browse */
     .suppliers-fullscreen {
         height: calc(100vh - 215px);
         height: calc(100dvh - 215px);
@@ -270,16 +273,16 @@
     });
 
     function addSupplier() {
-        alert('Dodaj dostawcę – funkcjonalność w przygotowaniu');
+        alert('Dodaj kontrahenta – funkcjonalność w przygotowaniu');
     }
     function editSupplier() {
-        if (!selectedSupplierId) { alert('Wybierz dostawcę do edycji'); return; }
-        alert('Edytuj dostawcę ID: ' + selectedSupplierId + ' – funkcjonalność w przygotowaniu');
+        if (!selectedSupplierId) { alert('Wybierz kontrahenta do edycji'); return; }
+        alert('Edytuj kontrahenta ID: ' + selectedSupplierId + ' – funkcjonalność w przygotowaniu');
     }
     function deleteSupplier() {
-        if (!selectedSupplierId) { alert('Wybierz dostawcę do usunięcia'); return; }
-        if (confirm('Czy na pewno chcesz usunąć dostawcę ID: ' + selectedSupplierId + '?')) {
-            alert('Usuń dostawcę – funkcjonalność w przygotowaniu');
+        if (!selectedSupplierId) { alert('Wybierz kontrahenta do usunięcia'); return; }
+        if (confirm('Czy na pewno chcesz usunąć kontrahenta ID: ' + selectedSupplierId + '?')) {
+            alert('Usuń kontrahenta – funkcjonalność w przygotowaniu');
         }
     }
 </script>

@@ -1,4 +1,5 @@
 using ERP.Application.DTOs;
+using ERP.Application.Repositories;
 using ERP.Domain.Entities;
 using ERP.Domain.Repositories;
 using BCrypt.Net;
@@ -13,90 +14,72 @@ public class AuthenticationService : IAuthenticationService
 {
     private readonly IUserRepository _userRepository;
     private readonly IUserLoginRepository _userLoginRepository;
-    private readonly IUserCompanyRepository _userCompanyRepository;
-    private readonly ICompanyRepository _companyRepository;
-    private readonly IRoleRepository _roleRepository;
+    private readonly ICompanyQueryRepository _companyQueryRepository;
 
     public AuthenticationService(
         IUserRepository userRepository,
         IUserLoginRepository userLoginRepository,
-        IUserCompanyRepository userCompanyRepository,
-        ICompanyRepository companyRepository,
-        IRoleRepository roleRepository)
+        ICompanyQueryRepository companyQueryRepository)
     {
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         _userLoginRepository = userLoginRepository ?? throw new ArgumentNullException(nameof(userLoginRepository));
-        _userCompanyRepository = userCompanyRepository ?? throw new ArgumentNullException(nameof(userCompanyRepository));
-        _companyRepository = companyRepository ?? throw new ArgumentNullException(nameof(companyRepository));
-        _roleRepository = roleRepository ?? throw new ArgumentNullException(nameof(roleRepository));
+        _companyQueryRepository = companyQueryRepository ?? throw new ArgumentNullException(nameof(companyQueryRepository));
     }
 
     /// <summary>
-    /// Autentykacja użytkownika na podstawie loginu i hasła
+    /// Autentykacja użytkownika na podstawie loginu i hasła.
+    /// Tryb testowy: gdy login jest liczbą (np. "1"), logowanie po ID operatora – bez weryfikacji hasła (tylko do weryfikacji).
     /// </summary>
     public async Task<UserDto?> AuthenticateAsync(string username, string password, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        if (string.IsNullOrWhiteSpace(username))
             return null;
 
-        // Pobieramy dane logowania z tabeli operator_login
+        // Tryb testowy: logowanie po ID (gdy login to liczba) – bez operator_login, bez hasła
+        if (int.TryParse(username.Trim(), out var operatorId) && operatorId > 0)
+        {
+            var user = await _userRepository.GetByIdAsync(operatorId, cancellationToken);
+            if (user != null)
+                return MapToDto(user);
+            // Jeśli nie znaleziono – fallback do normalnego logowania
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+            return null;
+
+        // Normalne logowanie: operator_login (login + hasło)
         var userLogin = await _userLoginRepository.GetByLoginAsync(username, cancellationToken);
         if (userLogin == null)
             return null;
 
-        // Weryfikujemy hasło
         if (!await VerifyPasswordAsync(password, userLogin.PasswordHash))
             return null;
 
-        // Pobieramy dane użytkownika z tabeli operator
-        var user = await _userRepository.GetByIdAsync(userLogin.UserId, cancellationToken);
-        if (user == null)
+        var userByLogin = await _userRepository.GetByIdAsync(userLogin.UserId, cancellationToken);
+        if (userByLogin == null)
             return null;
 
-        return MapToDto(user);
+        return MapToDto(userByLogin);
     }
 
     /// <summary>
-    /// Pobiera listę firm dostępnych dla użytkownika wraz z rolami
+    /// Walidacja: SELECT COUNT(*) FROM operatorfirma WHERE id_operatora = @UserId.
+    /// Zwraca true gdy COUNT > 0 (użytkownik ma przypisane firmy).
+    /// </summary>
+    public async Task<bool> HasCompaniesForUserAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        var count = await _companyQueryRepository.GetCompanyCountByUserIdAsync(userId, cancellationToken);
+        return count > 0;
+    }
+
+    /// <summary>
+    /// Pobiera listę firm dostępnych dla użytkownika wraz z rolami.
+    /// Jedno zapytanie: WHERE operatorfirma.id_operatora = @UserId.
+    /// Brak firm zgłaszany tylko gdy zapytanie zwraca 0 wierszy.
     /// </summary>
     public async Task<IEnumerable<CompanyDto>> GetUserCompaniesAsync(int userId, CancellationToken cancellationToken = default)
     {
-        var userCompanies = await _userCompanyRepository.GetByUserIdAsync(userId, cancellationToken);
-        var companies = new List<CompanyDto>();
-
-        foreach (var userCompany in userCompanies)
-        {
-            var company = await _companyRepository.GetByIdAsync(userCompany.CompanyId, cancellationToken);
-            if (company != null)
-            {
-                var isDefault = false;
-                var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
-                if (user != null)
-                {
-                    isDefault = company.Id == user.DefaultCompanyId;
-                }
-
-                companies.Add(new CompanyDto
-                {
-                    Id = company.Id,
-                    Name = company.Name,
-                    Header1 = company.Header1,
-                    Header2 = company.Header2,
-                    Street = company.Street,
-                    PostalCode = company.PostalCode,
-                    City = company.City,
-                    Country = company.Country,
-                    Nip = company.Nip,
-                    Regon = company.Regon,
-                    Krs = company.Krs,
-                    Phone1 = company.Phone1,
-                    Email = company.Email,
-                    RoleId = userCompany.RoleId,
-                    IsDefault = isDefault
-                });
-            }
-        }
-
+        var companies = await _companyQueryRepository.GetCompanyDtosByUserIdAsync(userId, cancellationToken);
         return companies.OrderByDescending(c => c.IsDefault).ThenBy(c => c.Name);
     }
 

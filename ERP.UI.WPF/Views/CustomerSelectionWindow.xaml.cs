@@ -11,16 +11,16 @@ namespace ERP.UI.WPF.Views;
 /// </summary>
 public partial class CustomerSelectionWindow : Window
 {
-    private readonly ObservableCollection<CustomerDto> _allCustomers;
-    private readonly ObservableCollection<CustomerDto> _filteredCustomers;
-    public CustomerDto? SelectedCustomer { get; private set; }
+    private readonly ObservableCollection<KontrahentLookupDto> _allCustomers;
+    private readonly ObservableCollection<KontrahentLookupDto> _filteredCustomers;
+    public KontrahentLookupDto? SelectedKontrahent { get; private set; }
 
-    public CustomerSelectionWindow(ObservableCollection<CustomerDto> customers)
+    public CustomerSelectionWindow(ObservableCollection<KontrahentLookupDto> customers)
     {
         InitializeComponent();
         
-        _allCustomers = new ObservableCollection<CustomerDto>(customers);
-        _filteredCustomers = new ObservableCollection<CustomerDto>(customers);
+        _allCustomers = new ObservableCollection<KontrahentLookupDto>(customers);
+        _filteredCustomers = new ObservableCollection<KontrahentLookupDto>(customers);
         
         CustomersDataGrid.DataContext = _filteredCustomers;
         SelectButton.IsEnabled = false;
@@ -55,13 +55,11 @@ public partial class CustomerSelectionWindow : Window
             {
                 // Szukaj po wszystkich kolumnach
                 if (customer.Id.ToString().Contains(searchTextLower) ||
-                    (customer.Name?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
-                    (customer.Nip?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
-                    (customer.City?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
-                    (customer.Email1?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
-                    (customer.Street?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
-                    (customer.PostalCode?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
-                    (customer.Country?.ToLowerInvariant().Contains(searchTextLower) ?? false))
+                    (customer.Nazwa?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
+                    (customer.Email?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
+                    (customer.Telefon?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
+                    (customer.Miasto?.ToLowerInvariant().Contains(searchTextLower) ?? false) ||
+                    (customer.Waluta?.ToLowerInvariant().Contains(searchTextLower) ?? false))
                 {
                     _filteredCustomers.Add(customer);
                 }
@@ -76,9 +74,9 @@ public partial class CustomerSelectionWindow : Window
 
     private void CustomersDataGrid_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        if (CustomersDataGrid.SelectedItem is CustomerDto customer)
+        if (CustomersDataGrid.SelectedItem is KontrahentLookupDto customer)
         {
-            SelectedCustomer = customer;
+            SelectedKontrahent = customer;
             DialogResult = true;
             Close();
         }
@@ -86,9 +84,9 @@ public partial class CustomerSelectionWindow : Window
 
     private void SelectButton_Click(object sender, RoutedEventArgs e)
     {
-        if (CustomersDataGrid.SelectedItem is CustomerDto customer)
+        if (CustomersDataGrid.SelectedItem is KontrahentLookupDto customer)
         {
-            SelectedCustomer = customer;
+            SelectedKontrahent = customer;
             DialogResult = true;
             Close();
         }

@@ -1,4 +1,4 @@
--- Skrypt do dodania klucza obcego między magazyn.id_towaru a towary.ID_towar
+-- Skrypt do dodania klucza obcego między magazyn.id_towaru a towary.id
 -- UWAGA: Upewnij się, że tabele towary i magazyn istnieją przed uruchomieniem
 
 -- Sprawdzenie czy foreign key już istnieje
@@ -15,7 +15,7 @@ SET @foreign_key_exists = (
 SET @sql = IF(@foreign_key_exists = 0,
     'ALTER TABLE magazyn 
      ADD CONSTRAINT fk_magazyn_towary 
-     FOREIGN KEY (id_towaru) REFERENCES towary(ID_towar) 
+     FOREIGN KEY (id_towaru) REFERENCES towary(id) 
      ON DELETE SET NULL 
      ON UPDATE CASCADE',
     'SELECT "Foreign key fk_magazyn_towary już istnieje" AS message'

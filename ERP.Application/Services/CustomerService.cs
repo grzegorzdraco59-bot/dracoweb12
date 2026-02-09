@@ -7,7 +7,7 @@ using ERP.Domain.Repositories;
 namespace ERP.Application.Services;
 
 /// <summary>
-/// Implementacja serwisu aplikacyjnego dla Odbiorcy (Customer)
+/// Implementacja serwisu aplikacyjnego dla kontrahenta (Customer)
 /// Zawiera logikę biznesową, walidacje i zarządzanie transakcjami
 /// </summary>
 public class CustomerService : ICustomerService
@@ -34,6 +34,17 @@ public class CustomerService : ICustomerService
             throw new ArgumentException("CompanyId musi być większe od zera.", nameof(companyId));
 
         var customer = await _repository.GetByIdAsync(id, companyId, cancellationToken);
+        return customer != null ? MapToDto(customer) : null;
+    }
+
+    public async Task<CustomerDto?> GetByKontrahentIdAsync(int kontrahentId, int companyId, CancellationToken cancellationToken = default)
+    {
+        if (kontrahentId <= 0)
+            throw new ArgumentException("KontrahentId musi być większe od zera.", nameof(kontrahentId));
+        if (companyId <= 0)
+            throw new ArgumentException("CompanyId musi być większe od zera.", nameof(companyId));
+
+        var customer = await _repository.GetByKontrahentIdAsync(kontrahentId, companyId, cancellationToken);
         return customer != null ? MapToDto(customer) : null;
     }
 
@@ -155,7 +166,7 @@ public class CustomerService : ICustomerService
         // Pobranie utworzonego klienta
         var createdCustomer = await _repository.GetByIdAsync(id, customerDto.CompanyId, cancellationToken);
         if (createdCustomer == null)
-            throw new InvalidOperationException("Nie udało się utworzyć odbiorcy.");
+            throw new InvalidOperationException("Nie udało się utworzyć kontrahenta.");
 
         return MapToDto(createdCustomer);
     }
@@ -177,7 +188,7 @@ public class CustomerService : ICustomerService
         // Pobranie istniejącego klienta
         var customer = await _repository.GetByIdAsync(customerDto.Id, customerDto.CompanyId, cancellationToken);
         if (customer == null)
-            throw new ArgumentException($"Odbiorca o ID {customerDto.Id} nie został znaleziony.", nameof(customerDto));
+            throw new ArgumentException($"Kontrahent o ID {customerDto.Id} nie został znaleziony.", nameof(customerDto));
 
         // Aktualizacja pól
         if (!string.IsNullOrWhiteSpace(customerDto.Name))
@@ -219,7 +230,7 @@ public class CustomerService : ICustomerService
         // Pobranie zaktualizowanego klienta
         var updatedCustomer = await _repository.GetByIdAsync(customerDto.Id, customerDto.CompanyId, cancellationToken);
         if (updatedCustomer == null)
-            throw new InvalidOperationException("Nie udało się zaktualizować odbiorcy.");
+            throw new InvalidOperationException("Nie udało się zaktualizować kontrahenta.");
 
         return MapToDto(updatedCustomer);
     }
@@ -233,7 +244,7 @@ public class CustomerService : ICustomerService
 
         // Sprawdzenie czy klient istnieje
         if (!await _repository.ExistsAsync(id, companyId, cancellationToken))
-            throw new ArgumentException($"Odbiorca o ID {id} nie został znaleziony.", nameof(id));
+            throw new ArgumentException($"Kontrahent o ID {id} nie został znaleziony.", nameof(id));
 
         // Usunięcie (dla przyszłych rozszerzeń - jeśli będzie potrzeba wielu operacji, użyjemy transakcji)
         await _repository.DeleteAsync(id, companyId, cancellationToken);

@@ -51,6 +51,11 @@ public class OrderMainService : IOrderMainService
         if (order == null)
             return;
         EnsureOrderEditable(order);
+        var positions = await _positionRepository.GetByOrderIdAsync(id, cancellationToken).ConfigureAwait(false);
+        foreach (var pos in positions)
+        {
+            await _positionRepository.DeleteAsync(pos.Id, cancellationToken).ConfigureAwait(false);
+        }
         await _orderRepository.DeleteAsync(id, cancellationToken).ConfigureAwait(false);
     }
 
@@ -80,13 +85,16 @@ public class OrderMainService : IOrderMainService
     public async Task<int> AddPositionAsync(OrderPositionMainDto position, CancellationToken cancellationToken = default)
     {
         await EnsureOrderDraftForPositionAsync(position.OrderId, cancellationToken).ConfigureAwait(false);
-        return await _positionRepository.AddAsync(position, cancellationToken).ConfigureAwait(false);
+        var newId = await _positionRepository.AddAsync(position, cancellationToken).ConfigureAwait(false);
+        await _orderRepository.RecalculateOrderTotalAsync(position.OrderId, cancellationToken).ConfigureAwait(false);
+        return newId;
     }
 
     public async Task UpdatePositionAsync(OrderPositionMainDto position, CancellationToken cancellationToken = default)
     {
         await EnsureOrderDraftForPositionAsync(position.OrderId, cancellationToken).ConfigureAwait(false);
         await _positionRepository.UpdateAsync(position, cancellationToken).ConfigureAwait(false);
+        await _orderRepository.RecalculateOrderTotalAsync(position.OrderId, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task DeletePositionAsync(int positionId, CancellationToken cancellationToken = default)
@@ -96,6 +104,7 @@ public class OrderMainService : IOrderMainService
             return;
         await EnsureOrderDraftForPositionAsync(position.OrderId, cancellationToken).ConfigureAwait(false);
         await _positionRepository.DeleteAsync(positionId, cancellationToken).ConfigureAwait(false);
+        await _orderRepository.RecalculateOrderTotalAsync(position.OrderId, cancellationToken).ConfigureAwait(false);
     }
 
     private static void EnsureOrderEditable(OrderMainDto order)

@@ -43,7 +43,7 @@ public class WarehouseRepository
             connection);
         command.Parameters.AddWithValue("@CompanyId", companyId);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderWithDiagnosticsAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             var operationDate = reader.IsDBNull(reader.GetOrdinal("data_operacji")) ? null : 

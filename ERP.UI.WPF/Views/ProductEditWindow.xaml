@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Edycja towaru" Height="600" Width="700"
+        Title="Edycja towaru" Height="700" Width="800"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize">
     <Grid Margin="15">
@@ -14,18 +14,15 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Nagłówek -->
-        <TextBlock Grid.Row="0" Text="Edycja towaru" 
-                   FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
+        <TextBlock Grid.Row="0" Text="Edycja towaru" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
 
-        <!-- ScrollViewer z formularzem -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel>
-                <!-- Informacje o towarze -->
-                <GroupBox Header="Informacje o towarze" Margin="0,0,0,10" Padding="10">
+                <!-- Podstawowe -->
+                <GroupBox Header="Podstawowe" Margin="0,0,0,10" Padding="10">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="150"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
@@ -39,43 +36,195 @@
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="ID:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Id}" 
-                                 Margin="5" Padding="5" IsEnabled="False"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Id}" Margin="5" Padding="5" IsEnabled="False"/>
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Grupa:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Group, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Group, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Nazwa PL:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding NamePl, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Grupa remanentu:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding GrupaRemanentu, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Nazwa ENG:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding NameEng, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Status towaru:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding StatusTowaru, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
 
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Cena PLN:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding PricePln, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Nazwa PL Draco:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding NazwaPLdraco, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
 
-                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Jednostka sprzedaży:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Unit, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Nazwa PL:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding NazwaPL, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
 
-                        <TextBlock Grid.Row="6" Grid.Column="0" Text="Status:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Status, UpdateSourceTrigger=PropertyChanged}" 
-                                 Margin="5" Padding="5"/>
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="Nazwa ENG:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding NazwaENG, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Ceny (PLN/EUR/USD) -->
+                <GroupBox Header="Ceny (PLN/EUR/USD)" Margin="0,0,0,10" Padding="10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Cena PLN:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Cena_PLN, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Cena EUR:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding Cena_EUR, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Cena USD:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Cena_USD, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Cena zakupu:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding CenaZakupu, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Waluta zakupu:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding WalutaZakupu, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBlock Grid.Row="2" Grid.Column="2" Text="Kurs waluty:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding KursWaluty, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Cena zakupu PLN:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding CenaZakupuPLN, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBlock Grid.Row="3" Grid.Column="2" Text="Cena zakupu PLN (nowe jedn.):" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="3" Grid.Column="3" Text="{Binding CenaZakupuPLNNoweJednostki, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Koszty materiałów:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding KosztyMaterialow, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBlock Grid.Row="4" Grid.Column="2" Text="Stawka VAT:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="4" Grid.Column="3" Text="{Binding StawkaVat, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Cena data:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding CenaData, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Magazyn / status -->
+                <GroupBox Header="Magazyn / status" Margin="0,0,0,10" Padding="10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Ilość magazyn:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding IloscMagazyn, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Do magazynu:" Margin="0,5" VerticalAlignment="Center"/>
+                        <CheckBox Grid.Row="0" Grid.Column="3" IsChecked="{Binding DoMagazynu}" Margin="5" VerticalAlignment="Center"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Jednostki zakupu:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding JednostkiZakupu, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Jednostki sprzedaży:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding JednostkiSprzedazy, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Jednostka:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Jednostka, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBlock Grid.Row="2" Grid.Column="2" Text="Jednostki EN:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding JednostkiEn, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Ilość w opakowaniu:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding IloscWOpakowaniu, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBlock Grid.Row="3" Grid.Column="2" Text="Ilość jednostkowa:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="3" Grid.Column="3" Text="{Binding IloscJednostkowa, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Linia produkcyjna:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding LiniaProdukcyjna, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Wymiary / waga -->
+                <GroupBox Header="Wymiary / waga" Margin="0,0,0,10" Padding="10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Waga (kg):" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Waga_Kg, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Przelicznik m/kg:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding PrzelicznikMKg, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Roboczogodziny:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Roboczogodziny, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Dodatkowe -->
+                <GroupBox Header="Dodatkowe" Margin="0,0,0,10" Padding="10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Kontrahent:" Margin="0,5" VerticalAlignment="Center"/>
+                        <Grid Grid.Row="0" Grid.Column="1" Margin="5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding Dostawca, UpdateSourceTrigger=PropertyChanged}"
+                                     Padding="5" IsReadOnly="True"/>
+                            <Button Grid.Column="1" Content="Wybierz..."
+                                    Command="{Binding PickKontrahentCommand}"
+                                    Padding="10,5" MinWidth="90" Margin="6,0,0,0"/>
+                        </Grid>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="ID kontrahenta:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding IdDostawcy, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5" IsReadOnly="True"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Grupa GTU:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding GrupaGtu, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Data zakupu:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding DataZakupu, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Etykieta nazwa:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding EtykietaNazwa, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBlock Grid.Row="2" Grid.Column="2" Text="Etykieta wielkość:" Margin="0,5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding EtykietaWielkosc, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Uwagi:" Margin="0,5" VerticalAlignment="Top"/>
+                        <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Uwagi, UpdateSourceTrigger=PropertyChanged}" 
+                                 Margin="5" Padding="5" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="60"/>
                     </Grid>
                 </GroupBox>
             </StackPanel>
         </ScrollViewer>
 
-        <!-- Przyciski -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
-            <Button Content="Zapisz" Command="{Binding SaveCommand}" 
-                    Padding="20,5" Margin="0,0,10,0" MinWidth="100"/>
-            <Button Content="Anuluj" Command="{Binding CancelCommand}" 
-                    Padding="20,5" MinWidth="100" IsCancel="True"/>
+            <Button Content="Zapisz" Command="{Binding SaveCommand}" Padding="20,5" Margin="0,0,10,0" MinWidth="100"/>
+            <Button Content="Anuluj" Command="{Binding CancelCommand}" Padding="20,5" MinWidth="100" IsCancel="True"/>
         </StackPanel>
     </Grid>
 </Window>

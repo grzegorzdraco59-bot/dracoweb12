@@ -7,32 +7,62 @@
              d:DesignHeight="600" d:DesignWidth="1000">
     <Grid Margin="10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>   <!-- 0: Nagłówek Kontrahenci -->
+            <RowDefinition Height="Auto"/>   <!-- 1: Pole wyszukiwania -->
+            <RowDefinition Height="*"/>      <!-- 2: Browse Kontrahenci -->
+            <RowDefinition Height="Auto"/>   <!-- 3: Panel akcji -->
         </Grid.RowDefinitions>
 
+        <!-- Nagłówek Kontrahenci -->
+        <Label Grid.Row="0" Content="Kontrahenci" FontSize="16" FontWeight="Bold" Margin="0,0,0,5" HorizontalAlignment="Left"/>
+
+        <!-- Pole wyszukiwania -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
+            <Label Content="Szukaj:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                     Width="300" 
+                     Padding="5"
+                     VerticalAlignment="Center">
+                <TextBox.Style>
+                    <Style TargetType="TextBox">
+                        <Setter Property="Tag" Value="Wyszukaj po wszystkich kolumnach"/>
+                    </Style>
+                </TextBox.Style>
+            </TextBox>
+        </StackPanel>
+
         <!-- Lista dostawców -->
-        <DataGrid Grid.Row="0" 
-                  ItemsSource="{Binding Suppliers}"
-                  SelectedItem="{Binding SelectedSupplier}"
+        <DataGrid Grid.Row="2" 
+                  ItemsSource="{Binding FilteredSuppliers}"
+                  SelectedItem="{Binding SelectedSupplier, Mode=TwoWay}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
-                  GridLinesVisibility="All"
                   HeadersVisibility="Column"
+                  ColumnHeaderStyle="{StaticResource FakturyOrangeColumnHeaderStyle}"
+                  AlternationCount="2"
                   Margin="0,0,0,10">
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow" BasedOn="{StaticResource DataGridRowSelectionStyle}">
+                    <Setter Property="Background" Value="White"/>
+                    <Style.Triggers>
+                        <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                            <Setter Property="Background" Value="#F2F2F2"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.RowStyle>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
                 <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="*"/>
-                <DataGridTextColumn Header="Email" Binding="{Binding Email1}" Width="200"/>
-                <DataGridTextColumn Header="Telefon" Binding="{Binding Phone1}" Width="150"/>
-                <DataGridTextColumn Header="Miasto" Binding="{Binding City}" Width="150"/>
-                <DataGridTextColumn Header="NIP" Binding="{Binding Nip}" Width="120"/>
-                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100"/>
+                <DataGridTextColumn Header="Waluta" Binding="{Binding Currency}" Width="60"/>
+                <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="200"/>
+                <DataGridTextColumn Header="Telefon" Binding="{Binding Phone}" Width="150"/>
+                <DataGridTextColumn Header="Uwagi" Binding="{Binding Notes}" Width="200"/>
             </DataGrid.Columns>
         </DataGrid>
 
-        <!-- Panel dodawania nowego dostawcy -->
-        <GroupBox Grid.Row="1" Header="Dodaj nowego dostawcę" Padding="10">
+        <!-- Panel akcji -->
+        <GroupBox Grid.Row="3" Header="Akcje - Kontrahenci" Padding="10">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -50,7 +80,7 @@
                          Padding="5">
                     <TextBox.Style>
                         <Style TargetType="TextBox">
-                            <Setter Property="Tag" Value="Nazwa dostawcy"/>
+                            <Setter Property="Tag" Value="Nazwa kontrahenta"/>
                         </Style>
                     </TextBox.Style>
                 </TextBox>
@@ -78,20 +108,20 @@
                 </TextBox>
 
                 <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="5,0,0,0">
-                    <Button Content="Dodaj" 
+                    <Button Content="Dodaj kontrahenta" 
                             Command="{Binding AddSupplierCommand}"
                             Padding="10,5"
                             Margin="0,0,5,0"/>
-                    <Button Content="Edytuj" 
+                    <Button Content="Edytuj kontrahenta" 
                             Command="{Binding EditSupplierCommand}"
+                            Padding="10,5"
+                            Margin="0,0,5,0"/>
+                    <Button Content="Usuń kontrahenta" 
+                            Command="{Binding DeleteSupplierCommand}"
                             Padding="10,5"
                             Margin="0,0,5,0"/>
                     <Button Content="Odśwież" 
                             Command="{Binding LoadSuppliersCommand}"
-                            Padding="10,5"
-                            Margin="0,0,5,0"/>
-                    <Button Content="Usuń" 
-                            Command="{Binding DeleteSupplierCommand}"
                             Padding="10,5"/>
                 </StackPanel>
             </Grid>
