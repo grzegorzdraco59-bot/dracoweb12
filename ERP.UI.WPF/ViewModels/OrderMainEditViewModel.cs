@@ -1,5 +1,6 @@
 using System.Windows.Input;
 using ERP.Application.DTOs;
+using ERP.Application.Helpers;
 using ERP.Application.Services;
 using ERP.Domain.Enums;
 using ERP.UI.WPF.Views;
@@ -21,12 +22,27 @@ public class OrderMainEditViewModel : ViewModelBase
         _order = IsNew
             ? (order ?? new OrderMainDto())
             : CopyFrom(order!);
+        if (IsNew)
+        {
+            InitializeNewOrderDefaults();
+        }
         WindowTitle = IsNew ? "Nowe zamówienie" : "Edycja zamówienia";
 
         SaveCommand = new RelayCommand(async () => await SaveAsync(), () => CanSave());
         CancelCommand = new RelayCommand(() => OnCancelled());
         PobierzNbpCommand = new RelayCommand(() => PobierzNbp()); // placeholder – integracja NBP później
         PickKontrahentCommand = new RelayCommand(PickKontrahent);
+    }
+
+    private void InitializeNewOrderDefaults()
+    {
+        var today = DateTime.Today;
+        var todayClarion = ClarionDateConverter.DateToClarionInt(today);
+        _order.OrderDate = today;
+        _order.DataZamowienia = today;
+        _order.OrderDateInt = todayClarion;
+        _order.SkopiowanoNiedostarczone = false;
+        _order.SkopiowanoDoMagazynu = false;
     }
 
     private static OrderMainDto CopyFrom(OrderMainDto src)
@@ -37,6 +53,7 @@ public class OrderMainEditViewModel : ViewModelBase
             CompanyId = src.CompanyId,
             OrderNumber = src.OrderNumber ?? src.Nr,
             Nr = src.Nr,
+            OrderDateInt = src.OrderDateInt,
             OrderDate = src.OrderDate ?? src.DataZamowienia,
             DataZamowienia = src.DataZamowienia,
             DataDostawy = src.DataDostawy,
@@ -83,7 +100,13 @@ public class OrderMainEditViewModel : ViewModelBase
     public DateTime? OrderDate
     {
         get => _order.OrderDate ?? _order.DataZamowienia;
-        set { _order.OrderDate = value; _order.DataZamowienia = value; OnPropertyChanged(); }
+        set
+        {
+            _order.OrderDate = value;
+            _order.DataZamowienia = value;
+            _order.OrderDateInt = ClarionDateConverter.DateToClarionInt(value);
+            OnPropertyChanged();
+        }
     }
 
     public DateTime? DataDostawy { get => _order.DataDostawy; set { _order.DataDostawy = value; OnPropertyChanged(); } }

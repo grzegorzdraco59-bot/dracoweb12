@@ -29,7 +29,7 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="2*"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -81,8 +81,6 @@
                         <TextBlock Grid.Row="2" Grid.Column="2" Text="wartosc:" Margin="8,5,0,5" VerticalAlignment="Center"/>
                         <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding Wartosc, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" Margin="4" Padding="4"/>
 
-                        <TextBlock Grid.Row="2" Grid.Column="4" Text="mod Data Zam:" Margin="8,5,0,5" VerticalAlignment="Center"/>
-                        <DatePicker Grid.Row="2" Grid.Column="5" SelectedDate="{Binding OrderDate}" IsEnabled="False" Margin="4" Padding="4" Opacity="0.8"/>
                     </Grid>
                 </GroupBox>
 

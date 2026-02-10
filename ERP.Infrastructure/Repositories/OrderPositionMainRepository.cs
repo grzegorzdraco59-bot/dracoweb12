@@ -135,7 +135,11 @@ public class OrderPositionMainRepository : IOrderPositionMainRepository
         await using var connection = await _context.CreateConnectionAsync();
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
-        var newId = await _idGenerator.GetNextIdAsync("pozycjezamowienia", connection, transaction, cancellationToken);
+        var companyId = position.CompanyId > 0 ? position.CompanyId : GetCurrentCompanyId();
+        position.CompanyId = companyId;
+        var newId = await GetNextOrderPositionIdAsync(connection, transaction, companyId, cancellationToken);
+        position.Id = (int)newId;
+        System.Diagnostics.Debug.WriteLine($"[OrderPositionMainRepository] next_id={newId}");
 
         var command = new MySqlCommand(
             "INSERT INTO pozycjezamowienia (id_pozycji_zamowienia, id_firmy, id_zamowienia, id_towaru, data_dostawy_pozycji, " +
@@ -152,7 +156,8 @@ public class OrderPositionMainRepository : IOrderPositionMainRepository
             connection, transaction);
 
         command.Parameters.AddWithValue("@Id", newId);
-        command.Parameters.AddWithValue("@CompanyId", position.CompanyId);
+        command.Parameters.AddWithValue("@CompanyId", companyId);
+        System.Diagnostics.Debug.WriteLine($"[OrderPositionMainRepository] insert_pk={newId}");
         command.Parameters.AddWithValue("@OrderId", position.OrderId);
         command.Parameters.AddWithValue("@ProductId", position.ProductId ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@DeliveryDateInt", position.DeliveryDateInt ?? (object)DBNull.Value);
@@ -185,6 +190,18 @@ public class OrderPositionMainRepository : IOrderPositionMainRepository
         await command.ExecuteNonQueryWithDiagnosticsAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return (int)newId;
+    }
+
+    private static async Task<int> GetNextOrderPositionIdAsync(MySqlConnection connection, MySqlTransaction transaction, int companyId, CancellationToken cancellationToken)
+    {
+        var command = new MySqlCommand(
+            "SELECT COALESCE(MAX(id_pozycji_zamowienia), 0) + 1 AS next_id " +
+            "FROM pozycjezamowienia " +
+            "WHERE id_firmy = @CompanyId FOR UPDATE",
+            connection, transaction);
+        command.Parameters.AddWithValue("@CompanyId", companyId);
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return Convert.ToInt32(result);
     }
 
     public async Task UpdateAsync(OrderPositionMainDto position, CancellationToken cancellationToken = default)

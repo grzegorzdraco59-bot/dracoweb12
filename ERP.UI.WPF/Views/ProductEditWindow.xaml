@@ -77,27 +77,115 @@
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Cena PLN:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Cena_PLN, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" Margin="5" Padding="5">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Text" Value="{Binding Cena_PLN, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                            <Setter Property="Text" Value="{Binding Cena_PLN, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N4}, ConverterCulture=pl-PL}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
                         <TextBlock Grid.Row="0" Grid.Column="2" Text="Cena EUR:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding Cena_EUR, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBox Grid.Row="0" Grid.Column="3" Margin="5" Padding="5">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Text" Value="{Binding Cena_EUR, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                            <Setter Property="Text" Value="{Binding Cena_EUR, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N4}, ConverterCulture=pl-PL}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Cena USD:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Cena_USD, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Margin="5" Padding="5">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Text" Value="{Binding Cena_USD, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                            <Setter Property="Text" Value="{Binding Cena_USD, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N4}, ConverterCulture=pl-PL}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
                         <TextBlock Grid.Row="1" Grid.Column="2" Text="Cena zakupu:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding CenaZakupu, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBox Grid.Row="1" Grid.Column="3" Margin="5" Padding="5">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Text" Value="{Binding CenaZakupu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                            <Setter Property="Text" Value="{Binding CenaZakupu, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N4}, ConverterCulture=pl-PL}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
 
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="Waluta zakupu:" Margin="0,5" VerticalAlignment="Center"/>
                         <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding WalutaZakupu, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
                         <TextBlock Grid.Row="2" Grid.Column="2" Text="Kurs waluty:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding KursWaluty, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBox Grid.Row="2" Grid.Column="3" Margin="5" Padding="5">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Text" Value="{Binding KursWaluty, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                            <Setter Property="Text" Value="{Binding KursWaluty, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N4}, ConverterCulture=pl-PL}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
 
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="Cena zakupu PLN:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding CenaZakupuPLN, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBox Grid.Row="3" Grid.Column="1" Margin="5" Padding="5">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Text" Value="{Binding CenaZakupuPLN, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                            <Setter Property="Text" Value="{Binding CenaZakupuPLN, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N4}, ConverterCulture=pl-PL}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
                         <TextBlock Grid.Row="3" Grid.Column="2" Text="Cena zakupu PLN (nowe jedn.):" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="3" Grid.Column="3" Text="{Binding CenaZakupuPLNNoweJednostki, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBox Grid.Row="3" Grid.Column="3" Margin="5" Padding="5">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Text" Value="{Binding CenaZakupuPLNNoweJednostki, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                            <Setter Property="Text" Value="{Binding CenaZakupuPLNNoweJednostki, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N4}, ConverterCulture=pl-PL}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
 
                         <TextBlock Grid.Row="4" Grid.Column="0" Text="Koszty materiałów:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding KosztyMaterialow, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBox Grid.Row="4" Grid.Column="1" Margin="5" Padding="5">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Text" Value="{Binding KosztyMaterialow, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                            <Setter Property="Text" Value="{Binding KosztyMaterialow, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N4}, ConverterCulture=pl-PL}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
                         <TextBlock Grid.Row="4" Grid.Column="2" Text="Stawka VAT:" Margin="0,5" VerticalAlignment="Center"/>
                         <TextBox Grid.Row="4" Grid.Column="3" Text="{Binding StawkaVat, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
 
@@ -124,7 +212,18 @@
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Ilość magazyn:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding IloscMagazyn, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" Margin="5" Padding="5">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Text" Value="{Binding IloscMagazyn, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                            <Setter Property="Text" Value="{Binding IloscMagazyn, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N4}, ConverterCulture=pl-PL}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
                         <TextBlock Grid.Row="0" Grid.Column="2" Text="Do magazynu:" Margin="0,5" VerticalAlignment="Center"/>
                         <CheckBox Grid.Row="0" Grid.Column="3" IsChecked="{Binding DoMagazynu}" Margin="5" VerticalAlignment="Center"/>
 
@@ -139,9 +238,31 @@
                         <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding JednostkiEn, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
 
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="Ilość w opakowaniu:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding IloscWOpakowaniu, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBox Grid.Row="3" Grid.Column="1" Margin="5" Padding="5">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Text" Value="{Binding IloscWOpakowaniu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                            <Setter Property="Text" Value="{Binding IloscWOpakowaniu, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N4}, ConverterCulture=pl-PL}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
                         <TextBlock Grid.Row="3" Grid.Column="2" Text="Ilość jednostkowa:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="3" Grid.Column="3" Text="{Binding IloscJednostkowa, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBox Grid.Row="3" Grid.Column="3" Margin="5" Padding="5">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Text" Value="{Binding IloscJednostkowa, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                            <Setter Property="Text" Value="{Binding IloscJednostkowa, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N4}, ConverterCulture=pl-PL}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
 
                         <TextBlock Grid.Row="4" Grid.Column="0" Text="Linia produkcyjna:" Margin="0,5" VerticalAlignment="Center"/>
                         <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding LiniaProdukcyjna, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
@@ -163,12 +284,45 @@
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Waga (kg):" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Waga_Kg, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" Margin="5" Padding="5">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Text" Value="{Binding Waga_Kg, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                            <Setter Property="Text" Value="{Binding Waga_Kg, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N4}, ConverterCulture=pl-PL}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
                         <TextBlock Grid.Row="0" Grid.Column="2" Text="Przelicznik m/kg:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding PrzelicznikMKg, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBox Grid.Row="0" Grid.Column="3" Margin="5" Padding="5">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Text" Value="{Binding PrzelicznikMKg, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                            <Setter Property="Text" Value="{Binding PrzelicznikMKg, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N4}, ConverterCulture=pl-PL}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Roboczogodziny:" Margin="0,5" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Roboczogodziny, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Margin="5" Padding="5">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Text" Value="{Binding Roboczogodziny, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                            <Setter Property="Text" Value="{Binding Roboczogodziny, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N4}, ConverterCulture=pl-PL}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
                     </Grid>
                 </GroupBox>
 
@@ -177,7 +331,7 @@
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="2*"/>
                             <ColumnDefinition Width="150"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>

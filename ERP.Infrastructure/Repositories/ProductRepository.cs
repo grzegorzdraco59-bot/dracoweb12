@@ -20,13 +20,11 @@ public class ProductRepository
 
     private readonly DatabaseContext _context;
     private readonly IUserContext _userContext;
-    private readonly IIdGenerator _idGenerator;
 
-    public ProductRepository(DatabaseContext context, IUserContext userContext, IIdGenerator idGenerator)
+    public ProductRepository(DatabaseContext context, IUserContext userContext)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
-        _idGenerator = idGenerator ?? throw new ArgumentNullException(nameof(idGenerator));
     }
 
     private int GetCurrentCompanyId()
@@ -129,7 +127,9 @@ public class ProductRepository
         await using var _ = connection;
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
-        var newId = (int)await _idGenerator.GetNextIdAsync("towary", connection, transaction, cancellationToken);
+        var newId = await GetNextProductIdAsync(connection, transaction, companyId, cancellationToken);
+        p.Id = newId;
+        p.CompanyId = companyId;
 
         var sql = "INSERT INTO towary (id_towar, id_firmy, grupa, grupa_remanentu, status_towaru, " +
             "Nazwa_PL_draco, Nazwa_PL, Nazwa_ENG, Cena_PLN, Cena_EUR, Cena_USD, Waga_Kg, roboczogodziny, " +
@@ -161,6 +161,18 @@ public class ProductRepository
         }
     }
 
+    private static async Task<int> GetNextProductIdAsync(MySqlConnection connection, MySqlTransaction transaction, int companyId, CancellationToken cancellationToken)
+    {
+        var command = new MySqlCommand(
+            "SELECT COALESCE(MAX(id_towar), 0) + 1 AS next_id " +
+            "FROM towary " +
+            "WHERE id_firmy = @CompanyId FOR UPDATE",
+            connection, transaction);
+        command.Parameters.AddWithValue("@CompanyId", companyId);
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return Convert.ToInt32(result);
+    }
+
     private static void AddProductParameters(MySqlCommand cmd, ProductDto p, int companyId)
     {
         cmd.Parameters.AddWithValue("@id_firmy", (object?)p.CompanyId ?? companyId);
@@ -170,9 +182,9 @@ public class ProductRepository
         cmd.Parameters.AddWithValue("@Nazwa_PL_draco", p.NazwaPLdraco ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@Nazwa_PL", p.NazwaPL ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@Nazwa_ENG", p.NazwaENG ?? (object)DBNull.Value);
-        cmd.Parameters.AddWithValue("@Cena_PLN", p.Cena_PLN ?? (object)DBNull.Value);
-        cmd.Parameters.AddWithValue("@Cena_EUR", p.Cena_EUR ?? (object)DBNull.Value);
-        cmd.Parameters.AddWithValue("@Cena_USD", p.Cena_USD ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@Cena_PLN", RoundPrice(p.Cena_PLN) ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@Cena_EUR", RoundPrice(p.Cena_EUR) ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@Cena_USD", RoundPrice(p.Cena_USD) ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@Waga_Kg", p.Waga_Kg ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@roboczogodziny", p.Roboczogodziny ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@Uwagi", p.Uwagi ?? (object)DBNull.Value);
@@ -182,12 +194,12 @@ public class ProductRepository
         cmd.Parameters.AddWithValue("@jednostki_sprzedazy", p.JednostkiSprzedazy ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@jednostka", p.Jednostka ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@przelicznik_m_kg", p.PrzelicznikMKg ?? (object)DBNull.Value);
-        cmd.Parameters.AddWithValue("@cena_zakupu", p.CenaZakupu ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@cena_zakupu", RoundPrice(p.CenaZakupu) ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@waluta_zakupu", p.WalutaZakupu ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@kurs_waluty", p.KursWaluty ?? (object)DBNull.Value);
-        cmd.Parameters.AddWithValue("@cena_zakupu_PLN", p.CenaZakupuPLN ?? (object)DBNull.Value);
-        cmd.Parameters.AddWithValue("@cena_zakupu_PLN_nowe_jednostki", p.CenaZakupuPLNNoweJednostki ?? (object)DBNull.Value);
-        cmd.Parameters.AddWithValue("@koszty_materialow", p.KosztyMaterialow ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@cena_zakupu_PLN", RoundPrice(p.CenaZakupuPLN) ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@cena_zakupu_PLN_nowe_jednostki", RoundPrice(p.CenaZakupuPLNNoweJednostki) ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@koszty_materialow", RoundPrice(p.KosztyMaterialow) ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@grupa_gtu", p.GrupaGtu ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@stawka_vat", p.StawkaVat ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@jednostki_en", p.JednostkiEn ?? (object)DBNull.Value);
@@ -200,6 +212,13 @@ public class ProductRepository
         cmd.Parameters.AddWithValue("@etykieta_nazwa", p.EtykietaNazwa ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@etykieta_wielkosc", p.EtykietaWielkosc ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("@ilosc_jednostkowa", p.IloscJednostkowa ?? (object)DBNull.Value);
+    }
+
+    private static decimal? RoundPrice(decimal? value)
+    {
+        return value.HasValue
+            ? Math.Round(value.Value, 2, MidpointRounding.AwayFromZero)
+            : null;
     }
 
     private static ProductDto MapToProduct(MySqlDataReader reader)

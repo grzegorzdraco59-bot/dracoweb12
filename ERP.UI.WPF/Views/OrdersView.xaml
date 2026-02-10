@@ -9,8 +9,9 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>   <!-- 0: Nagłówek Zamówienia hala -->
             <RowDefinition Height="Auto"/>   <!-- 1: Legenda kolorów i przyciski na górze -->
-            <RowDefinition Height="*"/>      <!-- 2: Browse Zamówień -->
-            <RowDefinition Height="Auto"/>   <!-- 3: Przyciski edycji na dole -->
+            <RowDefinition Height="Auto"/>   <!-- 2: Akcje -->
+            <RowDefinition Height="*"/>      <!-- 3: Browse Zamówień -->
+            <RowDefinition Height="Auto"/>   <!-- 4: Przyciski edycji na dole -->
         </Grid.RowDefinitions>
 
         <!-- Nagłówek Zamówienia hala -->
@@ -97,8 +98,24 @@
             </Grid>
         </GroupBox>
 
+        <!-- Akcje na zamówieniach -->
+        <GroupBox Grid.Row="2" Header="Akcje na zamówieniach" Padding="10" Margin="0,0,0,10" IsEnabled="{Binding HasSelectedOrder}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Drukuj PDF" Command="{Binding PrintPdfCommand}" Padding="10,5" MinWidth="90" Margin="0,0,5,0"/>
+                    <Button Content="Wyślij Mail" Command="{Binding SendMailCommand}" Padding="10,5" MinWidth="90" Margin="0,0,5,0"/>
+                    <Button Content="Kopiuj do nowego ZAM" Command="{Binding CopyToNewOrderCommand}" Padding="10,5" MinWidth="90"/>
+                </StackPanel>
+            </Grid>
+        </GroupBox>
+
         <!-- Browse Zamówień -->
-        <DataGrid Grid.Row="2" 
+        <DataGrid Grid.Row="3" 
                   ItemsSource="{Binding Orders}"
                   SelectedItem="{Binding SelectedOrder, Mode=TwoWay}"
                   AutoGenerateColumns="False"
@@ -122,7 +139,7 @@
         </DataGrid>
 
         <!-- Przyciski edycji na dole -->
-        <GroupBox Grid.Row="3" Header="Akcje - zamowieniahala" Padding="10">
+        <GroupBox Grid.Row="4" Header="Akcje - zamowieniahala" Padding="10">
             <StackPanel Orientation="Horizontal">
                 <Button Content="Dodaj" 
                         Command="{Binding AddOrderCommand}"

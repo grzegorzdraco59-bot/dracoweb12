@@ -36,6 +36,10 @@ public class OrdersViewModel : ViewModelBase
         AddOrderCommand = new RelayCommand(async () => await AddOrderAsync());
         EditOrderCommand = new RelayCommand(() => EditOrder(), () => SelectedOrder != null);
         DeleteOrderCommand = new RelayCommand(async () => await DeleteOrderAsync(), () => SelectedOrder != null);
+
+        PrintPdfCommand = new RelayCommand(() => PrintPdf(), () => SelectedOrder != null);
+        SendMailCommand = new RelayCommand(() => SendMail(), () => SelectedOrder != null);
+        CopyToNewOrderCommand = new RelayCommand(() => CopyToNewOrder(), () => SelectedOrder != null);
         
         // Przyciski z górnego paska
         DeleteOldCommand = new RelayCommand(async () => await DeleteOldAsync());
@@ -57,12 +61,21 @@ public class OrdersViewModel : ViewModelBase
         {
             _selectedOrder = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(HasSelectedOrder));
             if (EditOrderCommand is RelayCommand editCmd)
                 editCmd.RaiseCanExecuteChanged();
             if (DeleteOrderCommand is RelayCommand deleteCmd)
                 deleteCmd.RaiseCanExecuteChanged();
+            if (PrintPdfCommand is RelayCommand printCmd)
+                printCmd.RaiseCanExecuteChanged();
+            if (SendMailCommand is RelayCommand sendCmd)
+                sendCmd.RaiseCanExecuteChanged();
+            if (CopyToNewOrderCommand is RelayCommand copyCmd)
+                copyCmd.RaiseCanExecuteChanged();
         }
     }
+
+    public bool HasSelectedOrder => SelectedOrder != null;
 
     public string DaysToDeleteRealized
     {
@@ -80,6 +93,9 @@ public class OrdersViewModel : ViewModelBase
     public ICommand AddOrderCommand { get; }
     public ICommand EditOrderCommand { get; }
     public ICommand DeleteOrderCommand { get; }
+    public ICommand PrintPdfCommand { get; }
+    public ICommand SendMailCommand { get; }
+    public ICommand CopyToNewOrderCommand { get; }
     
     public ICommand DeleteOldCommand { get; }
     public ICommand SendToOfferCommand { get; }
@@ -378,5 +394,32 @@ public class OrdersViewModel : ViewModelBase
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Error);
         }
+    }
+
+    private void PrintPdf()
+    {
+        System.Windows.MessageBox.Show(
+            "W trakcie",
+            "Info",
+            System.Windows.MessageBoxButton.OK,
+            System.Windows.MessageBoxImage.Information);
+    }
+
+    private void SendMail()
+    {
+        System.Windows.MessageBox.Show(
+            "W trakcie",
+            "Info",
+            System.Windows.MessageBoxButton.OK,
+            System.Windows.MessageBoxImage.Information);
+    }
+
+    private void CopyToNewOrder()
+    {
+        System.Windows.MessageBox.Show(
+            "W trakcie",
+            "Info",
+            System.Windows.MessageBoxButton.OK,
+            System.Windows.MessageBoxImage.Information);
     }
 }

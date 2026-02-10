@@ -19,14 +19,25 @@ public class ProductEditViewModel : ViewModelBase
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _companyId = companyId;
         _product = product ?? throw new ArgumentNullException(nameof(product));
+        if (_product.Id == 0)
+        {
+            InitializeNewProductDefaults();
+        }
 
         SaveCommand = new RelayCommand(async () => await SaveAsync(), () => CanSave());
         CancelCommand = new RelayCommand(() => OnCancelled());
         PickKontrahentCommand = new RelayCommand(PickKontrahent);
     }
 
+    private void InitializeNewProductDefaults()
+    {
+        _product.DoMagazynu = false;
+    }
+
     public event EventHandler? Saved;
     public event EventHandler? Cancelled;
+
+    public bool IsEditMode => _product.Id > 0;
 
     public int Id => _product.Id;
     public int? CompanyId { get => _product.CompanyId; set { _product.CompanyId = value; OnPropertyChanged(); } }

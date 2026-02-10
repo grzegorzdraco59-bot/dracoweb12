@@ -16,13 +16,11 @@ public class OrderMainRepository : IOrderMainRepository
 {
     private readonly DatabaseContext _context;
     private readonly IUserContext _userContext;
-    private readonly IIdGenerator _idGenerator;
 
-    public OrderMainRepository(DatabaseContext context, IUserContext userContext, IIdGenerator idGenerator)
+    public OrderMainRepository(DatabaseContext context, IUserContext userContext)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
-        _idGenerator = idGenerator ?? throw new ArgumentNullException(nameof(idGenerator));
     }
 
     private int GetCurrentCompanyId()
@@ -104,9 +102,15 @@ public class OrderMainRepository : IOrderMainRepository
         await using var connection = await _context.CreateConnectionAsync();
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
-        var newId = await _idGenerator.GetNextIdAsync("zamowienia", connection, transaction, cancellationToken);
+        var companyId = order.CompanyId > 0 ? order.CompanyId : GetCurrentCompanyId();
+        order.CompanyId = companyId;
+        var newId = await GetNextOrderIdAsync(connection, transaction, companyId, cancellationToken);
+        order.Id = newId;
 
-        var orderDateInt = ClarionDateConverter.DateToClarionInt(order.OrderDate);
+        var orderNumber = await GetNextOrderNumberAsync(connection, transaction, companyId, cancellationToken);
+        order.OrderNumber = orderNumber;
+
+        var orderDateInt = order.OrderDateInt ?? ClarionDateConverter.DateToClarionInt(order.OrderDate);
         var dataDostawyInt = ClarionDateConverter.DateToClarionInt(order.DataDostawy);
         var dataPlatnosciInt = ClarionDateConverter.DateToClarionInt(order.DataPlatnosci);
         var dataFakturyInt = ClarionDateConverter.DateToClarionInt(order.DataFaktury);
@@ -121,8 +125,8 @@ public class OrderMainRepository : IOrderMainRepository
             connection, transaction);
 
         command.Parameters.AddWithValue("@Id", newId);
-        command.Parameters.AddWithValue("@CompanyId", order.CompanyId);
-        command.Parameters.AddWithValue("@OrderNumber", order.OrderNumber ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@CompanyId", companyId);
+        command.Parameters.AddWithValue("@OrderNumber", orderNumber);
         command.Parameters.AddWithValue("@OrderDateInt", orderDateInt ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@SupplierId", order.SupplierId ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@SupplierName", order.SupplierName ?? (object)DBNull.Value);
@@ -152,7 +156,7 @@ public class OrderMainRepository : IOrderMainRepository
     {
         await using var connection = await _context.CreateConnectionAsync();
         var idColumnName = await GetIdColumnNameAsync(connection, cancellationToken);
-        var orderDateInt = ClarionDateConverter.DateToClarionInt(order.OrderDate);
+        var orderDateInt = order.OrderDateInt ?? ClarionDateConverter.DateToClarionInt(order.OrderDate);
         var dataDostawyInt = ClarionDateConverter.DateToClarionInt(order.DataDostawy);
         var dataPlatnosciInt = ClarionDateConverter.DateToClarionInt(order.DataPlatnosci);
         var dataFakturyInt = ClarionDateConverter.DateToClarionInt(order.DataFaktury);
@@ -260,6 +264,71 @@ public class OrderMainRepository : IOrderMainRepository
         return "id"; // domyślna nazwa
     }
 
+    private static async Task<int> GetNextOrderIdAsync(MySqlConnection connection, MySqlTransaction transaction, int companyId, CancellationToken cancellationToken)
+    {
+        var command = new MySqlCommand(
+            "SELECT COALESCE(MAX(id_zamowienia), 0) + 1 AS next_id " +
+            "FROM zamowienia " +
+            "WHERE id_firmy = @CompanyId FOR UPDATE",
+            connection, transaction);
+        command.Parameters.AddWithValue("@CompanyId", companyId);
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return Convert.ToInt32(result);
+    }
+
+    private static async Task<int> GetNextOrderNumberAsync(MySqlConnection connection, MySqlTransaction transaction, int companyId, CancellationToken cancellationToken)
+    {
+        var today = DateTime.Today;
+        var year = today.Year;
+        var month = today.Month;
+        var dateKey = today.ToString("yyyyMMdd");
+        var docType = $"ZAM_{dateKey}";
+
+        var selectCommand = new MySqlCommand(
+            "SELECT last_no FROM doc_counters " +
+            "WHERE company_id = @CompanyId AND doc_type = @DocType AND year = @Year AND month = @Month " +
+            "FOR UPDATE",
+            connection, transaction);
+        selectCommand.Parameters.AddWithValue("@CompanyId", companyId);
+        selectCommand.Parameters.AddWithValue("@DocType", docType);
+        selectCommand.Parameters.AddWithValue("@Year", year);
+        selectCommand.Parameters.AddWithValue("@Month", month);
+
+        object? result = await selectCommand.ExecuteScalarAsync(cancellationToken);
+        if (result == null || result == DBNull.Value)
+        {
+            var insertCommand = new MySqlCommand(
+                "INSERT INTO doc_counters (company_id, doc_type, year, month, last_no, updated_at) " +
+                "VALUES (@CompanyId, @DocType, @Year, @Month, 0, NOW())",
+                connection, transaction);
+            insertCommand.Parameters.AddWithValue("@CompanyId", companyId);
+            insertCommand.Parameters.AddWithValue("@DocType", docType);
+            insertCommand.Parameters.AddWithValue("@Year", year);
+            insertCommand.Parameters.AddWithValue("@Month", month);
+            await insertCommand.ExecuteNonQueryAsync(cancellationToken);
+
+            result = await selectCommand.ExecuteScalarAsync(cancellationToken);
+        }
+
+        var lastNo = result == null || result == DBNull.Value ? 0 : Convert.ToInt32(result);
+        var nextNo = lastNo + 1;
+
+        var updateCommand = new MySqlCommand(
+            "UPDATE doc_counters " +
+            "SET last_no = @NextNo, updated_at = NOW() " +
+            "WHERE company_id = @CompanyId AND doc_type = @DocType AND year = @Year AND month = @Month",
+            connection, transaction);
+        updateCommand.Parameters.AddWithValue("@NextNo", nextNo);
+        updateCommand.Parameters.AddWithValue("@CompanyId", companyId);
+        updateCommand.Parameters.AddWithValue("@DocType", docType);
+        updateCommand.Parameters.AddWithValue("@Year", year);
+        updateCommand.Parameters.AddWithValue("@Month", month);
+        await updateCommand.ExecuteNonQueryAsync(cancellationToken);
+
+        System.Diagnostics.Debug.WriteLine($"[OrderMainRepository] companyId={companyId} docType={docType} year={year} month={month} last_no={lastNo} next_no={nextNo}");
+        return nextNo;
+    }
+
     private static OrderMainDto MapToDto(MySqlDataReader reader)
     {
         var availableColumns = new HashSet<string>();
@@ -293,6 +362,7 @@ public class OrderMainRepository : IOrderMainRepository
             Id = idVal,
             CompanyId = GetInt(reader, availableColumns.Contains("company_id") ? "company_id" : "id_firmy"),
             OrderNumber = GetNullableInt(reader, availableColumns.Contains("nr_zamowienia") ? "nr_zamowienia" : null),
+            OrderDateInt = dataZamInt,
             OrderDate = dataZam,
             SupplierId = GetNullableInt(reader, availableColumns.Contains("id_dostawcy") ? "id_dostawcy" : null),
             SupplierName = dostawca,
@@ -359,36 +429,6 @@ public class OrderMainRepository : IOrderMainRepository
         {
             var ordinal = reader.GetOrdinal(columnName);
             return reader.IsDBNull(ordinal) ? null : reader.GetInt32(ordinal);
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private static DateTime GetDateTime(MySqlDataReader reader, string? columnName)
-    {
-        if (string.IsNullOrEmpty(columnName))
-            return DateTime.MinValue;
-        try
-        {
-            var ordinal = reader.GetOrdinal(columnName);
-            return reader.IsDBNull(ordinal) ? DateTime.MinValue : reader.GetDateTime(ordinal);
-        }
-        catch
-        {
-            return DateTime.MinValue;
-        }
-    }
-
-    private static DateTime? GetNullableDateTime(MySqlDataReader reader, string? columnName)
-    {
-        if (string.IsNullOrEmpty(columnName))
-            return null;
-        try
-        {
-            var ordinal = reader.GetOrdinal(columnName);
-            return reader.IsDBNull(ordinal) ? null : reader.GetDateTime(ordinal);
         }
         catch
         {
